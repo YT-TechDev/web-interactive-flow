@@ -15,9 +15,28 @@ fn assert_inactive(runtime : Runtime) -> Unit raise {
 
 ///|
 fn assert_active(runtime : Runtime, direction : Direction) -> Unit raise {
+  assert_active_at(runtime, direction, 100, 0)
+}
+
+///|
+fn assert_active_at(
+  runtime : Runtime,
+  direction : Direction,
+  duration : Int,
+  elapsed : Int,
+) -> Unit raise {
   match (runtime.transition, direction) {
-    (Active(Forward, duration~), Forward)
-    | (Active(Reverse, duration~), Reverse) => assert_true(duration > 0)
+    (Active(Forward, duration=active_duration, elapsed=active_elapsed), Forward)
+    | (
+      Active(Reverse, duration=active_duration, elapsed=active_elapsed),
+      Reverse,
+    ) => {
+      assert_eq(active_duration, duration)
+      assert_eq(active_elapsed, elapsed)
+      assert_true(active_duration > 0)
+      assert_true(active_elapsed >= 0)
+      assert_true(active_elapsed < active_duration)
+    }
     _ => fail("active transition direction did not match")
   }
 }
@@ -139,4 +158,143 @@ test "O05 and P01 active reversal is stable" {
 
   assert_eq(runtime.selected, 1)
   assert_active(runtime, Forward)
+}
+
+///|
+test "O06 zero tick preserves an active transition exactly" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+
+  runtime.tick(0)
+
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 0)
+}
+
+///|
+test "O06 and P04 partial ticks advance exact elapsed quanta monotonically" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+
+  runtime.tick(25)
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 25)
+
+  runtime.tick(25)
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 50)
+
+  assert_false(runtime.request_previous())
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 50)
+}
+
+///|
+test "O06 normalized finer quanta retain exact fractional-host precision" {
+  let runtime = Runtime::new(["A", "B"], 0, 200)
+  assert_true(runtime.request_next())
+
+  runtime.tick(99)
+
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 200, 99)
+}
+
+///|
+test "O06 just below completion remains active at the exact position" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+
+  runtime.tick(99)
+
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 99)
+}
+
+///|
+test "O06 exact completion settles without changing the selected target" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+
+  runtime.tick(100)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+}
+
+///|
+test "O06 overshoot settles without changing the selected target" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+
+  runtime.tick(101)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+}
+
+///|
+test "P02 combined and segmented ticks agree before completion" {
+  let combined = Runtime::new(["A", "B"], 0, 200)
+  let segmented = Runtime::new(["A", "B"], 0, 200)
+  assert_true(combined.request_next())
+  assert_true(segmented.request_next())
+
+  combined.tick(99)
+  segmented.tick(40)
+  segmented.tick(59)
+
+  assert_eq(combined.selected, 1)
+  assert_eq(segmented.selected, 1)
+  assert_active_at(combined, Forward, 200, 99)
+  assert_active_at(segmented, Forward, 200, 99)
+}
+
+///|
+test "P02 combined and segmented ticks agree from non-zero elapsed" {
+  let combined = Runtime::new(["A", "B"], 0, 200)
+  let segmented = Runtime::new(["A", "B"], 0, 200)
+  assert_true(combined.request_next())
+  assert_true(segmented.request_next())
+  combined.tick(1)
+  segmented.tick(1)
+
+  combined.tick(99)
+  segmented.tick(49)
+  segmented.tick(50)
+
+  assert_eq(combined.selected, 1)
+  assert_eq(segmented.selected, 1)
+  assert_active_at(combined, Forward, 200, 100)
+  assert_active_at(segmented, Forward, 200, 100)
+}
+
+///|
+test "P02 combined and segmented ticks agree across completion" {
+  let combined = abc(0)
+  let segmented = abc(0)
+  assert_true(combined.request_next())
+  assert_true(segmented.request_next())
+
+  combined.tick(110)
+  segmented.tick(60)
+  segmented.tick(50)
+
+  assert_eq(combined.selected, 1)
+  assert_eq(segmented.selected, 1)
+  assert_inactive(combined)
+  assert_inactive(segmented)
+}
+
+///|
+test "transition-only settled tick is idempotent" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  assert_inactive(runtime)
+
+  runtime.tick(25)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
 }
