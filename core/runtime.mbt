@@ -44,16 +44,26 @@ fn Runtime::request_previous(self : Runtime) -> Bool {
 }
 
 ///|
-/// This helper accepts only the two adjacent request directions. A
-/// non-adjacent target is intentionally not representable in this proof.
-fn Runtime::request_adjacent(self : Runtime, direction : Direction) -> Bool {
+/// Requests a target that has already been normalized to a valid member of
+/// this runtime's configured domain. Keeping that precondition private avoids
+/// defining unknown-target validation semantics in this proof.
+fn Runtime::request_known_target(self : Runtime, target : Int) -> Bool {
   guard self.transition is Inactive else { return false }
+  guard target != self.selected else { return false }
+  let direction = if target > self.selected { Forward } else { Reverse }
+  self.selected = target
+  self.transition = Active(direction, duration=self.transition_duration)
+  true
+}
+
+///|
+/// Adjacent requests establish their target is in bounds before entering the
+/// trusted known-target path.
+fn Runtime::request_adjacent(self : Runtime, direction : Direction) -> Bool {
   let target = match direction {
     Forward => self.selected + 1
     Reverse => self.selected - 1
   }
   guard target >= 0 && target < self.phases.length() else { return false }
-  self.selected = target
-  self.transition = Active(direction, duration=self.transition_duration)
-  true
+  self.request_known_target(target)
 }

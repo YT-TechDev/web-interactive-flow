@@ -4,6 +4,11 @@ fn abc(selected : Int) -> Runtime {
 }
 
 ///|
+fn abcd(selected : Int) -> Runtime {
+  Runtime::new(["A", "B", "C", "D"], selected, 100)
+}
+
+///|
 fn assert_inactive(runtime : Runtime) -> Unit raise {
   assert_true(runtime.transition is Inactive)
 }
@@ -39,6 +44,55 @@ test "O02 adjacent previous selects target atomically and starts reverse transit
 
   assert_eq(runtime.selected, 0)
   assert_active(runtime, Reverse)
+}
+
+///|
+test "O03 and P03 direct non-adjacent forward selects only the target" {
+  let runtime = abcd(0)
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+
+  assert_true(runtime.request_known_target(3))
+
+  assert_eq(runtime.selected, 3)
+  assert_active(runtime, Forward)
+}
+
+///|
+test "O04 and P03 direct non-adjacent reverse selects only the target" {
+  let runtime = abcd(3)
+  assert_eq(runtime.selected, 3)
+  assert_inactive(runtime)
+
+  assert_true(runtime.request_known_target(0))
+
+  assert_eq(runtime.selected, 0)
+  assert_active(runtime, Reverse)
+}
+
+///|
+test "O05 and P01 same-selected direct request is stable" {
+  let runtime = abc(1)
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+
+  assert_false(runtime.request_known_target(1))
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+}
+
+///|
+test "O05 and P01 active direct request is stable" {
+  let runtime = abcd(0)
+  assert_true(runtime.request_known_target(3))
+  assert_eq(runtime.selected, 3)
+  assert_active(runtime, Forward)
+
+  assert_false(runtime.request_known_target(1))
+
+  assert_eq(runtime.selected, 3)
+  assert_active(runtime, Forward)
 }
 
 ///|
