@@ -6,14 +6,17 @@ This document defines responsibility boundaries between the host-independent run
 
 The core may know about normalized flow concepts such as:
 
-- requests to move or target a phase;
-- explicit time deltas;
+- a stable ordered phase domain;
+- requests to move or target a known semantic phase;
+- the selected phase / accepted target;
+- explicit valid time deltas;
 - transition state;
-- progress and direction;
+- raw normalized progress and direction;
 - cooldown;
 - lock state;
 - request disposition;
-- observable runtime snapshots.
+- semantic validity constraints;
+- observable runtime state.
 
 The core must not directly know about:
 
@@ -24,6 +27,16 @@ The core must not directly know about:
 - React hooks or components;
 - R3F hooks, raycasting, scene graphs, cameras, materials, or meshes;
 - requestAnimationFrame or a particular rendering loop.
+
+Core flow truth must not depend on presentation easing or animation curves.
+
+## Bridge / normalization boundary
+
+A bridge may translate host-facing identifiers, numbers, and API values into normalized core values.
+
+A host value that cannot be normalized to a valid semantic command is a validation failure. It must not be reclassified as an ordinary known-request rejection.
+
+Concrete exception/result/status-code representation remains open.
 
 ## DOM/Web adapter
 
@@ -36,7 +49,8 @@ The DOM adapter is expected to own host-specific policy and mechanics such as:
 - event ownership and `preventDefault()` decisions;
 - nested interactive regions;
 - focus and accessibility integration;
-- projecting runtime state into DOM-visible effects.
+- projecting runtime state into DOM-visible effects;
+- DOM/CSS presentation easing or interpolation where desired.
 
 Native-scroll coexistence is a research frontier. Do not encode an untested global event-capture policy as core semantics.
 
@@ -53,12 +67,17 @@ An R3F adapter may own:
 - `useFrame` or equivalent frame-loop binding;
 - R3F event integration;
 - scene, camera, object, or material mutations;
+- presentation easing and visual interpolation from raw core progress;
 - conversion between runtime state and 3D presentation.
 
 R3F raycasting and event propagation remain R3F/host responsibilities.
 
 ## Cross-host rule
 
-When DOM and R3F consumers receive equivalent normalized commands and deltas, any shared semantic claim must be decided by the same core runtime.
+When DOM and R3F consumers receive equivalent normalized commands and valid deltas, shared semantic claims must be decided by the same core runtime.
 
-Differences caused by host event systems must be documented as host behavior, not hidden as core differences.
+Equivalent core input should produce equivalent selected phase, lifecycle, raw progress, direction, cooldown/lock state, and request disposition where those observations apply.
+
+Hosts are not required to use the same easing or produce identical visual effects.
+
+Differences caused by host event systems or presentation policy must be documented as host behavior, not hidden as core differences.
