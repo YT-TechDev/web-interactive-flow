@@ -27,3 +27,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0001 — Host-independent MoonBit/Wasm core](0001-host-independent-moonbit-wasm-core.md)
 - [ADR-0002 — DOM and R3F are host adapters](0002-dom-and-r3f-as-host-adapters.md)
 - [ADR-0003 — Extract behavioral traces before porting](0003-behavioral-traces-before-porting.md)
+- [ADR-0004 — Core owns raw progress; easing is presentation policy](0004-raw-progress-core-easing-presentation.md)
