@@ -1,0 +1,4 @@
+// The runtime surface is intentionally package-private in this proof and is
+// exercised only by white-box tests. Do not force it public to silence the
+// production-only unused-value diagnostic.
+warnings = "-unused_value-unused_constructor"
