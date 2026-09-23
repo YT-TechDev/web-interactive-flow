@@ -1,0 +1,43 @@
+name: moonbit-wasm
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  moonbit-wasm:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Install exact MoonBit toolchain
+        shell: bash
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- 0.1.20260920
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          versions="$(moon version --all)"
+          printf '%s\n' "$versions"
+          grep -F "moon 0.1.20260920 (914d7da" <<< "$versions"
+          grep -F "moonc v0.10.14+7d59c7ec9" <<< "$versions"
+          grep -F "moonrun 0.1.20260920 (914d7da" <<< "$versions"
+
+      - name: Check formatting
+        run: moon fmt --check
+
+      - name: Check Wasm target
+        run: moon check --target wasm --deny-warn --frozen
+
+      - name: Test Wasm target
+        run: moon test --target wasm --deny-warn --frozen
+
+      - name: Build Wasm target
+        run: moon build --target wasm --deny-warn --frozen
