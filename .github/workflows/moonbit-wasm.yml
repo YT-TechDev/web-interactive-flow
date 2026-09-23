@@ -18,7 +18,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install exact MoonBit toolchain
+      - name: Install and verify qualified MoonBit toolchain
         shell: bash
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s latest
