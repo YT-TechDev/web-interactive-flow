@@ -35,20 +35,24 @@ fn Runtime::new(
 
 ///|
 fn Runtime::request_next(self : Runtime) -> Bool {
-  self.request_adjacent(1)
+  self.request_adjacent(Forward)
 }
 
 ///|
 fn Runtime::request_previous(self : Runtime) -> Bool {
-  self.request_adjacent(-1)
+  self.request_adjacent(Reverse)
 }
 
 ///|
-fn Runtime::request_adjacent(self : Runtime, offset : Int) -> Bool {
+/// This helper accepts only the two adjacent request directions. A
+/// non-adjacent target is intentionally not representable in this proof.
+fn Runtime::request_adjacent(self : Runtime, direction : Direction) -> Bool {
   guard self.transition is Inactive else { return false }
-  let target = self.selected + offset
+  let target = match direction {
+    Forward => self.selected + 1
+    Reverse => self.selected - 1
+  }
   guard target >= 0 && target < self.phases.length() else { return false }
-  let direction = if target > self.selected { Forward } else { Reverse }
   self.selected = target
   self.transition = Active(direction, duration=self.transition_duration)
   true
