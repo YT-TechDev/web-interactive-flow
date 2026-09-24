@@ -8,6 +8,65 @@ const QUALIFICATION_TIMEOUT_MS = 90_000;
 const WEBDRIVER_REQUEST_TIMEOUT_MS = 45_000;
 const CLEANUP_REQUEST_TIMEOUT_MS = 10_000;
 const DRIVER_PORT = 9515;
+const FIRST_DOM_OUTPUT_ID = "qualification-first-snapshot";
+const LATEST_DOM_OUTPUT_ID = "qualification-latest-snapshot";
+
+function parseProjectedSnapshot(value, label) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`missing ${label} DOM projection`);
+  }
+
+  let snapshot;
+  try {
+    snapshot = JSON.parse(value);
+  } catch (error) {
+    throw new Error(`invalid ${label} DOM projection JSON: ${String(error)}`);
+  }
+
+  if (snapshot === null || typeof snapshot !== "object") {
+    throw new Error(`invalid ${label} DOM projection snapshot`);
+  }
+
+  return snapshot;
+}
+
+function assertDomQualificationEvidence(dom) {
+  if (dom === null || typeof dom !== "object") {
+    throw new Error("missing DOM qualification evidence");
+  }
+
+  const first = parseProjectedSnapshot(dom.first, "first");
+  const latest = parseProjectedSnapshot(dom.latest, "latest");
+
+  if (first.selected !== "B") {
+    throw new Error("first DOM projection did not expose selected target B");
+  }
+  if (
+    first.transition === null ||
+    typeof first.transition !== "object" ||
+    first.transition.rawProgress !== 0
+  ) {
+    throw new Error("first DOM projection did not expose active zero progress");
+  }
+
+  if (latest.selected !== "B") {
+    throw new Error("latest DOM projection did not preserve selected target B");
+  }
+
+  const advanced =
+    latest.transition === null ||
+    (
+      typeof latest.transition === "object" &&
+      typeof latest.transition.rawProgress === "number" &&
+      latest.transition.rawProgress > 0
+    );
+
+  if (!advanced) {
+    throw new Error("latest DOM projection did not prove lifecycle advancement");
+  }
+
+  return { first, latest };
+}
 
 function driverUrl(pathname) {
   return `http://127.0.0.1:${DRIVER_PORT}${pathname}`;
@@ -174,20 +233,37 @@ async function main() {
     );
 
     while (Date.now() < qualificationDeadline) {
-      const status = await webdriverRequest(
+      const observed = await webdriverRequest(
         "POST",
         `/session/${sessionId}/execute/sync`,
         {
-          script: "return window.__WIF_QUALIFICATION__ ?? null;",
+          script: `
+            const readOutput = (id) =>
+              document.getElementById(id)?.textContent ?? null;
+
+            return {
+              qualification: window.__WIF_QUALIFICATION__ ?? null,
+              dom: {
+                first: readOutput("${FIRST_DOM_OUTPUT_ID}"),
+                latest: readOutput("${LATEST_DOM_OUTPUT_ID}"),
+              },
+            };
+          `,
           args: [],
         },
         remainingRequestTimeout(qualificationDeadline),
       );
 
+      const status = observed?.qualification;
+
       if (status?.state === "pass") {
+        const domEvidence = assertDomQualificationEvidence(observed?.dom);
         console.log(
           "Real-browser WIF qualification PASS:",
-          JSON.stringify(status.details),
+          JSON.stringify({
+            ...status.details,
+            domEvidence,
+          }),
         );
         return;
       }
