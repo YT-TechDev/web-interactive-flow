@@ -4,22 +4,37 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { createQualificationServer } from "./qualification_server.mjs";
 
-const QUALIFICATION_TIMEOUT_MS = 20_000;
-const WEBDRIVER_REQUEST_TIMEOUT_MS = 5_000;
+const QUALIFICATION_TIMEOUT_MS = 30_000;
+const WEBDRIVER_REQUEST_TIMEOUT_MS = 15_000;
+const CLEANUP_REQUEST_TIMEOUT_MS = 5_000;
 const DRIVER_PORT = 9515;
 
 function driverUrl(pathname) {
   return `http://127.0.0.1:${DRIVER_PORT}${pathname}`;
 }
 
-async function webdriverRequest(method, pathname, body) {
+function remainingRequestTimeout(deadline) {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) {
+    throw new Error("real-browser qualification exceeded overall timeout");
+  }
+
+  return Math.min(WEBDRIVER_REQUEST_TIMEOUT_MS, remaining);
+}
+
+async function webdriverRequest(
+  method,
+  pathname,
+  body,
+  timeoutMs = WEBDRIVER_REQUEST_TIMEOUT_MS,
+) {
   const response = await fetch(driverUrl(pathname), {
     method,
     headers: body === undefined
       ? undefined
       : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(WEBDRIVER_REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   const payload = await response.json();
@@ -32,16 +47,25 @@ async function webdriverRequest(method, pathname, body) {
   return payload.value;
 }
 
-async function waitForDriver() {
-  const deadline = Date.now() + 5_000;
+async function waitForDriver(deadline) {
   let lastError = null;
 
   while (Date.now() < deadline) {
     try {
-      await webdriverRequest("GET", "/status");
+      await webdriverRequest(
+        "GET",
+        "/status",
+        undefined,
+        remainingRequestTimeout(deadline),
+      );
       return;
     } catch (error) {
       lastError = error;
+
+      if (Date.now() >= deadline) {
+        break;
+      }
+
       await delay(100);
     }
   }
@@ -49,21 +73,28 @@ async function waitForDriver() {
   throw lastError ?? new Error("ChromeDriver did not become ready");
 }
 
-async function createWebDriverSession() {
-  const value = await webdriverRequest("POST", "/session", {
-    capabilities: {
-      alwaysMatch: {
-        browserName: "chrome",
-        "goog:chromeOptions": {
-          args: [
-            "--headless=new",
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-          ],
+async function createWebDriverSession(deadline) {
+  const value = await webdriverRequest(
+    "POST",
+    "/session",
+    {
+      capabilities: {
+        alwaysMatch: {
+          browserName: "chrome",
+          "goog:chromeOptions": {
+            args: [
+              "--headless=new",
+              "--no-sandbox",
+              "--disable-dev-shm-usage",
+              "--no-first-run",
+              "--no-default-browser-check",
+            ],
+          },
         },
       },
     },
-  });
+    remainingRequestTimeout(deadline),
+  );
 
   if (typeof value.sessionId !== "string") {
     throw new Error("WebDriver session did not return a session id");
@@ -74,7 +105,12 @@ async function createWebDriverSession() {
 
 async function deleteWebDriverSession(sessionId) {
   try {
-    await webdriverRequest("DELETE", `/session/${sessionId}`);
+    await webdriverRequest(
+      "DELETE",
+      `/session/${sessionId}`,
+      undefined,
+      CLEANUP_REQUEST_TIMEOUT_MS,
+    );
   } catch (error) {
     console.error("WebDriver session cleanup failed:", error);
   }
@@ -98,6 +134,7 @@ async function terminateDriver(driver) {
 }
 
 async function main() {
+  const qualificationDeadline = Date.now() + QUALIFICATION_TIMEOUT_MS;
   const server = createQualificationServer();
   let baseUrl = null;
   let driver = null;
@@ -117,9 +154,9 @@ async function main() {
       process.stderr.write(`[chromedriver] ${chunk}`);
     });
 
-    await waitForDriver();
+    await waitForDriver(qualificationDeadline);
 
-    const session = await createWebDriverSession();
+    const session = await createWebDriverSession(qualificationDeadline);
     sessionId = session.sessionId;
 
     const browserVersion = session.capabilities?.browserVersion ?? "unknown";
@@ -133,11 +170,10 @@ async function main() {
       "POST",
       `/session/${sessionId}/url`,
       { url: `${baseUrl}/` },
+      remainingRequestTimeout(qualificationDeadline),
     );
 
-    const deadline = Date.now() + QUALIFICATION_TIMEOUT_MS;
-
-    while (Date.now() < deadline) {
+    while (Date.now() < qualificationDeadline) {
       const status = await webdriverRequest(
         "POST",
         `/session/${sessionId}/execute/sync`,
@@ -145,6 +181,7 @@ async function main() {
           script: "return window.__WIF_QUALIFICATION__ ?? null;",
           args: [],
         },
+        remainingRequestTimeout(qualificationDeadline),
       );
 
       if (status?.state === "pass") {
