@@ -82,6 +82,7 @@ export function createMonotonicTimeNormalizer() {
     initialized = true;
     baselineTimestampMs = timestampMs;
     previousTimestampMs = timestampMs;
+    previousElapsedUs = 0;
 
     return 0;
   }
