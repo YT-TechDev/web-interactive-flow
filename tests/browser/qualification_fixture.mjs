@@ -103,7 +103,7 @@ try {
   firstDomOutput = createDomOutput(FIRST_DOM_OUTPUT_ID);
   latestDomOutput = createDomOutput(LATEST_DOM_OUTPUT_ID);
 
-  const module = await compileFlowModule(fetch("/core.wasm"));
+  const module = await WebAssembly.compileStreaming(fetch("/core.wasm"));
 
   runtime = createFlowRuntime(module, {
     phases: ["A", "B"],
