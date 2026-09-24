@@ -134,7 +134,7 @@ try {
         if (firstSnapshot === null) {
           projectDomSnapshot(firstDomOutput, snapshot);
 
-          // selected B means the consumer is already at visual occupancy B.
+          // selected is the semantic accepted destination; it is not visual occupancy.
           if (snapshot.selected !== "B") {
             throw new Error("first frame did not expose selected target B");
           }
