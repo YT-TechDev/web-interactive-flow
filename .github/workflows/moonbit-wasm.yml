@@ -55,6 +55,9 @@ jobs:
       - name: Test JS semantic wrapper
         run: node --test tests/bridge/runtime.test.mjs
 
+      - name: Test browser Wasm module acquisition
+        run: node --test tests/bridge/module_compiler.test.mjs
+
       - name: Test browser clock normalizer
         run: node --test tests/bridge/clock.test.mjs
 
