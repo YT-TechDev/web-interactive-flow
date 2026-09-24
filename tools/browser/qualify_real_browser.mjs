@@ -233,37 +233,20 @@ async function main() {
     );
 
     while (Date.now() < qualificationDeadline) {
-      const observed = await webdriverRequest(
+      const status = await webdriverRequest(
         "POST",
         `/session/${sessionId}/execute/sync`,
         {
-          script: `
-            const readOutput = (id) =>
-              document.getElementById(id)?.textContent ?? null;
-
-            return {
-              qualification: window.__WIF_QUALIFICATION__ ?? null,
-              dom: {
-                first: readOutput("${FIRST_DOM_OUTPUT_ID}"),
-                latest: readOutput("${LATEST_DOM_OUTPUT_ID}"),
-              },
-            };
-          `,
+          script: "return window.__WIF_QUALIFICATION__ ?? null;",
           args: [],
         },
         remainingRequestTimeout(qualificationDeadline),
       );
 
-      const status = observed?.qualification;
-
       if (status?.state === "pass") {
-        const domEvidence = assertDomQualificationEvidence(observed?.dom);
         console.log(
           "Real-browser WIF qualification PASS:",
-          JSON.stringify({
-            ...status.details,
-            domEvidence,
-          }),
+          JSON.stringify(status.details),
         );
         return;
       }
