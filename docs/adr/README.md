@@ -31,3 +31,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0005 — Browser monotonic time normalizes at the host boundary](0005-browser-monotonic-time-normalization.md)
 - [ADR-0006 — First browser frame scheduler consumes delivered frame timestamps](0006-first-browser-frame-scheduler.md)
 - [ADR-0007 — Browser Wasm acquisition terminates at a validated Module](0007-browser-wasm-module-acquisition.md)
+- [ADR-0008 — DOM wheel default-action suppression follows semantic acceptance](0008-dom-wheel-default-action-ownership.md)

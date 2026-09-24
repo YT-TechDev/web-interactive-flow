@@ -102,6 +102,27 @@ The DOM adapter is expected to own host-specific policy and mechanics such as:
 
 Native-scroll coexistence is a research frontier. Do not encode an untested global event-capture policy as core semantics.
 
+### First DOM wheel default-action ownership
+
+The first wheel ownership boundary is governed by [ADR-0008](adr/0008-dom-wheel-default-action-ownership.md).
+
+It receives an already-normalized `next` or `previous` intent and delegates exactly one corresponding request to the existing semantic Runtime. The Runtime's returned request disposition remains the sole authority for flow eligibility at this boundary.
+
+Native-default suppression follows, rather than predicts, semantic disposition:
+
+- a `rejected` semantic request does not call `preventDefault()`;
+- an `accepted` request remains accepted independently of browser-event cancelability;
+- when prevention is enabled, an accepted request may call `preventDefault()` only when the supplied event is cancelable;
+- if the semantic request fails before returning a disposition, this boundary does not request native-default suppression.
+
+Semantic request disposition, event cancelability, and successful browser default cancellation are distinct observations.
+
+This first ownership boundary is stateless and does not define wheel delta interpretation, `deltaMode` conversion, thresholding, burst accumulation, gesture timing, local cooldown, listener/root selection, capture/bubble phase, already-`defaultPrevented` arbitration, nested-scroll inference, scroll-boundary release, Shadow DOM ownership, or propagation policy.
+
+A future listener that intends to suppress a default action must execute in a listener context where the platform permits cancellation, including non-passive registration where applicable. The exact listener API remains open.
+
+Rejected requests preserving native default behavior at this layer is not a claim of complete native-scroll coexistence. Determining which wheel events a future DOM adapter owns remains a separate host-policy frontier.
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
