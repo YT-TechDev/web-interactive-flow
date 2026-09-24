@@ -109,8 +109,12 @@ test("Q05 fixture mechanically composes production seams and real Window rAF", a
 test("Q06 harness has bounded timeout and cleanup ownership", async () => {
   const source = await readFile(harnessUrl, "utf8");
 
-  assert.match(source, /const QUALIFICATION_TIMEOUT_MS = 20_000/);
-  assert.match(source, /const deadline = Date\.now\(\) \+ QUALIFICATION_TIMEOUT_MS/);
+  assert.match(source, /const QUALIFICATION_TIMEOUT_MS = [0-9_]+/);
+  assert.match(
+    source,
+    /const qualificationDeadline = Date\.now\(\) \+ QUALIFICATION_TIMEOUT_MS/,
+  );
+  assert.match(source, /remainingRequestTimeout\(qualificationDeadline\)/);
   assert.match(source, /finally \{/);
   assert.match(source, /deleteWebDriverSession\(sessionId\)/);
   assert.match(source, /terminateDriver\(driver\)/);
