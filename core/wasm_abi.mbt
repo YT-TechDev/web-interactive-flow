@@ -20,7 +20,7 @@ const ABI_OPERATION_INVALID = 0
 const ABI_OPERATION_OK = 1
 
 ///|
-const ABI_REQUEST_INVALID = 1
+const ABI_REQUEST_INVALID = 0
 
 ///|
 const ABI_REQUEST_REJECTED = 1
@@ -59,9 +59,6 @@ pub fn abi_init(
   transition_duration : Int,
   cooldown_duration : Int,
 ) -> Int {
-  guard abi_lifecycle.val is AbiUninitialized else {
-    return ABI_OPERATION_INVALID
-  }
   match
     Runtime::new(phase_count, selected, transition_duration, cooldown_duration) {
     Valid(runtime) => {
