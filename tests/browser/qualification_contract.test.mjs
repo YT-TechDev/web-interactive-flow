@@ -130,3 +130,77 @@ test("server implementation uses explicit route allowlist rather than filesystem
   assert.doesNotMatch(source, /readFile\([^\n]*req\.url/);
   assert.doesNotMatch(source, /path\.(join|resolve)\([^\n]*url/);
 });
+
+
+test("D01/D05 fixture projects production scheduler snapshots into fixture-owned DOM outputs", async () => {
+  const source = await readFile(fixtureUrl, "utf8");
+
+  assert.match(source, /document\.createElement\("output"\)/);
+  assert.match(source, /document\.body\.append\(output\)/);
+  assert.match(
+    source,
+    /output\.textContent = JSON\.stringify\(snapshot\)/,
+  );
+  assert.match(
+    source,
+    /onFrame\(snapshot\) \{[\s\S]*projectDomSnapshot\(latestDomOutput, snapshot\)/,
+  );
+  assert.match(
+    source,
+    /onFrame\(snapshot\) \{[\s\S]*projectDomSnapshot\(firstDomOutput, snapshot\)/,
+  );
+
+  assert.doesNotMatch(source, /runtime\.getSnapshot\s*\(/);
+  assert.doesNotMatch(source, /createMonotonicTimeNormalizer/);
+  assert.doesNotMatch(source, /decomposeTickBudgetUs/);
+  assert.doesNotMatch(source, /setTimeout\s*\(/);
+});
+
+test("D02/D03/D04 harness requires actual DOM readback for first zero progress and later advancement", async () => {
+  const source = await readFile(harnessUrl, "utf8");
+
+  assert.match(
+    source,
+    /document\.getElementById\(id\)\?\.textContent \?\? null/,
+  );
+  assert.match(source, /qualification-first-snapshot/);
+  assert.match(source, /qualification-latest-snapshot/);
+  assert.match(
+    source,
+    /const domEvidence = assertDomQualificationEvidence\(observed\?\.dom\)/,
+  );
+  assert.match(source, /first\.selected !== "B"/);
+  assert.match(source, /first\.transition\.rawProgress !== 0/);
+  assert.match(source, /latest\.selected !== "B"/);
+  assert.match(source, /latest\.transition\.rawProgress > 0/);
+
+  assert.doesNotMatch(
+    source,
+    /latest\.transition\.rawProgress\s*(?:===|!==|==|!=)\s*0\.[0-9]+/,
+  );
+  assert.doesNotMatch(source, /observerCount\s*(?:===|!==|==|!=|>|<)/);
+});
+
+test("D06/D07 DOM projection remains test-local and does not redefine visual occupancy", async () => {
+  const source = await readFile(fixtureUrl, "utf8");
+
+  assert.doesNotMatch(source, /data-wif-/i);
+  assert.doesNotMatch(source, /--wif-/i);
+  assert.doesNotMatch(source, /classList\./);
+  assert.doesNotMatch(source, /\.style\./);
+  assert.match(
+    source,
+    /selected is the semantic accepted destination; it is not visual occupancy\./,
+  );
+});
+
+test("D08 reuses the existing bounded browser qualification lifecycle", async () => {
+  const source = await readFile(harnessUrl, "utf8");
+
+  assert.match(source, /const QUALIFICATION_TIMEOUT_MS = [0-9_]+/);
+  assert.match(source, /deleteWebDriverSession\(sessionId\)/);
+  assert.match(source, /terminateDriver\(driver\)/);
+  assert.match(source, /await server\.close\(\)/);
+  assert.match(source, /Qualification browser:/);
+  assert.match(source, /Qualification driver:/);
+});

@@ -7,6 +7,22 @@ let scheduler = null;
 let finished = false;
 let firstSnapshot = null;
 let observerCount = 0;
+let firstDomOutput = null;
+let latestDomOutput = null;
+
+const FIRST_DOM_OUTPUT_ID = "qualification-first-snapshot";
+const LATEST_DOM_OUTPUT_ID = "qualification-latest-snapshot";
+
+function createDomOutput(id) {
+  const output = document.createElement("output");
+  output.id = id;
+  document.body.append(output);
+  return output;
+}
+
+function projectDomSnapshot(output, snapshot) {
+  output.textContent = JSON.stringify(snapshot);
+}
 
 function describeError(error) {
   return error instanceof Error
@@ -84,6 +100,9 @@ function finishFail(error) {
 }
 
 try {
+  firstDomOutput = createDomOutput(FIRST_DOM_OUTPUT_ID);
+  latestDomOutput = createDomOutput(LATEST_DOM_OUTPUT_ID);
+
   const module = await compileFlowModule(fetch("/core.wasm"));
 
   runtime = createFlowRuntime(module, {
@@ -106,7 +125,16 @@ try {
       observerCount += 1;
 
       try {
+        if (firstDomOutput === null || latestDomOutput === null) {
+          throw new Error("qualification DOM outputs are unavailable");
+        }
+
+        projectDomSnapshot(latestDomOutput, snapshot);
+
         if (firstSnapshot === null) {
+          projectDomSnapshot(firstDomOutput, snapshot);
+
+          // selected is the semantic accepted destination; it is not visual occupancy.
           if (snapshot.selected !== "B") {
             throw new Error("first frame did not expose selected target B");
           }
