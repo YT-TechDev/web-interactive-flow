@@ -179,6 +179,61 @@ For focused Runtime witnesses and with no semantic command interleaved, differen
 
 This property strengthens host/carrier evidence; it must not be described as proof that an invalid oversized single `tick` call exists.
 
+## Browser frame-scheduler properties
+
+Frame scheduling is host evidence, separate from the O01-O10/P01-P05 core corpus and the T01-T08 clock-normalization properties.
+
+For the first browser scheduler contract in [ADR-0006](adr/0006-first-browser-frame-scheduler.md), implementation evidence should establish at least:
+
+### F01 — First delivered frame establishes an epoch
+
+The first delivered frame after start or restart advances zero lifecycle time but still produces exactly one semantic snapshot observation.
+
+### F02 — Equal timestamp frame observes without advancing time
+
+A delivered timestamp equal to the previous accepted frame timestamp produces no positive tick chunk but still produces exactly one semantic snapshot observation.
+
+### F03 — Long-gap chunks precede one observation
+
+All exact valid tick chunks representing one delivered frame's normalized budget are applied in order before one semantic snapshot is read and observed.
+
+Chunk count must not change observer-call count.
+
+### F04 — At most one pending frame request
+
+A Running scheduler owns at most one pending frame request outside callback execution.
+
+Calling start while already Running must not create a second loop.
+
+### F05 — Stop cancellation and stale-callback inertness
+
+Stopping a Running scheduler cancels its pending request when present.
+
+A callback delivered after the scheduler is Stopped performs no tick, snapshot read, observer call, or reschedule.
+
+### F06 — Restart begins a new normalization epoch
+
+After explicit stop, a later start does not consume the stopped interval. Its first delivered timestamp establishes a fresh epoch and advances zero lifecycle time.
+
+### F07 — Tick-before-snapshot ordering
+
+For one delivered frame, all normalized tick chunks are applied before the semantic snapshot supplied to the observer is captured.
+
+### F08 — Observer stop prevents rescheduling
+
+If observer code stops the scheduler during a frame callback, that callback requests no subsequent frame.
+
+### F09 — Frame failure stops and does not reschedule
+
+A failure from normalization, chunking, runtime ticking, snapshot observation, or the observer stops scheduler driving, propagates the failure, and requests no next frame.
+
+Runtime disposal is not implied.
+
+### F10 — Scheduler isolation
+
+Independent scheduler instances do not share normalization epoch state or pending-request ownership.
+
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
