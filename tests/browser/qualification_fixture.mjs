@@ -103,7 +103,7 @@ try {
   firstDomOutput = createDomOutput(FIRST_DOM_OUTPUT_ID);
   latestDomOutput = createDomOutput(LATEST_DOM_OUTPUT_ID);
 
-  const module = await WebAssembly.compileStreaming(fetch("/core.wasm"));
+  const module = await compileFlowModule(fetch("/core.wasm"));
 
   runtime = createFlowRuntime(module, {
     phases: ["A", "B"],
@@ -134,7 +134,7 @@ try {
         if (firstSnapshot === null) {
           projectDomSnapshot(firstDomOutput, snapshot);
 
-          // selected is the semantic accepted destination; it is not visual occupancy.
+          // selected B means the consumer is already at visual occupancy B.
           if (snapshot.selected !== "B") {
             throw new Error("first frame did not expose selected target B");
           }
