@@ -55,7 +55,9 @@ export function createMonotonicTimeNormalizer() {
     }
 
     if (timestampMs < previousTimestampMs) {
-      return 0;
+      previousTimestampMs = timestampMs;
+      previousElapsedUs = 0;
+      fail("monotonic timestamp regressed");
     }
 
     const nextElapsedUs = elapsedMicroseconds(
