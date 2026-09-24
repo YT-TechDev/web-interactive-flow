@@ -21,8 +21,7 @@ function createDomOutput(id) {
 }
 
 function projectDomSnapshot(output, snapshot) {
-  void snapshot;
-  output.textContent = JSON.stringify(runtime.getSnapshot());
+  output.textContent = JSON.stringify(snapshot);
 }
 
 function describeError(error) {
