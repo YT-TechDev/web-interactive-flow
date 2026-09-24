@@ -367,6 +367,131 @@ This evidence does not establish:
 - arbitrary CORS, CSP, network, or deployment configurations;
 - DOM projection or input-event correctness.
 
+## Real-DOM consumer qualification
+
+Real-DOM consumer qualification is browser host evidence. It is separate from the O/P core corpus, T clock-normalization properties, F frame-scheduler properties, L Wasm Module-acquisition properties, Q real-browser production composition qualification, and W DOM wheel default-action ownership properties.
+
+The purpose of this qualification is narrow:
+
+> In the qualified real-browser environment, the existing production WIF Module compiler, semantic Runtime, and frame scheduler can drive an ordinary DOM consumer from semantic scheduler snapshots without adding a production DOM adapter, presentation schema, or second semantic owner.
+
+The DOM element and its fixture-owned text/serialization format are test artifacts only. This section does not select a production DOM projection schema.
+
+### D01 — Actual DOM consumer exists
+
+The browser fixture owns at least one ordinary DOM element and mutates that element from the production frame scheduler's `onFrame(snapshot)` observation path.
+
+A private JavaScript global alone is not sufficient DOM-consumer evidence.
+
+### D02 — First DOM projection reflects the first semantic snapshot
+
+The navigation request is accepted before scheduler start.
+
+The first DOM projection represents the first production scheduler snapshot with:
+
+- selected semantic target `B`;
+- an active transition;
+- raw progress exactly `0`.
+
+This observation describes semantic selected-target and lifecycle state. It must not be described as proof that the user is already visually occupying phase `B`.
+
+### D03 — Later DOM projection reflects lifecycle advancement
+
+Within the bounded real-browser qualification window, WebDriver observes the actual DOM element showing semantic lifecycle advancement after D02.
+
+The later DOM projection may represent either:
+
+- an active transition with raw progress greater than `0`; or
+- an inactive transition after positive lifecycle time has advanced the Runtime.
+
+The qualification must not require an exact positive progress value, exact frame count, exact frame duration, or exact refresh rate.
+
+### D04 — DOM readback is independent qualification evidence
+
+The browser harness reads the actual DOM element when evaluating the DOM-consumer witness.
+
+The private `window.__WIF_QUALIFICATION__` object may remain a completion, failure, cleanup, or diagnostic channel, but it is not sufficient semantic projection evidence by itself.
+
+A fixture that reports `state: "pass"` while no qualifying DOM projection exists must fail this qualification.
+
+### D05 — Production seams only
+
+The browser fixture composes the repository production:
+
+- `compileFlowModule`;
+- `createFlowRuntime`;
+- `createFrameScheduler`.
+
+DOM projection consumes the semantic snapshot delivered by the production scheduler observer.
+
+The fixture must not:
+
+- implement a second clock normalizer;
+- tick the Runtime from a separate DOM loop;
+- add another requestAnimationFrame loop for semantic driving;
+- fabricate semantic snapshot values for the DOM witness;
+- manually replace the scheduler observation path with a separate polling source.
+
+### D06 — Projection format is non-normative
+
+The fixture-owned DOM element identity, element type, text content, and any serialization used by this qualification are test-local details.
+
+This qualification does not select or freeze production:
+
+- `data-*` attribute names;
+- CSS custom-property names;
+- class names;
+- text/status serialization;
+- numeric formatting precision;
+- projection helper names or signatures;
+- element ownership or replacement policy;
+- per-frame mutation policy for applications.
+
+A future production DOM projection API requires separate evidence.
+
+### D07 — Selected semantic identity is not visual occupancy
+
+The DOM qualification may project `snapshot.selected` because selected target is part of semantic Runtime state.
+
+During an active transition, that selected identity remains the accepted destination and must not be reinterpreted as current visual occupancy.
+
+Presentation interpolation, easing, and the meaning of visual position remain host/application concerns.
+
+### D08 — Existing browser qualification bounds remain intact
+
+The real-DOM consumer witness reuses the bounded real-browser qualification model.
+
+It must not weaken existing guarantees for:
+
+- overall qualification timeout;
+- browser-session cleanup;
+- browser-driver cleanup;
+- loopback-only local server binding;
+- explicit route allowlisting;
+- exact Wasm MIME handling;
+- browser/driver provenance logging.
+
+The additional DOM witness must not turn browser-version provenance into semantic authority.
+
+### Real-DOM qualification evidence boundaries
+
+D01-D08 do not establish:
+
+- a production DOM adapter API;
+- a final DOM/CSS projection schema;
+- presentation easing or animation policy;
+- visual occupancy semantics;
+- DOM mutation performance;
+- accessibility or WCAG correctness;
+- universal cross-browser compatibility;
+- raw WheelEvent-to-intent normalization;
+- listener/root ownership;
+- nested-scroll or native-scroll coexistence;
+- visibility-aware scheduling;
+- package or npm export layout.
+
+These remain later host-policy or distribution frontiers.
+
 ## DOM wheel default-action ownership properties
 
 DOM wheel default-action ownership is host evidence, separate from the O/P core corpus, T clock-normalization properties, F frame-scheduler properties, L Wasm Module-acquisition properties, and Q real-browser composition qualification.
