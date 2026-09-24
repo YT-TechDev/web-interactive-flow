@@ -86,9 +86,7 @@ export function createFrameScheduler({
         requestNextFrame();
       }
     } catch (error) {
-      if (running) {
-        requestNextFrame();
-      }
+      transitionToStopped();
       throw error;
     }
   }
