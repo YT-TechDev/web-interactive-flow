@@ -4,8 +4,8 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { createQualificationServer } from "./qualification_server.mjs";
 
-const QUALIFICATION_TIMEOUT_MS = 60_000;
-const WEBDRIVER_REQUEST_TIMEOUT_MS = 30_000;
+const QUALIFICATION_TIMEOUT_MS = 90_000;
+const WEBDRIVER_REQUEST_TIMEOUT_MS = 45_000;
 const CLEANUP_REQUEST_TIMEOUT_MS = 10_000;
 const DRIVER_PORT = 9515;
 
