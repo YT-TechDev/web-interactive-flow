@@ -755,3 +755,154 @@ test "C19 settled time after cooldown is idempotent" {
   assert_cooldown_inactive(runtime)
   assert_locked(runtime)
 }
+
+///|
+test "Z1 O09 adjacent forward zero-duration lifecycle collapses" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 0)
+
+  assert_true(runtime.request_next())
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+  assert_unlocked(runtime)
+}
+
+///|
+test "Z2 O09 adjacent reverse zero-duration lifecycle collapses" {
+  let runtime = Runtime::new(["A", "B", "C"], 1, 0, 0)
+
+  assert_true(runtime.request_previous())
+
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "Z3 O09 and P03 direct non-adjacent zero-duration selects only target" {
+  let runtime = Runtime::new(["A", "B", "C", "D"], 0, 0, 0)
+
+  assert_true(runtime.request_known_target(3))
+
+  assert_eq(runtime.selected, 3)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "Z4 O09 positive cooldown starts synchronously at full duration" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+
+  assert_true(runtime.request_next())
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+}
+
+///|
+test "Z5 O06 zero-duration acceptance consumes no cooldown time" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  assert_true(runtime.request_next())
+
+  runtime.tick(0)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+  assert_unlocked(runtime)
+}
+
+///|
+test "Z6 O06 exact cooldown expiry after zero-duration acceptance" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  assert_true(runtime.request_next())
+
+  runtime.tick(299)
+  assert_cooldown_active_at(runtime, 1)
+  assert_false(runtime.request_next())
+  runtime.tick(1)
+  assert_cooldown_inactive(runtime)
+
+  assert_true(runtime.request_next())
+  assert_eq(runtime.selected, 2)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+}
+
+///|
+test "Z7 O09 repeated zero-duration zero-cooldown acceptance" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 0)
+
+  assert_true(runtime.request_next())
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+
+  assert_true(runtime.request_next())
+  assert_eq(runtime.selected, 2)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "Z8 O05 and P01 same-selected zero-duration rejection is stable" {
+  let runtime = Runtime::new(["A", "B", "C"], 1, 0, 300)
+
+  assert_false(runtime.request_known_target(1))
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "Z9 O05 and P01 locked zero-duration rejection is stable" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  runtime.lock()
+
+  assert_false(runtime.request_next())
+
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+  assert_locked(runtime)
+}
+
+///|
+test "Z10 O06 zero-duration-origin cooldown uses ordinary tick semantics" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  assert_true(runtime.request_next())
+
+  runtime.tick(125)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 175)
+}
+
+///|
+test "Z11 O10 settled time is idempotent from zero-zero origin" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 0)
+  assert_true(runtime.request_next())
+
+  runtime.tick(250)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+  assert_unlocked(runtime)
+}
+
+///|
+test "Z12 O05 and P01 cooldown rejection after zero-duration is stable" {
+  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  assert_true(runtime.request_next())
+
+  assert_false(runtime.request_known_target(2))
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+}
