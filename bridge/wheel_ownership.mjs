@@ -30,8 +30,6 @@ export function applyWheelNavigationIntent({
     throw new Error("invalid preventDefault policy");
   }
 
-  void event.deltaY;
-
   const disposition = request.call(runtime);
 
   if (
