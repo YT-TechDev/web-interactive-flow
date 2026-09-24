@@ -147,7 +147,7 @@ function decodeTransitionState(value) {
 }
 
 function decodeActiveProgress(value) {
-  if (!Number.isFinite(value) || value < 0) {
+  if (!Number.isFinite(value) || value < 0 || value >= 1) {
     fail("unexpected active raw progress");
   }
   return value;
@@ -242,7 +242,11 @@ export function createSemanticRuntimeFromAbi(abiExports, normalizedConfig) {
   }
 
   function dispose() {
-    ensureLive();
+    if (!live || abi === null) {
+      const status = abiExports.wif_abi_dispose();
+      assertOperationStatus(status);
+      return;
+    }
 
     const currentAbi = abi;
     live = false;
