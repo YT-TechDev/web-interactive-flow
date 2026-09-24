@@ -143,7 +143,7 @@ function decodeTransitionState(value) {
   if (value === 2) {
     return "reverse";
   }
-  fail("unexpected transition carrier");
+  return null;
 }
 
 function decodeActiveProgress(value) {
