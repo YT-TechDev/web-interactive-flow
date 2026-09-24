@@ -180,8 +180,8 @@ pub fn abi_transition_state() -> Int {
           ignore(duration)
           ignore(elapsed)
           match direction {
-            Forward => ABI_TRANSITION_REVERSE
-            Reverse => ABI_TRANSITION_FORWARD
+            Forward => ABI_TRANSITION_FORWARD
+            Reverse => ABI_TRANSITION_REVERSE
           }
         }
       }
