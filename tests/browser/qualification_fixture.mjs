@@ -21,7 +21,6 @@ function createDomOutput(id) {
 }
 
 function projectDomSnapshot(output, snapshot) {
-  output.setAttribute("data-wif-phase", snapshot.selected);
   output.textContent = JSON.stringify(snapshot);
 }
 
