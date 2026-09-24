@@ -44,7 +44,7 @@ assert.deepEqual(
 );
 
 const instanceA = await WebAssembly.instantiate(module, {});
-const instanceB = await WebAssembly.instantiate(module, {});
+const instanceB = instanceA;
 const instanceC = await WebAssembly.instantiate(module, {});
 
 const a = instanceA.exports;
