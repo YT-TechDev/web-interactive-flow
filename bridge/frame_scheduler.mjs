@@ -75,24 +75,20 @@ export function createFrameScheduler({
     try {
       const budgetUs = clock.observe(timestampMs);
 
-      let observedChunk = false;
       for (const chunk of decomposeTickBudgetUs(budgetUs)) {
         runtime.tick(chunk);
-        const snapshot = runtime.getSnapshot();
-        onFrame(snapshot);
-        observedChunk = true;
       }
 
-      if (!observedChunk) {
-        const snapshot = runtime.getSnapshot();
-        onFrame(snapshot);
-      }
+      const snapshot = runtime.getSnapshot();
+      onFrame(snapshot);
 
       if (running) {
         requestNextFrame();
       }
     } catch (error) {
-      transitionToStopped();
+      if (running) {
+        requestNextFrame();
+      }
       throw error;
     }
   }
