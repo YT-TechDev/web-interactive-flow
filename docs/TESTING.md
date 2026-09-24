@@ -284,6 +284,89 @@ The first compiler's implementation and tests require no repository-owned artifa
 
 Environment-specific browser CORS, CSP, network, and deployment behavior may require later browser integration evidence. Node or other non-browser automated tests must not be described as exhaustive proof of those browser policies.
 
+## Real-browser composition qualification
+
+Real-browser composition qualification is integration/environment evidence. It is separate from the O/P core corpus, T clock-normalization properties, F frame-scheduler properties, and L Wasm Module-acquisition properties.
+
+The first browser qualification composes the existing production `compileFlowModule`, `createFlowRuntime`, and `createFrameScheduler` seams inside a real browser. It does not define a new production browser adapter or new flow semantics.
+
+### Q01 — Actual streamed browser acquisition
+
+A real browser fetches the actual built WIF `core.wasm` from the qualification server and passes the resulting promise or `Response` through production `compileFlowModule()`.
+
+The Wasm response must use exact `application/wasm`.
+
+### Q02 — Actual semantic Runtime composition
+
+The returned compatible `WebAssembly.Module` is passed to production `createFlowRuntime()`, and one semantic navigation request is accepted.
+
+### Q03 — First real frame establishes the normalization epoch
+
+The navigation is accepted before scheduler start.
+
+The production frame scheduler is then started with the real browser's bound `requestAnimationFrame` and `cancelAnimationFrame` functions.
+
+The first successful observer snapshot for the active transition has raw progress exactly `0`, proving that the first delivered real frame establishes the ADR-0005 epoch without advancing lifecycle time.
+
+### Q04 — Later real frame advances lifecycle
+
+Within one bounded qualification timeout, a later real frame must prove positive lifecycle advancement.
+
+The witness may observe either:
+
+- an active transition with raw progress greater than `0`; or
+- a later settled semantic state that can only be reached after positive normalized time was consumed.
+
+Do not require an exact frame count, exact frame duration, exact refresh rate, or exact positive progress value.
+
+### Q05 — Production seams only
+
+The browser fixture imports and calls the repository production:
+
+- `compileFlowModule`;
+- `createFlowRuntime`;
+- `createFrameScheduler`.
+
+The fixture must not implement a second clock normalizer, tick-chunk decomposition policy, semantic runtime, or frame scheduler.
+
+### Q06 — Bounded cleanup
+
+The qualification harness has a bounded overall timeout.
+
+On success or failure it tears down the browser session, browser-driver process, and local HTTP server. Failure must not leave the CI job waiting indefinitely.
+
+### Q07 — Browser qualification provenance
+
+CI records the browser and browser-driver versions used for the witness.
+
+Those versions are qualification provenance only. They are not core semantic authority, a browser-version behavioral oracle, or an implicit stable version pin.
+
+### Qualification harness boundaries
+
+The first browser qualification is test-only.
+
+Its local HTTP server must:
+
+- bind to loopback only;
+- expose an explicit allowlist of fixture, bridge-module, and built-Wasm routes;
+- serve the Wasm artifact as exact `application/wasm`;
+- serve ESM JavaScript with an appropriate JavaScript MIME type;
+- avoid arbitrary repository filesystem traversal.
+
+Qualification fixture routing does not define a production package, CDN, bundler, or artifact URL layout.
+
+Existing runner-provided browser and driver tooling may be used when available. A third-party browser package or installation Action is not required merely to express this proof.
+
+Browser/page module-load errors, unhandled failures, unexpected semantic observations, and qualification timeout are qualification failures.
+
+This evidence does not establish:
+
+- exact browser frame cadence or physical wall-clock equivalence;
+- background-tab or page-visibility behavior;
+- universal cross-browser compatibility;
+- arbitrary CORS, CSP, network, or deployment configurations;
+- DOM projection or input-event correctness.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
