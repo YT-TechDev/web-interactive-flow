@@ -38,6 +38,23 @@ A host value that cannot be normalized to a valid semantic command is a validati
 
 Concrete exception/result/status-code representation remains open.
 
+### Browser monotonic time normalization
+
+For the first browser/Web real-time host, monotonic timestamp samples are normalized before `tick(dt)` according to [ADR-0005](adr/0005-browser-monotonic-time-normalization.md).
+
+The browser-host normalizer owns only host-time representation state such as:
+
+- epoch baseline timestamp;
+- previous accepted timestamp;
+- cumulative normalized elapsed time;
+- exact decomposition of an oversized normalized budget into valid tick chunks.
+
+That state is not flow-semantic state and must not become an independent owner of phase, transition, cooldown, lock, direction, raw progress, or request eligibility.
+
+The selected first browser-host unit is one microsecond, produced by baseline-relative cumulative floor quantization. This is not a universal core time unit or a permanent cross-host invariant.
+
+The generic normalizer remains independent of DOM scheduling and visibility APIs. A later Web scheduler owns any policy that chooses between consuming a resume gap and explicitly rebasing to pause elapsed host time.
+
 ## DOM/Web adapter
 
 The DOM adapter is expected to own host-specific policy and mechanics such as:
@@ -49,6 +66,7 @@ The DOM adapter is expected to own host-specific policy and mechanics such as:
 - event ownership and `preventDefault()` decisions;
 - nested interactive regions;
 - focus and accessibility integration;
+- browser frame/visibility scheduling policy;
 - projecting runtime state into DOM-visible effects;
 - DOM/CSS presentation easing or interpolation where desired.
 
@@ -80,4 +98,4 @@ Equivalent core input should produce equivalent selected phase, lifecycle, raw p
 
 Hosts are not required to use the same easing or produce identical visual effects.
 
-Differences caused by host event systems or presentation policy must be documented as host behavior, not hidden as core differences.
+Differences caused by host event systems, timestamp normalization epochs, scheduling policy, or presentation policy must be documented as host behavior, not hidden as core differences.

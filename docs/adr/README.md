@@ -28,3 +28,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0002 — DOM and R3F are host adapters](0002-dom-and-r3f-as-host-adapters.md)
 - [ADR-0003 — Extract behavioral traces before porting](0003-behavioral-traces-before-porting.md)
 - [ADR-0004 — Core owns raw progress; easing is presentation policy](0004-raw-progress-core-easing-presentation.md)
+- [ADR-0005 — Browser monotonic time normalizes at the host boundary](0005-browser-monotonic-time-normalization.md)
