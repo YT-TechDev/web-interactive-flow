@@ -93,6 +93,11 @@ try {
     cooldown: 0,
   });
 
+  const disposition = runtime.next();
+  if (disposition !== "accepted") {
+    throw new Error(`expected accepted navigation, got ${disposition}`);
+  }
+
   scheduler = createFrameScheduler({
     runtime,
     requestFrame: window.requestAnimationFrame.bind(window),
@@ -130,15 +135,6 @@ try {
   });
 
   scheduler.start();
-
-  await new Promise((resolve) => {
-    window.requestAnimationFrame(resolve);
-  });
-
-  const disposition = runtime.next();
-  if (disposition !== "accepted") {
-    throw new Error(`expected accepted navigation, got ${disposition}`);
-  }
 } catch (error) {
   finishFail(error);
 }
