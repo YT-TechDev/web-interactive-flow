@@ -80,12 +80,11 @@ export function createFrameScheduler({
       }
 
       const snapshot = runtime.getSnapshot();
+      onFrame(snapshot);
 
       if (running) {
         requestNextFrame();
       }
-
-      onFrame(snapshot);
     } catch (error) {
       transitionToStopped();
       throw error;
@@ -93,10 +92,6 @@ export function createFrameScheduler({
   }
 
   function start() {
-    if (running) {
-      return;
-    }
-
     running = true;
     clock = createMonotonicTimeNormalizer();
 
