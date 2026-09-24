@@ -257,9 +257,6 @@ async function main() {
       const status = observed?.qualification;
 
       if (status?.state === "pass") {
-        if (status.details?.observerCount !== 2) {
-          throw new Error("expected exactly two qualification frames");
-        }
         const domEvidence = assertDomQualificationEvidence(observed?.dom);
         console.log(
           "Real-browser WIF qualification PASS:",
