@@ -67,7 +67,9 @@ export function createMonotonicTimeNormalizer() {
       fail("normalized elapsed time regressed");
     }
 
-    const budgetUs = nextElapsedUs - previousElapsedUs;
+    const budgetUs = Math.floor(
+      (timestampMs - previousTimestampMs) * QUANTA_PER_MILLISECOND,
+    );
     validateBudget(budgetUs);
 
     previousTimestampMs = timestampMs;
