@@ -55,6 +55,20 @@ The selected first browser-host unit is one microsecond, produced by baseline-re
 
 The generic normalizer remains independent of DOM scheduling and visibility APIs. A later Web scheduler owns any policy that chooses between consuming a resume gap and explicitly rebasing to pause elapsed host time.
 
+### Browser frame scheduling
+
+The first browser frame scheduler is host state governed by [ADR-0006](adr/0006-first-browser-frame-scheduler.md).
+
+While the scheduler remains running, delivered frame timestamps remain in one ADR-0005 normalization epoch. Browser callback suspension alone does not trigger a rebase; the scheduler consumes the elapsed gap represented by the next delivered timestamp.
+
+Explicit scheduler stop ends the current normalization epoch. A later restart establishes a new epoch on its first delivered frame and advances zero lifecycle time on that frame.
+
+For one delivered frame, all exact normalized tick chunks are applied before one semantic snapshot is read and projected. Carrier chunking must not create extra host-frame observations.
+
+The scheduler does not own semantic Runtime lifetime or flow semantics. It receives an existing semantic runtime, drives valid time through it, and observes semantic snapshots.
+
+Visibility-aware pause/rebase remains later DOM/Web host policy. The first scheduler does not inspect document visibility or own input-event policy.
+
 ## DOM/Web adapter
 
 The DOM adapter is expected to own host-specific policy and mechanics such as:
