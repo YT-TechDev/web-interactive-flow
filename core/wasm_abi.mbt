@@ -131,6 +131,7 @@ pub fn abi_set_locked(locked : Bool) -> Int {
 /// must be rejected by the future JS wrapper before crossing the ABI.
 #export_name("wif_abi_tick")
 pub fn abi_tick(dt : Int) -> Int {
+  guard dt >= 0 else { return ABI_OPERATION_INVALID }
   match abi_lifecycle.val {
     AbiLive(runtime) => {
       runtime.tick(dt)
@@ -179,8 +180,8 @@ pub fn abi_transition_state() -> Int {
           ignore(duration)
           ignore(elapsed)
           match direction {
-            Forward => ABI_TRANSITION_FORWARD
-            Reverse => ABI_TRANSITION_REVERSE
+            Forward => ABI_TRANSITION_REVERSE
+            Reverse => ABI_TRANSITION_FORWARD
           }
         }
       }
