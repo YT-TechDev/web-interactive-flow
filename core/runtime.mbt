@@ -48,21 +48,24 @@ fn Runtime::new(
   transition_duration : Int,
   cooldown_duration : Int,
 ) -> Construction {
-  guard phases.length() > 0 else { return Invalid }
-  guard selected >= 0 && selected < phases.length() else { return Invalid }
+  let owned_phases = phases.copy()
+  guard owned_phases.length() > 0 else { return Invalid }
+  guard selected >= 0 && selected < owned_phases.length() else {
+    return Invalid
+  }
   guard transition_duration >= 0 else { return Invalid }
   guard cooldown_duration >= 0 else { return Invalid }
   let mut left = 0
-  while left < phases.length() {
+  while left < owned_phases.length() {
     let mut right = left + 1
-    while right < phases.length() {
-      guard phases[left] != phases[right] else { return Invalid }
+    while right < owned_phases.length() {
+      guard owned_phases[left] != owned_phases[right] else { return Invalid }
       right = right + 1
     }
     left = left + 1
   }
   Valid({
-    phases,
+    phases: owned_phases,
     selected,
     transition_duration,
     cooldown_duration,

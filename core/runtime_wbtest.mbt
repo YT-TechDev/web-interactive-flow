@@ -996,3 +996,15 @@ test "V12 large researched positive lifecycle values are valid" {
   assert_cooldown_inactive(runtime)
   assert_unlocked(runtime)
 }
+
+///|
+test "checked construction owns a stable phase-domain copy" {
+  let phases = ["A", "B"]
+  let runtime = valid_runtime(phases, 0, 100, 0)
+  assert_eq(runtime.phases, ["A", "B"])
+
+  phases[1] = "A"
+
+  assert_eq(phases, ["A", "A"])
+  assert_eq(runtime.phases, ["A", "B"])
+}
