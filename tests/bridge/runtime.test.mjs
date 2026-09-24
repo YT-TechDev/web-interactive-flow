@@ -138,7 +138,7 @@ test("real artifact owns exact runtime-local String identity mapping", async () 
   });
 
   assert.equal(runtime.goTo("Intro"), "accepted");
-  assert.equal(runtime.goTo("changed"), "rejected");
+  assert.throws(() => runtime.goTo("changed"));
 
   assert.equal(runtime.goTo("intro"), "accepted");
   assert.equal(runtime.goTo("\u00e9"), "accepted");
@@ -442,6 +442,19 @@ test("inactive snapshot does not read raw progress", () => {
   assert.equal(fake.calls.progress, 0);
 
   fake.runtime.dispose();
+});
+
+test("unexpected raw dispose failure still leaves wrapper terminal", () => {
+  const fake = makeFakeAbi();
+  fake.api.wif_abi_dispose = () => 0;
+  const runtime = createSemanticRuntimeFromAbi(
+    fake.api,
+    normalizeConfig(config({ transitionDuration: 0, cooldown: 0 })),
+  );
+
+  assert.throws(() => runtime.dispose());
+  assert.throws(() => runtime.next());
+  assert.throws(() => runtime.getSnapshot());
 });
 
 test("disposed fake wrapper never touches raw ABI again", () => {
