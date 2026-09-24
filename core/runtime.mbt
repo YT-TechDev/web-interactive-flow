@@ -33,7 +33,7 @@ priv struct Runtime {
 
 ///|
 /// Construction receives an already-valid ordered domain, selected member,
-/// a positive transition duration, and a non-negative uniform cooldown.
+/// a non-negative transition duration and uniform cooldown.
 /// Validation and a public constructor are deliberately outside this proof.
 fn Runtime::new(
   phases : Array[String],
@@ -83,15 +83,32 @@ fn Runtime::request_known_target(self : Runtime, target : Int) -> Bool {
   guard self.transition is Inactive else { return false }
   guard self.cooldown is Inactive else { return false }
   guard target != self.selected else { return false }
-  let direction = if target > self.selected { Forward } else { Reverse }
-  self.selected = target
-  self.transition = Active(
-    direction,
-    duration=self.transition_duration,
-    elapsed=0,
-  )
-  self.cooldown = Inactive
+  if self.transition_duration == 0 {
+    self.selected = target
+    self.transition = Inactive
+    self.start_configured_cooldown()
+  } else {
+    let direction = if target > self.selected { Forward } else { Reverse }
+    self.selected = target
+    self.transition = Active(
+      direction,
+      duration=self.transition_duration,
+      elapsed=0,
+    )
+    self.cooldown = Inactive
+  }
   true
+}
+
+///|
+/// Initializes the configured cooldown without creating an active zero-valued
+/// cooldown. Both synchronous and tick-driven settlement use this rule.
+fn Runtime::start_configured_cooldown(self : Runtime) -> Unit {
+  if self.cooldown_duration > 0 {
+    self.cooldown = Active(remaining=self.cooldown_duration)
+  } else {
+    self.cooldown = Inactive
+  }
 }
 
 ///|
@@ -107,11 +124,7 @@ fn Runtime::tick(self : Runtime, dt : Int) -> Unit {
       if remaining_dt >= remaining {
         remaining_dt = remaining_dt - remaining
         self.transition = Inactive
-        if self.cooldown_duration > 0 {
-          self.cooldown = Active(remaining=self.cooldown_duration)
-        } else {
-          self.cooldown = Inactive
-        }
+        self.start_configured_cooldown()
       } else {
         self.transition = Active(
           direction,
