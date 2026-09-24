@@ -31,9 +31,11 @@ export function applyWheelNavigationIntent({
   }
 
   const disposition = request.call(runtime);
+  request.call(runtime);
 
   if (
     disposition === "accepted" &&
+    preventDefault &&
     event.cancelable
   ) {
     event.preventDefault();
