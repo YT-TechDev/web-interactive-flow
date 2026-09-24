@@ -88,7 +88,10 @@ pub extend TraceActionResult with Debug::{to_repr}
 /// Projects only trace-relevant semantics. In particular, inactive transitions
 /// structurally have no direction or progress, and cooldown erases remaining
 /// time to a gate boolean.
-fn observe(runtime : Runtime) -> SemanticObservation {
+fn observe(
+  runtime : Runtime,
+  semantic_phases : Array[String],
+) -> SemanticObservation {
   let transition = match runtime.transition {
     Inactive => ObservedTransition::Inactive
     Active(direction, duration~, elapsed~) => {
@@ -103,7 +106,7 @@ fn observe(runtime : Runtime) -> SemanticObservation {
     }
   }
   {
-    selected_phase: runtime.phases[runtime.selected],
+    selected_phase: semantic_phases[runtime.selected],
     transition,
     cooldown_active: runtime.cooldown is Cooldown::Active(_),
     locked: runtime.locked,
@@ -142,6 +145,44 @@ fn apply_trace_action(
 }
 
 ///|
+/// Test-only normalization owns semantic identities while the Runtime receives
+/// only their ordered token count.
+struct NormalizedFixture {
+  phases : Array[String]
+  runtime : Runtime
+}
+
+///|
+fn normalize_fixture(
+  phases : Array[String],
+  selected : Int,
+  transition_duration : Int,
+  cooldown_duration : Int,
+) -> NormalizedFixture? {
+  let owned_phases = phases.copy()
+  guard owned_phases.length() > 0 else { return None }
+  let mut left = 0
+  while left < owned_phases.length() {
+    let mut right = left + 1
+    while right < owned_phases.length() {
+      guard owned_phases[left] != owned_phases[right] else { return None }
+      right = right + 1
+    }
+    left = left + 1
+  }
+  match
+    Runtime::new(
+      owned_phases.length(),
+      selected,
+      transition_duration,
+      cooldown_duration,
+    ) {
+    Valid(runtime) => Some({ phases: owned_phases, runtime, })
+    Invalid => None
+  }
+}
+
+///|
 /// All known-valid white-box fixtures pass through checked construction.
 fn valid_runtime(
   phases : Array[String],
@@ -149,9 +190,10 @@ fn valid_runtime(
   transition_duration : Int,
   cooldown_duration : Int,
 ) -> Runtime raise {
-  match Runtime::new(phases, selected, transition_duration, cooldown_duration) {
-    Valid(runtime) => runtime
-    Invalid => fail("expected valid test fixture")
+  match
+    normalize_fixture(phases, selected, transition_duration, cooldown_duration) {
+    Some(fixture) => fixture.runtime
+    None => fail("expected valid test fixture")
   }
 }
 
@@ -234,7 +276,7 @@ test "T1 accepted adjacent navigation has a semantic projection" {
   let runtime = abc(0)
 
   assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, ["A", "B", "C"]), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -248,10 +290,10 @@ test "T1 accepted adjacent navigation has a semantic projection" {
 ///|
 test "T2 rejected known request preserves semantic projection" {
   let runtime = abc(0)
-  let before = observe(runtime)
+  let before = observe(runtime, ["A", "B", "C"])
 
   assert_eq(apply_trace_action(runtime, Previous), Request(Rejected))
-  assert_eq(observe(runtime), before)
+  assert_eq(observe(runtime, ["A", "B", "C"]), before)
 }
 
 ///|
@@ -260,7 +302,7 @@ test "T3 partial positive tick advances exact raw progress" {
   assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
 
   assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, ["A", "B", "C"]), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 25,
@@ -277,7 +319,7 @@ test "T4 transition completion enters cooldown" {
   assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
 
   assert_eq(apply_trace_action(runtime, Tick(100)), NoRequestDisposition)
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, ["A", "B", "C"]), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -299,7 +341,10 @@ test "T5 exact cooldown bookkeeping is hidden" {
   assert_cooldown_active_at(full, 300)
   assert_cooldown_active_at(partly_consumed, 200)
 
-  assert_eq(observe(full), observe(partly_consumed))
+  assert_eq(
+    observe(full, ["A", "B", "C"]),
+    observe(partly_consumed, ["A", "B", "C"]),
+  )
 }
 
 ///|
@@ -308,7 +353,7 @@ test "T6 lock and time are orthogonal through projection" {
   assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
   assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
   assert_eq(apply_trace_action(runtime, Lock), NoRequestDisposition)
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, ["A", "B", "C"]), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 25,
@@ -319,7 +364,7 @@ test "T6 lock and time are orthogonal through projection" {
   })
 
   assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, ["A", "B", "C"]), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 50,
@@ -335,7 +380,7 @@ test "T7 zero-duration lifecycle collapses without transition sentinels" {
   let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
 
   assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, ["A", "B", "C"]), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -348,10 +393,10 @@ test "T8 settled extra tick is projection-idempotent" {
   let runtime = cooled(0)
   assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
   assert_eq(apply_trace_action(runtime, Tick(400)), NoRequestDisposition)
-  let before = observe(runtime)
+  let before = observe(runtime, ["A", "B", "C"])
 
   assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
-  assert_eq(observe(runtime), before)
+  assert_eq(observe(runtime, ["A", "B", "C"]), before)
 }
 
 ///|
@@ -1190,89 +1235,118 @@ test "Z12 O05 and P01 cooldown rejection after zero-duration is stable" {
 }
 
 ///|
-test "V1 empty domain is invalid" {
-  assert_true(Runtime::new([], 0, 0, 0) is Invalid)
+test "V1 normalized zero phase count is invalid" {
+  assert_true(Runtime::new(0, 0, 0, 0) is Invalid)
 }
 
 ///|
-test "V2 adjacent duplicate phase is invalid" {
-  assert_true(Runtime::new(["A", "A"], 0, 0, 0) is Invalid)
+test "V1b normalized negative phase count is invalid" {
+  assert_true(Runtime::new(-1, 0, 0, 0) is Invalid)
 }
 
 ///|
-test "V3 non-adjacent duplicate phase is invalid" {
-  assert_true(Runtime::new(["A", "B", "A"], 0, 0, 0) is Invalid)
+test "V2 adjacent duplicate semantic phase fails normalization" {
+  assert_true(normalize_fixture(["A", "A"], 0, 0, 0) is None)
 }
 
 ///|
-test "V4 trailing duplicate phase is invalid" {
-  assert_true(Runtime::new(["A", "B", "B"], 0, 0, 0) is Invalid)
+test "V3 non-adjacent duplicate semantic phase fails normalization" {
+  assert_true(normalize_fixture(["A", "B", "A"], 0, 0, 0) is None)
 }
 
 ///|
-test "V5 negative selected index is invalid" {
-  assert_true(Runtime::new(["A", "B"], -1, 0, 0) is Invalid)
+test "V4 trailing duplicate semantic phase fails normalization" {
+  assert_true(normalize_fixture(["A", "B", "B"], 0, 0, 0) is None)
 }
 
 ///|
-test "V6 selected index equal to domain length is invalid" {
-  assert_true(Runtime::new(["A", "B"], 2, 0, 0) is Invalid)
+test "V5 negative selected token is invalid" {
+  assert_true(Runtime::new(2, -1, 0, 0) is Invalid)
+}
+
+///|
+test "V6 selected token equal to phase count is invalid" {
+  assert_true(Runtime::new(2, 2, 0, 0) is Invalid)
+}
+
+///|
+test "V6b selected token greater than phase count is invalid" {
+  assert_true(Runtime::new(2, 3, 0, 0) is Invalid)
 }
 
 ///|
 test "V7 negative transition duration is invalid" {
-  assert_true(Runtime::new(["A"], 0, -1, 0) is Invalid)
+  assert_true(Runtime::new(1, 0, -1, 0) is Invalid)
 }
 
 ///|
 test "V8 negative cooldown duration is invalid" {
-  assert_true(Runtime::new(["A"], 0, 0, -1) is Invalid)
+  assert_true(Runtime::new(1, 0, 0, -1) is Invalid)
 }
 
 ///|
-test "V9 one-phase zero-duration configuration is valid and ordinary" {
+test "V9 one-phase normalized configuration is valid and ordinary" {
   let runtime = valid_runtime(["A"], 0, 0, 0)
+  assert_eq(runtime.phase_count, 1)
   assert_eq(runtime.selected, 0)
-  assert_inactive(runtime)
-  assert_cooldown_inactive(runtime)
-  assert_unlocked(runtime)
+  assert_false(runtime.request_next())
+  assert_false(runtime.request_previous())
 }
 
 ///|
 test "V10 zero transition and positive cooldown constructs inactive" {
   let runtime = valid_runtime(["A", "B"], 0, 0, 300)
-  assert_eq(runtime.selected, 0)
+  assert_eq(runtime.phase_count, 2)
   assert_inactive(runtime)
   assert_cooldown_inactive(runtime)
-  assert_unlocked(runtime)
 }
 
 ///|
-test "V11 final selected boundary is valid" {
+test "V11 final selected token boundary is valid" {
   let runtime = valid_runtime(["A", "B"], 1, 100, 0)
+  assert_eq(runtime.phase_count, 2)
   assert_eq(runtime.selected, 1)
-  assert_inactive(runtime)
-  assert_cooldown_inactive(runtime)
-  assert_unlocked(runtime)
+  assert_false(runtime.request_next())
 }
 
 ///|
 test "V12 large researched positive lifecycle values are valid" {
   let runtime = valid_runtime(["A", "B"], 0, 1_100_000_000, 1_100_000_000)
-  assert_eq(runtime.selected, 0)
-  assert_inactive(runtime)
-  assert_cooldown_inactive(runtime)
-  assert_unlocked(runtime)
+  assert_eq(runtime.phase_count, 2)
+  assert_true(runtime.request_next())
+  assert_active_at(runtime, Forward, 1_100_000_000, 0)
 }
 
 ///|
-test "checked construction owns a stable phase-domain copy" {
+test "normalization owns a stable semantic phase copy" {
   let phases = ["A", "B"]
-  let runtime = valid_runtime(phases, 0, 100, 0)
-  assert_eq(runtime.phases, ["A", "B"])
-
+  let fixture = match normalize_fixture(phases, 0, 100, 0) {
+    Some(fixture) => fixture
+    None => fail("expected valid normalized fixture")
+  }
   phases[1] = "A"
 
-  assert_eq(phases, ["A", "A"])
-  assert_eq(runtime.phases, ["A", "B"])
+  assert_eq(fixture.phases, ["A", "B"])
+  assert_eq(fixture.runtime.phase_count, 2)
+  assert_eq(fixture.runtime.selected, 0)
+}
+
+///|
+test "selected token projects through external semantic mapping" {
+  let fixture = match normalize_fixture(["A", "B", "C"], 1, 100, 0) {
+    Some(fixture) => fixture
+    None => fail("expected valid normalized fixture")
+  }
+  assert_eq(observe(fixture.runtime, fixture.phases).selected_phase, "B")
+}
+
+///|
+test "normalization preserves semantic phase order exactly" {
+  let fixture = match normalize_fixture(["A", "C", "B"], 0, 100, 0) {
+    Some(fixture) => fixture
+    None => fail("expected valid normalized fixture")
+  }
+  assert_true(fixture.runtime.request_known_target(1))
+  assert_eq(observe(fixture.runtime, fixture.phases).selected_phase, "C")
+  assert_active(fixture.runtime, Forward)
 }
