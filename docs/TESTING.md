@@ -133,6 +133,52 @@ This does not apply to presentation-eased progress.
 
 Given the same accepted transition and valid time budget, lock state does not change the raw transition/cooldown lifecycle endpoint. It changes request eligibility only.
 
+## Browser host time-normalization properties
+
+Browser timestamp normalization is host evidence, not part of the O01-O10/P01-P05 core semantic corpus.
+
+For the first browser-host contract in [ADR-0005](adr/0005-browser-monotonic-time-normalization.md), implementation evidence should establish at least:
+
+### T01 — Non-negative normalized budget
+
+A nondecreasing accepted timestamp sequence never produces a negative normalized elapsed budget.
+
+### T02 — Equal timestamp zero
+
+Two equal consecutive accepted timestamps produce zero normalized elapsed budget.
+
+### T03 — Endpoint/segmentation consistency
+
+Within one uninterrupted normalization epoch, inserting intermediate timestamps between the same accepted start and final timestamps does not change total normalized elapsed quanta.
+
+Per-sample budgets may differ; the total for the same epoch endpoints must not.
+
+### T04 — Exact valid tick-chunk decomposition
+
+Every positive chunk sent toward `tick(dt)` is an exact integer satisfying the current signed-i32 wrapper boundary, and the exact integer sum of the ordered chunks equals the normalized host budget.
+
+No test should invent an oversized raw `tick(B)` call outside the current valid carrier.
+
+### T05 — Deterministic replay
+
+The same timestamp sequence, normalization policy, and explicit rebase points produce the same normalized budget/chunk sequence.
+
+### T06 — Regression rejection is non-mutating
+
+A timestamp lower than the previous accepted timestamp is rejected before accepted normalization state changes.
+
+A subsequent valid timestamp must behave as though the rejected regression had not been accepted.
+
+### T07 — Rebase epoch isolation
+
+An explicit rebase starts a new normalization epoch and cannot silently consume elapsed time from the prior epoch.
+
+### T08 — Exact-chunk semantic endpoint equivalence
+
+For focused Runtime witnesses and with no semantic command interleaved, different valid exact chunk decompositions of the same normalized integer budget must reach the same semantic endpoint where the current bounded core properties justify the comparison.
+
+This property strengthens host/carrier evidence; it must not be described as proof that an invalid oversized single `tick` call exists.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
@@ -150,6 +196,8 @@ A validation test may verify non-mutation or construction failure, but it must n
 
 Host-specific research should separately consider cases such as:
 
+- timestamp normalization and explicit epoch rebasing;
+- browser visibility/frame scheduling policy;
 - nested interactive regions;
 - native-scroll release;
 - event cancellation;
