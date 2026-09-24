@@ -30,3 +30,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0004 — Core owns raw progress; easing is presentation policy](0004-raw-progress-core-easing-presentation.md)
 - [ADR-0005 — Browser monotonic time normalizes at the host boundary](0005-browser-monotonic-time-normalization.md)
 - [ADR-0006 — First browser frame scheduler consumes delivered frame timestamps](0006-first-browser-frame-scheduler.md)
+- [ADR-0007 — Browser Wasm acquisition terminates at a validated Module](0007-browser-wasm-module-acquisition.md)
