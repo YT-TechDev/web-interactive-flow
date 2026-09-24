@@ -367,6 +367,77 @@ This evidence does not establish:
 - arbitrary CORS, CSP, network, or deployment configurations;
 - DOM projection or input-event correctness.
 
+## DOM wheel default-action ownership properties
+
+DOM wheel default-action ownership is host evidence, separate from the O/P core corpus, T clock-normalization properties, F frame-scheduler properties, L Wasm Module-acquisition properties, and Q real-browser composition qualification.
+
+For the first normalized-wheel-intent ownership contract in [ADR-0008](adr/0008-dom-wheel-default-action-ownership.md), implementation evidence should establish at least:
+
+### W01 — Accepted cancelable intent may suppress after disposition
+
+For one already-normalized `next` or `previous` intent whose semantic Runtime request returns `accepted`, with prevention enabled and a cancelable host event, the ownership layer issues exactly one semantic request before making exactly one `preventDefault()` call.
+
+The test must detect prevention that occurs before the semantic request returns.
+
+### W02 — Rejected intent remains unprevented
+
+If the semantic Runtime returns `rejected`, the ownership layer does not call `preventDefault()`, even when prevention is enabled and the host event is cancelable.
+
+The host layer must not precompute semantic eligibility from phase boundaries, lock, transition, cooldown, or another snapshot field.
+
+### W03 — Non-cancelable event does not control semantic acceptance
+
+If the semantic Runtime returns `accepted` for a normalized intent associated with a non-cancelable event, the result remains `accepted` and no `preventDefault()` call is attempted.
+
+Cancelability is not an input to core request eligibility.
+
+### W04 — Prevention-disabled Accepted intent remains unprevented
+
+If the semantic Runtime returns `accepted` and prevention is disabled, the ownership layer does not call `preventDefault()` regardless of event cancelability.
+
+### W05 — Exactly one semantic request per normalized intent
+
+One ownership-layer invocation for `next` calls the Runtime's next request exactly once; one invocation for `previous` calls the previous request exactly once.
+
+No retry, replay, queue, or second request may be triggered by cancelability or prevention outcome.
+
+### W06 — Semantic owner is not shadowed by snapshot prediction
+
+The ownership layer delegates directly to the semantic Runtime and does not call `getSnapshot()` or maintain copies of selected phase, lock, transition, cooldown, or other request-gating state to predict disposition.
+
+Mechanical evidence may be used to guard this ownership boundary.
+
+### W07 — First ownership layer is stateless and delta-policy-free
+
+The first ownership layer contains no persistent burst/timing/cooldown state and no raw wheel-delta policy.
+
+Its implementation evidence must not introduce `deltaX`, `deltaY`, `deltaMode`, wheel-unit multipliers, thresholds, accumulation, inactivity timing, or ADR-0005/frame-clock reuse.
+
+These concerns require separate host-input evidence before they are added.
+
+### W08 — Failure before disposition does not suppress native default
+
+If the semantic Runtime request throws or otherwise fails before returning `accepted` or `rejected`, the failure propagates according to the existing host error boundary and `preventDefault()` is not called.
+
+This property does not freeze a new public error taxonomy.
+
+### Wheel-ownership evidence boundaries
+
+W01-W08 do not establish:
+
+- how a raw WheelEvent becomes `next` or `previous`;
+- listener target/root ownership;
+- capture/bubble policy;
+- passive-listener registration API;
+- behavior for an already-`defaultPrevented` event;
+- propagation policy;
+- automatic nested-scroll detection or boundary release;
+- universal native-scroll coexistence;
+- touch, pointer, or keyboard input behavior;
+- cross-browser input compatibility.
+
+Those remain later host-policy frontiers.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
