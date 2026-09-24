@@ -138,6 +138,7 @@ test("real artifact owns exact runtime-local String identity mapping", async () 
   });
 
   assert.equal(runtime.goTo("Intro"), "accepted");
+  assert.equal(runtime.getSnapshot().selected, "Intro");
   assert.throws(() => runtime.goTo("changed"));
 
   assert.equal(runtime.goTo("intro"), "accepted");
