@@ -55,7 +55,7 @@ export function createMonotonicTimeNormalizer() {
     }
 
     if (timestampMs < previousTimestampMs) {
-      fail("monotonic timestamp regressed");
+      return 0;
     }
 
     const nextElapsedUs = elapsedMicroseconds(
@@ -96,12 +96,14 @@ export function createMonotonicTimeNormalizer() {
 export function* decomposeTickBudgetUs(budgetUs) {
   validateBudget(budgetUs);
 
-  if (budgetUs > INT32_MAX) {
+  let remainingUs = budgetUs;
+
+  while (remainingUs > INT32_MAX) {
     yield INT32_MAX;
-    return;
+    remainingUs -= INT32_MAX;
   }
 
-  if (budgetUs > 0) {
-    yield budgetUs;
+  if (remainingUs > 0) {
+    yield remainingUs;
   }
 }
