@@ -1,4 +1,3 @@
-import { compileFlowModule } from "/bridge/module_compiler.mjs";
 import { createFlowRuntime } from "/bridge/runtime.mjs";
 import { createFrameScheduler } from "/bridge/frame_scheduler.mjs";
 
@@ -84,7 +83,7 @@ function finishFail(error) {
 }
 
 try {
-  const module = await compileFlowModule(fetch("/core.wasm"));
+  const module = await WebAssembly.compileStreaming(fetch("/core.wasm"));
 
   runtime = createFlowRuntime(module, {
     phases: ["A", "B"],
@@ -100,12 +99,8 @@ try {
 
   scheduler = createFrameScheduler({
     runtime,
-    requestFrame(callback) {
-      return window.setTimeout(() => callback(performance.now()), 0);
-    },
-    cancelFrame(requestId) {
-      window.clearTimeout(requestId);
-    },
+    requestFrame: window.requestAnimationFrame.bind(window),
+    cancelFrame: window.cancelAnimationFrame.bind(window),
     onFrame(snapshot) {
       observerCount += 1;
 
