@@ -173,7 +173,7 @@ async function main() {
       remainingRequestTimeout(qualificationDeadline),
     );
 
-    while (Date.now() < qualificationDeadline) {
+    while (true) {
       const status = await webdriverRequest(
         "POST",
         `/session/${sessionId}/execute/sync`,
