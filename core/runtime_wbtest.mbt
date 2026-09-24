@@ -499,6 +499,24 @@ test "C1 exact transition completion starts the full cooldown" {
 }
 
 ///|
+test "O06 zero tick preserves an active cooldown exactly" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+  assert_unlocked(runtime)
+
+  runtime.tick(0)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+  assert_unlocked(runtime)
+}
+
+///|
 test "C2 transition overshoot is consumed by cooldown" {
   let runtime = cooled(0)
   assert_true(runtime.request_next())
