@@ -19,10 +19,11 @@ priv enum Cooldown {
 }
 
 ///|
-/// This first proof keeps all representation private. Phase indexes are an
-/// implementation detail, and transition duration has no public unit yet.
+/// This first proof keeps all representation private. The phase count defines
+/// an ordered token domain from zero through phase_count - 1; those tokens are
+/// an implementation detail, and transition duration has no public unit yet.
 priv struct Runtime {
-  phases : Array[String]
+  phase_count : Int
   mut selected : Int
   transition_duration : Int
   cooldown_duration : Int
@@ -43,29 +44,17 @@ priv enum Construction {
 /// The only ordinary construction path validates the complete configuration
 /// before creating a Runtime value.
 fn Runtime::new(
-  phases : Array[String],
+  phase_count : Int,
   selected : Int,
   transition_duration : Int,
   cooldown_duration : Int,
 ) -> Construction {
-  let owned_phases = phases.copy()
-  guard owned_phases.length() > 0 else { return Invalid }
-  guard selected >= 0 && selected < owned_phases.length() else {
-    return Invalid
-  }
+  guard phase_count > 0 else { return Invalid }
+  guard selected >= 0 && selected < phase_count else { return Invalid }
   guard transition_duration >= 0 else { return Invalid }
   guard cooldown_duration >= 0 else { return Invalid }
-  let mut left = 0
-  while left < owned_phases.length() {
-    let mut right = left + 1
-    while right < owned_phases.length() {
-      guard owned_phases[left] != owned_phases[right] else { return Invalid }
-      right = right + 1
-    }
-    left = left + 1
-  }
   Valid({
-    phases: owned_phases,
+    phase_count,
     selected,
     transition_duration,
     cooldown_duration,
@@ -177,6 +166,6 @@ fn Runtime::request_adjacent(self : Runtime, direction : Direction) -> Bool {
     Forward => self.selected + 1
     Reverse => self.selected - 1
   }
-  guard target >= 0 && target < self.phases.length() else { return false }
+  guard target >= 0 && target < self.phase_count else { return false }
   self.request_known_target(target)
 }

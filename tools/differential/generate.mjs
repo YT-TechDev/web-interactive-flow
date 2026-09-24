@@ -114,12 +114,13 @@ function generateMoon(fixture) {
   for (const trace of fixture.traces) {
     const scale = trace._scale;
     out += `\n///|\ntest ${q(`differential ${trace.id} [${trace.covers.join(",")}]`)} {\n`;
-    out += `  let runtime = valid_runtime([${trace.phases.map(q).join(", ")}], ${trace.phases.indexOf(trace.initial)}, ${trace.transition_duration.numerator * (scale / trace.transition_duration.denominator)}, ${trace.cooldown.numerator * (scale / trace.cooldown.denominator)})\n`;
+    out += `  let phases = [${trace.phases.map(q).join(", ")}]\n`;
+    out += `  let runtime = valid_runtime(phases, ${trace.phases.indexOf(trace.initial)}, ${trace.transition_duration.numerator * (scale / trace.transition_duration.denominator)}, ${trace.cooldown.numerator * (scale / trace.cooldown.denominator)})\n`;
     for (const action of trace.actions) {
       const result = action.disposition ? `TraceActionResult::Request(RequestDisposition::${action.disposition === "accepted" ? "Accepted" : "Rejected"})` : "TraceActionResult::NoRequestDisposition";
       out += `  assert_eq(\n    apply_trace_action(runtime, ${moonAction(action, trace.phases, scale)}),\n    ${result},\n  )\n`;
       const observation = moonObs(action.expected, trace.transition_duration.numerator * (scale / trace.transition_duration.denominator));
-      out += `  assert_eq(observe(runtime), ${observation[0]}\n${observation.slice(1, -1).map(line => `  ${line}`).join("\n")}\n  ${observation.at(-1)})\n`;
+      out += `  assert_eq(observe(runtime, phases), ${observation[0]}\n${observation.slice(1, -1).map(line => `  ${line}`).join("\n")}\n  ${observation.at(-1)})\n`;
     }
     out += "}\n";
   }

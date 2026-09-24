@@ -3,12 +3,13 @@
 
 ///|
 test "differential adjacent-forward [O01]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 0)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 0)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -21,12 +22,13 @@ test "differential adjacent-forward [O01]" {
 
 ///|
 test "differential adjacent-reverse [O02]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 1, 100, 0)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 1, 100, 0)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Previous),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "A",
     transition: ObservedTransition::Active(ObservedDirection::ObservedReverse, {
       numerator: 0,
@@ -39,12 +41,13 @@ test "differential adjacent-reverse [O02]" {
 
 ///|
 test "differential direct-forward [O03]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 0)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 0)
   assert_eq(
     apply_trace_action(runtime, TraceAction::KnownTarget(3)),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "D",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -57,12 +60,13 @@ test "differential direct-forward [O03]" {
 
 ///|
 test "differential direct-reverse [O04]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 3, 100, 0)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 3, 100, 0)
   assert_eq(
     apply_trace_action(runtime, TraceAction::KnownTarget(0)),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "A",
     transition: ObservedTransition::Active(ObservedDirection::ObservedReverse, {
       numerator: 0,
@@ -75,12 +79,13 @@ test "differential direct-reverse [O04]" {
 
 ///|
 test "differential rejections-boundaries-same [O05]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 0)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 0)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Previous),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "A",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -90,7 +95,7 @@ test "differential rejections-boundaries-same [O05]" {
     apply_trace_action(runtime, TraceAction::KnownTarget(0)),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "A",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -100,12 +105,13 @@ test "differential rejections-boundaries-same [O05]" {
 
 ///|
 test "differential rejection-last-boundary [O05]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 3, 100, 0)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 3, 100, 0)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "D",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -115,12 +121,13 @@ test "differential rejection-last-boundary [O05]" {
 
 ///|
 test "differential rejections-lock-active [O05]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 0)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 0)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Lock),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "A",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -130,7 +137,7 @@ test "differential rejections-lock-active [O05]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "A",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -140,7 +147,7 @@ test "differential rejections-lock-active [O05]" {
     apply_trace_action(runtime, TraceAction::Unlock),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "A",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -150,7 +157,7 @@ test "differential rejections-lock-active [O05]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -163,7 +170,7 @@ test "differential rejections-lock-active [O05]" {
     apply_trace_action(runtime, TraceAction::KnownTarget(1)),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -176,7 +183,7 @@ test "differential rejections-lock-active [O05]" {
     apply_trace_action(runtime, TraceAction::KnownTarget(0)),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -189,12 +196,13 @@ test "differential rejections-lock-active [O05]" {
 
 ///|
 test "differential fractional-and-time-boundaries [O05,O06]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 200, 40)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 200, 40)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -207,7 +215,7 @@ test "differential fractional-and-time-boundaries [O05,O06]" {
     apply_trace_action(runtime, TraceAction::Tick(0)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -220,7 +228,7 @@ test "differential fractional-and-time-boundaries [O05,O06]" {
     apply_trace_action(runtime, TraceAction::Tick(99)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 99,
@@ -233,7 +241,7 @@ test "differential fractional-and-time-boundaries [O05,O06]" {
     apply_trace_action(runtime, TraceAction::Tick(101)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -243,7 +251,7 @@ test "differential fractional-and-time-boundaries [O05,O06]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -253,7 +261,7 @@ test "differential fractional-and-time-boundaries [O05,O06]" {
     apply_trace_action(runtime, TraceAction::Tick(40)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -263,7 +271,7 @@ test "differential fractional-and-time-boundaries [O05,O06]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "C",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -276,12 +284,13 @@ test "differential fractional-and-time-boundaries [O05,O06]" {
 
 ///|
 test "differential leftover-combined [O07]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 300)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 300)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -294,7 +303,7 @@ test "differential leftover-combined [O07]" {
     apply_trace_action(runtime, TraceAction::Tick(250)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -304,7 +313,7 @@ test "differential leftover-combined [O07]" {
     apply_trace_action(runtime, TraceAction::Tick(149)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -314,7 +323,7 @@ test "differential leftover-combined [O07]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -324,7 +333,7 @@ test "differential leftover-combined [O07]" {
     apply_trace_action(runtime, TraceAction::Tick(1)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -334,7 +343,7 @@ test "differential leftover-combined [O07]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "C",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -347,12 +356,13 @@ test "differential leftover-combined [O07]" {
 
 ///|
 test "differential leftover-split [O07]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 300)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 300)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -365,7 +375,7 @@ test "differential leftover-split [O07]" {
     apply_trace_action(runtime, TraceAction::Tick(80)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 80,
@@ -378,7 +388,7 @@ test "differential leftover-split [O07]" {
     apply_trace_action(runtime, TraceAction::Tick(20)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -388,7 +398,7 @@ test "differential leftover-split [O07]" {
     apply_trace_action(runtime, TraceAction::Tick(299)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -398,7 +408,7 @@ test "differential leftover-split [O07]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -408,7 +418,7 @@ test "differential leftover-split [O07]" {
     apply_trace_action(runtime, TraceAction::Tick(1)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -418,7 +428,7 @@ test "differential leftover-split [O07]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "C",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -431,12 +441,13 @@ test "differential leftover-split [O07]" {
 
 ///|
 test "differential lock-time-orthogonality [O08]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 50)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 50)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -449,7 +460,7 @@ test "differential lock-time-orthogonality [O08]" {
     apply_trace_action(runtime, TraceAction::Lock),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -462,7 +473,7 @@ test "differential lock-time-orthogonality [O08]" {
     apply_trace_action(runtime, TraceAction::KnownTarget(2)),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -475,7 +486,7 @@ test "differential lock-time-orthogonality [O08]" {
     apply_trace_action(runtime, TraceAction::Tick(100)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -485,7 +496,7 @@ test "differential lock-time-orthogonality [O08]" {
     apply_trace_action(runtime, TraceAction::Tick(50)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -495,7 +506,7 @@ test "differential lock-time-orthogonality [O08]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Rejected),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -505,7 +516,7 @@ test "differential lock-time-orthogonality [O08]" {
     apply_trace_action(runtime, TraceAction::Unlock),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -515,7 +526,7 @@ test "differential lock-time-orthogonality [O08]" {
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "C",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -528,12 +539,13 @@ test "differential lock-time-orthogonality [O08]" {
 
 ///|
 test "differential zero-duration-collapse [O09]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 0, 30)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 0, 30)
   assert_eq(
     apply_trace_action(runtime, TraceAction::KnownTarget(3)),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "D",
     transition: ObservedTransition::Inactive,
     cooldown_active: true,
@@ -543,12 +555,13 @@ test "differential zero-duration-collapse [O09]" {
 
 ///|
 test "differential settled-time-idempotence [O10]" {
-  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 100, 20)
+  let phases = ["A", "B", "C", "D"]
+  let runtime = valid_runtime(phases, 0, 100, 20)
   assert_eq(
     apply_trace_action(runtime, TraceAction::Next),
     TraceActionResult::Request(RequestDisposition::Accepted),
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
       numerator: 0,
@@ -561,7 +574,7 @@ test "differential settled-time-idempotence [O10]" {
     apply_trace_action(runtime, TraceAction::Tick(120)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
@@ -571,7 +584,7 @@ test "differential settled-time-idempotence [O10]" {
     apply_trace_action(runtime, TraceAction::Tick(250)),
     TraceActionResult::NoRequestDisposition,
   )
-  assert_eq(observe(runtime), {
+  assert_eq(observe(runtime, phases), {
     selected_phase: "B",
     transition: ObservedTransition::Inactive,
     cooldown_active: false,
