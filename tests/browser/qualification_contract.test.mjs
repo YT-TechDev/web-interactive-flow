@@ -115,6 +115,7 @@ test("Q06 harness has bounded timeout and cleanup ownership", async () => {
     /const qualificationDeadline = Date\.now\(\) \+ QUALIFICATION_TIMEOUT_MS/,
   );
   assert.match(source, /remainingRequestTimeout\(qualificationDeadline\)/);
+  assert.match(source, /while \(Date\.now\(\) < qualificationDeadline\)/);
   assert.match(source, /finally \{/);
   assert.match(source, /deleteWebDriverSession\(sessionId\)/);
   assert.match(source, /terminateDriver\(driver\)/);
