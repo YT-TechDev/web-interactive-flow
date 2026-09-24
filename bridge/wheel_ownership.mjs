@@ -30,8 +30,11 @@ export function applyWheelNavigationIntent({
     throw new Error("invalid preventDefault policy");
   }
 
+  if (typeof runtime.getSnapshot === "function") {
+    runtime.getSnapshot();
+  }
+
   const disposition = request.call(runtime);
-  request.call(runtime);
 
   if (
     disposition === "accepted" &&
