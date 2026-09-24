@@ -143,11 +143,11 @@ function decodeTransitionState(value) {
   if (value === 2) {
     return "reverse";
   }
-  return null;
+  fail("unexpected transition carrier");
 }
 
 function decodeActiveProgress(value) {
-  if (!Number.isFinite(value) || value < 0 || value >= 1) {
+  if (!Number.isFinite(value) || value < 0) {
     fail("unexpected active raw progress");
   }
   return value;
