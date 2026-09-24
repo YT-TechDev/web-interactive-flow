@@ -10,7 +10,7 @@ priv enum AbiLifecycle {
 }
 
 ///|
-let abi_lifecycle : Ref[AbiLifecycle] = { val: AbiUninitialized }
+let abi_lifecycle : Ref[AbiLifecycle] = { val: AbiUninitialized, }
 
 ///|
 /// Scalar status encodings are internal ABI proof details, not product errors.
@@ -40,7 +40,11 @@ const ABI_TRANSITION_REVERSE = 2
 
 ///|
 fn abi_request_status(accepted : Bool) -> Int {
-  if accepted { ABI_REQUEST_ACCEPTED } else { ABI_REQUEST_REJECTED }
+  if accepted {
+    ABI_REQUEST_ACCEPTED
+  } else {
+    ABI_REQUEST_REJECTED
+  }
 }
 
 ///|
@@ -59,12 +63,7 @@ pub fn abi_init(
     return ABI_OPERATION_INVALID
   }
   match
-    Runtime::new(
-      phase_count,
-      selected,
-      transition_duration,
-      cooldown_duration,
-    ) {
+    Runtime::new(phase_count, selected, transition_duration, cooldown_duration) {
     Valid(runtime) => {
       abi_lifecycle.val = AbiLive(runtime)
       ABI_OPERATION_OK
