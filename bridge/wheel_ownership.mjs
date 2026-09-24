@@ -30,9 +30,14 @@ export function applyWheelNavigationIntent({
     throw new Error("invalid preventDefault policy");
   }
 
+  if (!event.cancelable) {
+    return "rejected";
+  }
+
   const disposition = request.call(runtime);
 
   if (
+    disposition === "accepted" &&
     preventDefault &&
     event.cancelable
   ) {
