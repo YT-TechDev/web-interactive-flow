@@ -190,6 +190,19 @@ test "O06 and P04 partial ticks advance exact elapsed quanta monotonically" {
 }
 
 ///|
+test "O06 partial tick preserves reverse direction" {
+  let runtime = abc(1)
+  assert_true(runtime.request_previous())
+  assert_eq(runtime.selected, 0)
+  assert_active_at(runtime, Reverse, 100, 0)
+
+  runtime.tick(25)
+
+  assert_eq(runtime.selected, 0)
+  assert_active_at(runtime, Reverse, 100, 25)
+}
+
+///|
 test "O06 normalized finer quanta retain exact fractional-host precision" {
   let runtime = Runtime::new(["A", "B"], 0, 200)
   assert_true(runtime.request_next())
@@ -228,6 +241,21 @@ test "O06 overshoot settles without changing the selected target" {
   assert_true(runtime.request_next())
 
   runtime.tick(101)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+}
+
+///|
+test "O06 bounded overshoot avoids an overflowing addition" {
+  let runtime = Runtime::new(["A", "B"], 0, 1_100_000_000)
+  assert_true(runtime.request_next())
+
+  runtime.tick(1_000_000_000)
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 1_100_000_000, 1_000_000_000)
+
+  runtime.tick(1_200_000_000)
 
   assert_eq(runtime.selected, 1)
   assert_inactive(runtime)
