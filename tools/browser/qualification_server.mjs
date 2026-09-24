@@ -98,7 +98,7 @@ const ROUTES = new Map([
   [
     "/core.wasm",
     {
-      contentType: "application/wasm",
+      contentType: "application/octet-stream",
       body: async () =>
         readFile(new URL("../../_build/wasm/debug/build/core/core.wasm", import.meta.url)),
     },
