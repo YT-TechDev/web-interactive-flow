@@ -156,7 +156,7 @@ test("D01/D05 fixture projects production scheduler snapshots into fixture-owned
   assert.doesNotMatch(source, /setTimeout\s*\(/);
 });
 
-test("D02-D04 harness requires actual DOM readback for first zero progress and later advancement", async () => {
+test("D02/D03/D04 harness requires actual DOM readback for first zero progress and later advancement", async () => {
   const source = await readFile(harnessUrl, "utf8");
 
   assert.match(
