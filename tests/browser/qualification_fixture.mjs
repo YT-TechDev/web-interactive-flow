@@ -129,11 +129,7 @@ try {
           throw new Error("qualification DOM outputs are unavailable");
         }
 
-        projectDomSnapshot(latestDomOutput, snapshot);
-
         if (firstSnapshot === null) {
-          projectDomSnapshot(firstDomOutput, snapshot);
-
           // selected is the semantic accepted destination; it is not visual occupancy.
           if (snapshot.selected !== "B") {
             throw new Error("first frame did not expose selected target B");
