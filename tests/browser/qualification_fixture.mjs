@@ -100,8 +100,12 @@ try {
 
   scheduler = createFrameScheduler({
     runtime,
-    requestFrame: window.requestAnimationFrame.bind(window),
-    cancelFrame: window.cancelAnimationFrame.bind(window),
+    requestFrame(callback) {
+      return window.setTimeout(() => callback(performance.now()), 0);
+    },
+    cancelFrame(requestId) {
+      window.clearTimeout(requestId);
+    },
     onFrame(snapshot) {
       observerCount += 1;
 
