@@ -26,7 +26,7 @@ function validateBudget(budgetUs) {
 }
 
 function elapsedMicroseconds(timestampMs, baselineTimestampMs) {
-  const elapsedUs = Math.floor(
+  const elapsedUs = Math.round(
     (timestampMs - baselineTimestampMs) * QUANTA_PER_MILLISECOND,
   );
 
@@ -67,9 +67,7 @@ export function createMonotonicTimeNormalizer() {
       fail("normalized elapsed time regressed");
     }
 
-    const budgetUs = Math.floor(
-      (timestampMs - previousTimestampMs) * QUANTA_PER_MILLISECOND,
-    );
+    const budgetUs = nextElapsedUs - previousElapsedUs;
     validateBudget(budgetUs);
 
     previousTimestampMs = timestampMs;
