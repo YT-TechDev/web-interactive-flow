@@ -30,6 +30,11 @@ jobs:
           grep -F "moonc v0.10.14+7d59c7ec9" <<< "$versions"
           grep -F "moonrun 0.1.20260920 (914d7da" <<< "$versions"
 
+      - name: Set up Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22
+
       - name: Check formatting
         run: moon fmt --check
 
@@ -41,6 +46,11 @@ jobs:
 
       - name: Build Wasm target
         run: moon build --target wasm --deny-warn --frozen
+
+      - name: Verify scalar Wasm ABI artifact
+        run: |
+          test -f _build/wasm/debug/build/core/core.wasm
+          node tools/abi/verify.mjs _build/wasm/debug/build/core/core.wasm
 
   differential-reference:
     runs-on: ubuntu-24.04
