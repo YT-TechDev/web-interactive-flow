@@ -44,7 +44,7 @@ export function normalizeConfig(config) {
     fail("invalid phase domain size");
   }
 
-  const phases = sourcePhases.slice();
+  const phases = sourcePhases;
   const tokenByPhase = new Map();
 
   for (let token = 0; token < phases.length; token += 1) {
@@ -104,7 +104,7 @@ function decodeRequestStatus(status) {
   if (status === 2) {
     return "accepted";
   }
-  if (status === 1 || status === 0) {
+  if (status === 1) {
     return "rejected";
   }
   fail("unexpected request status");
