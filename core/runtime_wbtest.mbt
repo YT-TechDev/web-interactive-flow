@@ -1,4 +1,147 @@
 ///|
+/// Test-only semantic vocabulary. These types are deliberately local to the
+/// white-box suite: they are neither a Runtime snapshot nor a product ABI.
+enum ObservedDirection {
+  ObservedForward
+  ObservedReverse
+} derive(Eq, Debug)
+
+///|
+struct RawProgressWitness {
+  numerator : Int
+  denominator : Int
+} derive(Eq, Debug)
+
+///|
+enum ObservedTransition {
+  Inactive
+  Active(ObservedDirection, RawProgressWitness)
+} derive(Eq, Debug)
+
+///|
+struct SemanticObservation {
+  selected_phase : String
+  transition : ObservedTransition
+  cooldown_active : Bool
+  locked : Bool
+} derive(Eq, Debug)
+
+///|
+enum RequestDisposition {
+  Accepted
+  Rejected
+} derive(Eq, Debug)
+
+///|
+enum TraceAction {
+  Next
+  Previous
+  KnownTarget(Int)
+  Lock
+  Unlock
+  Tick(Int)
+}
+
+///|
+enum TraceActionResult {
+  NoRequestDisposition
+  Request(RequestDisposition)
+} derive(Eq, Debug)
+
+///|
+pub extend ObservedDirection with Eq::{equal, not_equal}
+
+///|
+pub extend ObservedDirection with Debug::{to_repr}
+
+///|
+pub extend RawProgressWitness with Eq::{equal, not_equal}
+
+///|
+pub extend RawProgressWitness with Debug::{to_repr}
+
+///|
+pub extend ObservedTransition with Eq::{equal, not_equal}
+
+///|
+pub extend ObservedTransition with Debug::{to_repr}
+
+///|
+pub extend SemanticObservation with Eq::{equal, not_equal}
+
+///|
+pub extend SemanticObservation with Debug::{to_repr}
+
+///|
+pub extend RequestDisposition with Eq::{equal, not_equal}
+
+///|
+pub extend RequestDisposition with Debug::{to_repr}
+
+///|
+pub extend TraceActionResult with Eq::{equal, not_equal}
+
+///|
+pub extend TraceActionResult with Debug::{to_repr}
+
+///|
+/// Projects only trace-relevant semantics. In particular, inactive transitions
+/// structurally have no direction or progress, and cooldown erases remaining
+/// time to a gate boolean.
+fn observe(runtime : Runtime) -> SemanticObservation {
+  let transition = match runtime.transition {
+    Inactive => ObservedTransition::Inactive
+    Active(direction, duration~, elapsed~) => {
+      let observed_direction = match direction {
+        Direction::Forward => ObservedDirection::ObservedForward
+        Direction::Reverse => ObservedDirection::ObservedReverse
+      }
+      ObservedTransition::Active(observed_direction, {
+        numerator: elapsed,
+        denominator: duration,
+      })
+    }
+  }
+  {
+    selected_phase: runtime.phases[runtime.selected],
+    transition,
+    cooldown_active: runtime.cooldown is Cooldown::Active(_),
+    locked: runtime.locked,
+  }
+}
+
+///|
+fn disposition(accepted : Bool) -> TraceActionResult {
+  Request(if accepted { Accepted } else { Rejected })
+}
+
+///|
+/// Applies valid normalized trace inputs. KnownTarget indexes and Tick deltas
+/// are fixture-local normalized carriers, so validation failures are excluded.
+fn apply_trace_action(
+  runtime : Runtime,
+  action : TraceAction,
+) -> TraceActionResult {
+  match action {
+    Next => disposition(runtime.request_next())
+    Previous => disposition(runtime.request_previous())
+    KnownTarget(target) => disposition(runtime.request_known_target(target))
+    Lock => {
+      runtime.lock()
+      NoRequestDisposition
+    }
+    Unlock => {
+      runtime.unlock()
+      NoRequestDisposition
+    }
+    Tick(dt) => {
+      runtime.tick(dt)
+      NoRequestDisposition
+    }
+  }
+}
+
+///|
 /// All known-valid white-box fixtures pass through checked construction.
 fn valid_runtime(
   phases : Array[String],
@@ -84,6 +227,131 @@ fn assert_active_at(
     }
     _ => fail("active transition direction did not match")
   }
+}
+
+///|
+test "T1 accepted adjacent navigation has a semantic projection" {
+  let runtime = abc(0)
+
+  assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
+  assert_eq(observe(runtime), {
+    selected_phase: "B",
+    transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
+      numerator: 0,
+      denominator: 100,
+    }),
+    cooldown_active: false,
+    locked: false,
+  })
+}
+
+///|
+test "T2 rejected known request preserves semantic projection" {
+  let runtime = abc(0)
+  let before = observe(runtime)
+
+  assert_eq(apply_trace_action(runtime, Previous), Request(Rejected))
+  assert_eq(observe(runtime), before)
+}
+
+///|
+test "T3 partial positive tick advances exact raw progress" {
+  let runtime = abc(0)
+  assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
+
+  assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
+  assert_eq(observe(runtime), {
+    selected_phase: "B",
+    transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
+      numerator: 25,
+      denominator: 100,
+    }),
+    cooldown_active: false,
+    locked: false,
+  })
+}
+
+///|
+test "T4 transition completion enters cooldown" {
+  let runtime = cooled(0)
+  assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
+
+  assert_eq(apply_trace_action(runtime, Tick(100)), NoRequestDisposition)
+  assert_eq(observe(runtime), {
+    selected_phase: "B",
+    transition: ObservedTransition::Inactive,
+    cooldown_active: true,
+    locked: false,
+  })
+}
+
+///|
+test "T5 exact cooldown bookkeeping is hidden" {
+  let full = cooled(0)
+  let partly_consumed = cooled(0)
+  assert_eq(apply_trace_action(full, Next), Request(Accepted))
+  assert_eq(apply_trace_action(partly_consumed, Next), Request(Accepted))
+  assert_eq(apply_trace_action(full, Tick(100)), NoRequestDisposition)
+  assert_eq(
+    apply_trace_action(partly_consumed, Tick(200)),
+    NoRequestDisposition,
+  )
+  assert_cooldown_active_at(full, 300)
+  assert_cooldown_active_at(partly_consumed, 200)
+
+  assert_eq(observe(full), observe(partly_consumed))
+}
+
+///|
+test "T6 lock and time are orthogonal through projection" {
+  let runtime = abc(0)
+  assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
+  assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
+  assert_eq(apply_trace_action(runtime, Lock), NoRequestDisposition)
+  assert_eq(observe(runtime), {
+    selected_phase: "B",
+    transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
+      numerator: 25,
+      denominator: 100,
+    }),
+    cooldown_active: false,
+    locked: true,
+  })
+
+  assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
+  assert_eq(observe(runtime), {
+    selected_phase: "B",
+    transition: ObservedTransition::Active(ObservedDirection::ObservedForward, {
+      numerator: 50,
+      denominator: 100,
+    }),
+    cooldown_active: false,
+    locked: true,
+  })
+}
+
+///|
+test "T7 zero-duration lifecycle collapses without transition sentinels" {
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
+
+  assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
+  assert_eq(observe(runtime), {
+    selected_phase: "B",
+    transition: ObservedTransition::Inactive,
+    cooldown_active: true,
+    locked: false,
+  })
+}
+
+///|
+test "T8 settled extra tick is projection-idempotent" {
+  let runtime = cooled(0)
+  assert_eq(apply_trace_action(runtime, Next), Request(Accepted))
+  assert_eq(apply_trace_action(runtime, Tick(400)), NoRequestDisposition)
+  let before = observe(runtime)
+
+  assert_eq(apply_trace_action(runtime, Tick(25)), NoRequestDisposition)
+  assert_eq(observe(runtime), before)
 }
 
 ///|
