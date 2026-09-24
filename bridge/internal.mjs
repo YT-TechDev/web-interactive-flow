@@ -207,7 +207,6 @@ export function createSemanticRuntimeFromAbi(abiExports, normalizedConfig) {
 
   function tick(dt) {
     ensureLive();
-    validateQuanta(dt);
     assertOperationStatus(abi.wif_abi_tick(dt));
   }
 
