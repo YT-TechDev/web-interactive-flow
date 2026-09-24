@@ -14,6 +14,16 @@ fn assert_inactive(runtime : Runtime) -> Unit raise {
 }
 
 ///|
+fn assert_locked(runtime : Runtime) -> Unit raise {
+  assert_true(runtime.locked)
+}
+
+///|
+fn assert_unlocked(runtime : Runtime) -> Unit raise {
+  assert_false(runtime.locked)
+}
+
+///|
 fn assert_active(runtime : Runtime, direction : Direction) -> Unit raise {
   assert_active_at(runtime, direction, 100, 0)
 }
@@ -325,4 +335,134 @@ test "transition-only settled tick is idempotent" {
 
   assert_eq(runtime.selected, 1)
   assert_inactive(runtime)
+}
+
+///|
+test "L1 O05 and P01 idle lock rejects adjacent navigation stably" {
+  let runtime = abc(0)
+  assert_unlocked(runtime)
+  runtime.lock()
+
+  assert_false(runtime.request_next())
+
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_locked(runtime)
+}
+
+///|
+test "L2 O05 and P01 idle lock rejects direct navigation stably" {
+  let runtime = abc(0)
+  runtime.lock()
+
+  assert_false(runtime.request_known_target(2))
+
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_locked(runtime)
+}
+
+///|
+test "L3 unlock does not replay a rejected request" {
+  let runtime = abc(0)
+  runtime.lock()
+  assert_false(runtime.request_next())
+
+  runtime.unlock()
+
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_unlocked(runtime)
+
+  assert_true(runtime.request_next())
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 0)
+  assert_unlocked(runtime)
+}
+
+///|
+test "L4 transition-only O08 lock and unlock preserve active lifecycle" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+  runtime.tick(25)
+
+  runtime.lock()
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 25)
+  assert_locked(runtime)
+
+  runtime.unlock()
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 25)
+  assert_unlocked(runtime)
+}
+
+///|
+test "L5 transition-only P05 locked and unlocked lifecycle projections agree" {
+  let unlocked = abc(0)
+  let locked = abc(0)
+  assert_true(unlocked.request_next())
+  assert_true(locked.request_next())
+  unlocked.tick(25)
+  locked.tick(25)
+  locked.lock()
+
+  unlocked.tick(25)
+  locked.tick(25)
+
+  assert_eq(unlocked.selected, 1)
+  assert_eq(locked.selected, 1)
+  assert_active_at(unlocked, Forward, 100, 50)
+  assert_active_at(locked, Forward, 100, 50)
+  assert_unlocked(unlocked)
+  assert_locked(locked)
+}
+
+///|
+test "L6 transition-only O08 transition completes while locked" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+  runtime.tick(25)
+  runtime.lock()
+
+  runtime.tick(75)
+
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_locked(runtime)
+}
+
+///|
+test "L7 lock remains the gate after completion until a fresh unlocked request" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+  runtime.tick(25)
+  runtime.lock()
+  runtime.tick(75)
+  assert_inactive(runtime)
+
+  assert_false(runtime.request_next())
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_locked(runtime)
+
+  runtime.unlock()
+  assert_true(runtime.request_next())
+  assert_eq(runtime.selected, 2)
+  assert_active_at(runtime, Forward, 100, 0)
+  assert_unlocked(runtime)
+}
+
+///|
+test "L8 active locked rejection preserves lifecycle state" {
+  let runtime = abc(0)
+  assert_true(runtime.request_next())
+  runtime.tick(25)
+  runtime.lock()
+
+  assert_false(runtime.request_known_target(2))
+
+  assert_eq(runtime.selected, 1)
+  assert_active_at(runtime, Forward, 100, 25)
+  assert_locked(runtime)
 }

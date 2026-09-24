@@ -19,6 +19,7 @@ priv struct Runtime {
   mut selected : Int
   transition_duration : Int
   mut transition : Transition
+  mut locked : Bool
 }
 
 ///|
@@ -30,7 +31,25 @@ fn Runtime::new(
   selected : Int,
   transition_duration : Int,
 ) -> Runtime {
-  { phases, selected, transition_duration, transition: Inactive, }
+  {
+    phases,
+    selected,
+    transition_duration,
+    transition: Inactive,
+    locked: false,
+  }
+}
+
+///|
+/// Manual lock changes request eligibility without changing lifecycle state.
+fn Runtime::lock(self : Runtime) -> Unit {
+  self.locked = true
+}
+
+///|
+/// Unlocking permits future requests; rejected requests are never replayed.
+fn Runtime::unlock(self : Runtime) -> Unit {
+  self.locked = false
 }
 
 ///|
@@ -48,6 +67,7 @@ fn Runtime::request_previous(self : Runtime) -> Bool {
 /// this runtime's configured domain. Keeping that precondition private avoids
 /// defining unknown-target validation semantics in this proof.
 fn Runtime::request_known_target(self : Runtime, target : Int) -> Bool {
+  guard !self.locked else { return false }
   guard self.transition is Inactive else { return false }
   guard target != self.selected else { return false }
   let direction = if target > self.selected { Forward } else { Reverse }
