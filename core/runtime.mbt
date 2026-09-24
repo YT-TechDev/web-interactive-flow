@@ -8,7 +8,7 @@ priv enum Direction {
 ///|
 priv enum Transition {
   Inactive
-  Active(Direction, duration~ : Int)
+  Active(Direction, duration~ : Int, elapsed~ : Int)
 }
 
 ///|
@@ -52,8 +52,30 @@ fn Runtime::request_known_target(self : Runtime, target : Int) -> Bool {
   guard target != self.selected else { return false }
   let direction = if target > self.selected { Forward } else { Reverse }
   self.selected = target
-  self.transition = Active(direction, duration=self.transition_duration)
+  self.transition = Active(
+    direction,
+    duration=self.transition_duration,
+    elapsed=0,
+  )
   true
+}
+
+///|
+/// Advances an already-valid non-negative count of abstract time quanta. This
+/// private proof covers only the positive-duration transition lifecycle; there
+/// is no cooldown to receive time left after transition completion.
+fn Runtime::tick(self : Runtime, dt : Int) -> Unit {
+  match self.transition {
+    Inactive => ()
+    Active(direction, duration~, elapsed~) => {
+      let remaining = duration - elapsed
+      if dt >= remaining {
+        self.transition = Inactive
+      } else {
+        self.transition = Active(direction, duration~, elapsed=elapsed + dt)
+      }
+    }
+  }
 }
 
 ///|
