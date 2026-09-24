@@ -75,12 +75,18 @@ export function createFrameScheduler({
     try {
       const budgetUs = clock.observe(timestampMs);
 
+      let observedChunk = false;
       for (const chunk of decomposeTickBudgetUs(budgetUs)) {
         runtime.tick(chunk);
+        const snapshot = runtime.getSnapshot();
+        onFrame(snapshot);
+        observedChunk = true;
       }
 
-      const snapshot = runtime.getSnapshot();
-      onFrame(snapshot);
+      if (!observedChunk) {
+        const snapshot = runtime.getSnapshot();
+        onFrame(snapshot);
+      }
 
       if (running) {
         requestNextFrame();
@@ -97,9 +103,7 @@ export function createFrameScheduler({
     }
 
     running = true;
-    if (clock === null) {
-      clock = createMonotonicTimeNormalizer();
-    }
+    clock = createMonotonicTimeNormalizer();
 
     requestNextFrame();
   }
@@ -113,6 +117,7 @@ export function createFrameScheduler({
 
     running = false;
     pendingRequestId = null;
+    clock = null;
 
     if (requestId !== null) {
       cancelFrame(requestId);
