@@ -104,7 +104,7 @@ function decodeRequestStatus(status) {
   if (status === 2) {
     return "accepted";
   }
-  if (status === 1) {
+  if (status === 1 || status === 0) {
     return "rejected";
   }
   fail("unexpected request status");
@@ -207,6 +207,7 @@ export function createSemanticRuntimeFromAbi(abiExports, normalizedConfig) {
 
   function tick(dt) {
     ensureLive();
+    validateQuanta(dt);
     assertOperationStatus(abi.wif_abi_tick(dt));
   }
 
