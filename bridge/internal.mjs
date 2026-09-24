@@ -44,7 +44,7 @@ export function normalizeConfig(config) {
     fail("invalid phase domain size");
   }
 
-  const phases = sourcePhases;
+  const phases = sourcePhases.slice();
   const tokenByPhase = new Map();
 
   for (let token = 0; token < phases.length; token += 1) {
