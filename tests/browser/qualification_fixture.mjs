@@ -21,12 +21,8 @@ function createDomOutput(id) {
 }
 
 function projectDomSnapshot(output, snapshot) {
-  output.textContent = JSON.stringify({
-    selected: "B",
-    transition: snapshot.transition,
-    cooldownActive: snapshot.cooldownActive,
-    locked: snapshot.locked,
-  });
+  void snapshot;
+  output.textContent = JSON.stringify(runtime.getSnapshot());
 }
 
 function describeError(error) {
