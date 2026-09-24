@@ -96,9 +96,7 @@ pub fn abi_request_previous() -> Int {
 #export_name("wif_abi_request_target")
 pub fn abi_request_target(target : Int) -> Int {
   match abi_lifecycle.val {
-    AbiLive(runtime) => {
-      abi_request_status(runtime.request_known_target(target))
-    }
+    AbiLive(runtime) => abi_request_status(runtime.request_known_target(target))
     _ => ABI_REQUEST_INVALID
   }
 }
