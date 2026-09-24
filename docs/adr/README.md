@@ -29,3 +29,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0003 — Extract behavioral traces before porting](0003-behavioral-traces-before-porting.md)
 - [ADR-0004 — Core owns raw progress; easing is presentation policy](0004-raw-progress-core-easing-presentation.md)
 - [ADR-0005 — Browser monotonic time normalizes at the host boundary](0005-browser-monotonic-time-normalization.md)
+- [ADR-0006 — First browser frame scheduler consumes delivered frame timestamps](0006-first-browser-frame-scheduler.md)
