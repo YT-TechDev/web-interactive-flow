@@ -242,11 +242,7 @@ export function createSemanticRuntimeFromAbi(abiExports, normalizedConfig) {
   }
 
   function dispose() {
-    if (!live || abi === null) {
-      const status = abiExports.wif_abi_dispose();
-      assertOperationStatus(status);
-      return;
-    }
+    ensureLive();
 
     const currentAbi = abi;
     live = false;
