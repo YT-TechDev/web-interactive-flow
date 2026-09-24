@@ -26,7 +26,7 @@ function validateBudget(budgetUs) {
 }
 
 function elapsedMicroseconds(timestampMs, baselineTimestampMs) {
-  const elapsedUs = Math.round(
+  const elapsedUs = Math.floor(
     (timestampMs - baselineTimestampMs) * QUANTA_PER_MILLISECOND,
   );
 
@@ -96,14 +96,12 @@ export function createMonotonicTimeNormalizer() {
 export function* decomposeTickBudgetUs(budgetUs) {
   validateBudget(budgetUs);
 
-  let remainingUs = budgetUs;
-
-  while (remainingUs > INT32_MAX) {
+  if (budgetUs > INT32_MAX) {
     yield INT32_MAX;
-    remainingUs -= INT32_MAX;
+    return;
   }
 
-  if (remainingUs > 0) {
-    yield remainingUs;
+  if (budgetUs > 0) {
+    yield budgetUs;
   }
 }
