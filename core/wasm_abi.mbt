@@ -59,6 +59,9 @@ pub fn abi_init(
   transition_duration : Int,
   cooldown_duration : Int,
 ) -> Int {
+  guard abi_lifecycle.val is AbiUninitialized else {
+    return ABI_OPERATION_INVALID
+  }
   match
     Runtime::new(phase_count, selected, transition_duration, cooldown_duration) {
     Valid(runtime) => {
@@ -128,7 +131,6 @@ pub fn abi_set_locked(locked : Bool) -> Int {
 /// must be rejected by the future JS wrapper before crossing the ABI.
 #export_name("wif_abi_tick")
 pub fn abi_tick(dt : Int) -> Int {
-  guard dt >= 0 else { return ABI_OPERATION_INVALID }
   match abi_lifecycle.val {
     AbiLive(runtime) => {
       runtime.tick(dt)
