@@ -121,14 +121,11 @@ export function createQualificationServer() {
     }
 
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
-    let route = ROUTES.get(url.pathname);
+    const route = ROUTES.get(url.pathname);
 
     if (route === undefined) {
-      route = {
-        contentType: "application/octet-stream",
-        body: async () =>
-          readFile(new URL(`../../${url.pathname.slice(1)}`, import.meta.url)),
-      };
+      send(res, 404, "text/plain; charset=utf-8", "not found");
+      return;
     }
 
     try {
