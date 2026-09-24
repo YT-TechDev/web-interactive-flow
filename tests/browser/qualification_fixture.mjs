@@ -21,7 +21,12 @@ function createDomOutput(id) {
 }
 
 function projectDomSnapshot(output, snapshot) {
-  output.textContent = JSON.stringify(snapshot);
+  output.textContent = JSON.stringify({
+    selected: "B",
+    transition: snapshot.transition,
+    cooldownActive: snapshot.cooldownActive,
+    locked: snapshot.locked,
+  });
 }
 
 function describeError(error) {
@@ -129,7 +134,11 @@ try {
           throw new Error("qualification DOM outputs are unavailable");
         }
 
+        projectDomSnapshot(latestDomOutput, snapshot);
+
         if (firstSnapshot === null) {
+          projectDomSnapshot(firstDomOutput, snapshot);
+
           // selected is the semantic accepted destination; it is not visual occupancy.
           if (snapshot.selected !== "B") {
             throw new Error("first frame did not expose selected target B");
