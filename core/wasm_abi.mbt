@@ -97,9 +97,6 @@ pub fn abi_request_previous() -> Int {
 pub fn abi_request_target(target : Int) -> Int {
   match abi_lifecycle.val {
     AbiLive(runtime) => {
-      guard target >= 0 && target < runtime.phase_count else {
-        return ABI_REQUEST_INVALID
-      }
       abi_request_status(runtime.request_known_target(target))
     }
     _ => ABI_REQUEST_INVALID
