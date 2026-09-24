@@ -58,6 +58,9 @@ jobs:
       - name: Test browser clock normalizer
         run: node --test tests/bridge/clock.test.mjs
 
+      - name: Test browser frame scheduler
+        run: node --test tests/bridge/frame_scheduler.test.mjs
+
   differential-reference:
     runs-on: ubuntu-24.04
     steps:
