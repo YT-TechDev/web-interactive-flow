@@ -92,8 +92,14 @@ export function createFrameScheduler({
   }
 
   function start() {
+    if (running) {
+      return;
+    }
+
     running = true;
-    clock = createMonotonicTimeNormalizer();
+    if (clock === null) {
+      clock = createMonotonicTimeNormalizer();
+    }
 
     requestNextFrame();
   }
@@ -107,7 +113,6 @@ export function createFrameScheduler({
 
     running = false;
     pendingRequestId = null;
-    clock = null;
 
     if (requestId !== null) {
       cancelFrame(requestId);
