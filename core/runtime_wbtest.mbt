@@ -1,11 +1,11 @@
 ///|
 fn abc(selected : Int) -> Runtime {
-  Runtime::new(["A", "B", "C"], selected, 100)
+  Runtime::new(["A", "B", "C"], selected, 100, 0)
 }
 
 ///|
 fn abcd(selected : Int) -> Runtime {
-  Runtime::new(["A", "B", "C", "D"], selected, 100)
+  Runtime::new(["A", "B", "C", "D"], selected, 100, 0)
 }
 
 ///|
@@ -21,6 +21,27 @@ fn assert_locked(runtime : Runtime) -> Unit raise {
 ///|
 fn assert_unlocked(runtime : Runtime) -> Unit raise {
   assert_false(runtime.locked)
+}
+
+///|
+fn assert_cooldown_inactive(runtime : Runtime) -> Unit raise {
+  assert_true(runtime.cooldown is Inactive)
+}
+
+///|
+fn assert_cooldown_active_at(runtime : Runtime, remaining : Int) -> Unit raise {
+  match runtime.cooldown {
+    Active(remaining=active_remaining) => {
+      assert_eq(active_remaining, remaining)
+      assert_true(active_remaining > 0)
+    }
+    Inactive => fail("cooldown was inactive")
+  }
+}
+
+///|
+fn cooled(selected : Int) -> Runtime {
+  Runtime::new(["A", "B", "C"], selected, 100, 300)
 }
 
 ///|
@@ -214,7 +235,7 @@ test "O06 partial tick preserves reverse direction" {
 
 ///|
 test "O06 normalized finer quanta retain exact fractional-host precision" {
-  let runtime = Runtime::new(["A", "B"], 0, 200)
+  let runtime = Runtime::new(["A", "B"], 0, 200, 0)
   assert_true(runtime.request_next())
 
   runtime.tick(99)
@@ -258,7 +279,7 @@ test "O06 overshoot settles without changing the selected target" {
 
 ///|
 test "O06 bounded overshoot avoids an overflowing addition" {
-  let runtime = Runtime::new(["A", "B"], 0, 1_100_000_000)
+  let runtime = Runtime::new(["A", "B"], 0, 1_100_000_000, 0)
   assert_true(runtime.request_next())
 
   runtime.tick(1_000_000_000)
@@ -273,8 +294,8 @@ test "O06 bounded overshoot avoids an overflowing addition" {
 
 ///|
 test "P02 combined and segmented ticks agree before completion" {
-  let combined = Runtime::new(["A", "B"], 0, 200)
-  let segmented = Runtime::new(["A", "B"], 0, 200)
+  let combined = Runtime::new(["A", "B"], 0, 200, 0)
+  let segmented = Runtime::new(["A", "B"], 0, 200, 0)
   assert_true(combined.request_next())
   assert_true(segmented.request_next())
 
@@ -290,8 +311,8 @@ test "P02 combined and segmented ticks agree before completion" {
 
 ///|
 test "P02 combined and segmented ticks agree from non-zero elapsed" {
-  let combined = Runtime::new(["A", "B"], 0, 200)
-  let segmented = Runtime::new(["A", "B"], 0, 200)
+  let combined = Runtime::new(["A", "B"], 0, 200, 0)
+  let segmented = Runtime::new(["A", "B"], 0, 200, 0)
   assert_true(combined.request_next())
   assert_true(segmented.request_next())
   combined.tick(1)
@@ -464,5 +485,255 @@ test "L8 active locked rejection preserves lifecycle state" {
 
   assert_eq(runtime.selected, 1)
   assert_active_at(runtime, Forward, 100, 25)
+  assert_locked(runtime)
+}
+
+///|
+test "C1 exact transition completion starts the full cooldown" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+}
+
+///|
+test "C2 transition overshoot is consumed by cooldown" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(150)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 250)
+}
+
+///|
+test "C3 exact transition and cooldown budget settles in one tick" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(400)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "C4 excess beyond the full lifecycle has no effect" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(450)
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "C5 exact cooldown expiry controls navigation eligibility" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  runtime.tick(299)
+  assert_cooldown_active_at(runtime, 1)
+  assert_false(runtime.request_next())
+  runtime.tick(1)
+  assert_cooldown_inactive(runtime)
+  assert_true(runtime.request_next())
+}
+
+///|
+test "C6 rejected cooldown request preserves the original expiry boundary" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(150)
+  assert_cooldown_active_at(runtime, 250)
+  assert_false(runtime.request_known_target(2))
+  assert_eq(runtime.selected, 1)
+  assert_cooldown_active_at(runtime, 250)
+  runtime.tick(249)
+  assert_cooldown_active_at(runtime, 1)
+  runtime.tick(1)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "C7 direct known target cannot bypass cooldown" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  assert_false(runtime.request_known_target(2))
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+}
+
+///|
+test "C8 adjacent request cannot bypass cooldown" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  assert_false(runtime.request_next())
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 300)
+}
+
+///|
+test "C9 zero configured cooldown never creates an active cooldown" {
+  let exact = abc(0)
+  let overshoot = abc(0)
+  assert_true(exact.request_next())
+  assert_true(overshoot.request_next())
+  exact.tick(100)
+  overshoot.tick(150)
+  assert_inactive(exact)
+  assert_inactive(overshoot)
+  assert_cooldown_inactive(exact)
+  assert_cooldown_inactive(overshoot)
+}
+
+///|
+test "C10 P02 agrees across transition into cooldown" {
+  let combined = cooled(0)
+  let segmented = cooled(0)
+  assert_true(combined.request_next())
+  assert_true(segmented.request_next())
+  combined.tick(250)
+  segmented.tick(80)
+  segmented.tick(20)
+  segmented.tick(150)
+  assert_eq(combined.selected, segmented.selected)
+  assert_inactive(combined)
+  assert_inactive(segmented)
+  assert_cooldown_active_at(combined, 150)
+  assert_cooldown_active_at(segmented, 150)
+}
+
+///|
+test "C11 P02 agrees across transition from non-zero elapsed" {
+  let combined = cooled(0)
+  let segmented = cooled(0)
+  assert_true(combined.request_next())
+  assert_true(segmented.request_next())
+  combined.tick(25)
+  segmented.tick(25)
+  combined.tick(175)
+  segmented.tick(50)
+  segmented.tick(125)
+  assert_inactive(combined)
+  assert_inactive(segmented)
+  assert_cooldown_active_at(combined, 200)
+  assert_cooldown_active_at(segmented, 200)
+}
+
+///|
+test "C12 P02 agrees while already in cooldown" {
+  let combined = cooled(0)
+  let segmented = cooled(0)
+  assert_true(combined.request_next())
+  assert_true(segmented.request_next())
+  combined.tick(100)
+  segmented.tick(100)
+  combined.tick(125)
+  segmented.tick(50)
+  segmented.tick(75)
+  assert_cooldown_active_at(combined, 175)
+  assert_cooldown_active_at(segmented, 175)
+}
+
+///|
+test "C13 large bounded lifecycle avoids overflowing additions" {
+  let runtime = Runtime::new(["A", "B"], 0, 1_100_000_000, 1_100_000_000)
+  assert_true(runtime.request_next())
+  runtime.tick(1_000_000_000)
+  assert_active_at(runtime, Forward, 1_100_000_000, 1_000_000_000)
+  assert_cooldown_inactive(runtime)
+  runtime.tick(1_200_000_000)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+}
+
+///|
+test "C14 cooldown advances while locked" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  runtime.lock()
+  runtime.tick(200)
+  assert_inactive(runtime)
+  assert_cooldown_active_at(runtime, 100)
+  assert_locked(runtime)
+}
+
+///|
+test "C15 unlock before cooldown expiry does not bypass cooldown" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(200)
+  runtime.lock()
+  runtime.unlock()
+  assert_false(runtime.request_next())
+  assert_cooldown_active_at(runtime, 200)
+  assert_unlocked(runtime)
+}
+
+///|
+test "C16 cooldown expires while lock remains an independent gate" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(100)
+  runtime.lock()
+  runtime.tick(300)
+  assert_cooldown_inactive(runtime)
+  assert_locked(runtime)
+  assert_false(runtime.request_next())
+  runtime.unlock()
+  assert_true(runtime.request_next())
+}
+
+///|
+test "C17 full P05 locked and unlocked lifecycle projections agree" {
+  let unlocked = cooled(0)
+  let locked = cooled(0)
+  assert_true(unlocked.request_next())
+  assert_true(locked.request_next())
+  unlocked.tick(25)
+  locked.tick(25)
+  locked.lock()
+  unlocked.tick(175)
+  locked.tick(175)
+  assert_inactive(unlocked)
+  assert_inactive(locked)
+  assert_cooldown_active_at(unlocked, 200)
+  assert_cooldown_active_at(locked, 200)
+  assert_unlocked(unlocked)
+  assert_locked(locked)
+}
+
+///|
+test "C18 lock remains orthogonal through full lifecycle settlement" {
+  let unlocked = cooled(0)
+  let locked = cooled(0)
+  assert_true(unlocked.request_next())
+  assert_true(locked.request_next())
+  locked.lock()
+  unlocked.tick(400)
+  locked.tick(400)
+  assert_inactive(unlocked)
+  assert_inactive(locked)
+  assert_cooldown_inactive(unlocked)
+  assert_cooldown_inactive(locked)
+  assert_unlocked(unlocked)
+  assert_locked(locked)
+}
+
+///|
+test "C19 settled time after cooldown is idempotent" {
+  let runtime = cooled(0)
+  assert_true(runtime.request_next())
+  runtime.tick(400)
+  runtime.lock()
+  runtime.tick(250)
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
   assert_locked(runtime)
 }
