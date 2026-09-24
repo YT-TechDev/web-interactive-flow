@@ -1,4 +1,5 @@
-// The runtime surface is intentionally package-private in this proof and is
-// exercised only by white-box tests. Do not force it public to silence the
-// production-only unused-value diagnostic.
+pkgtype(kind: "foreign_library")
+
+// Runtime remains package-private. Only the scalar Wasm boundary functions are
+// public so #export_name can expose them from this foreign-library artifact.
 warnings = "-unused_value-unused_constructor"
