@@ -262,7 +262,7 @@ test("F05: stop cancels pending request and stale callback is inert", () => {
 });
 
 test("F06: restart establishes a fresh epoch without disposing Runtime", () => {
-  const frameApi = createFakeFrameApi({ ids: [1, 2, 3, 4] });
+  const frameApi = createFakeFrameApi({ ids: [1, 2, 3, 4, 5] });
   const fakeRuntime = createFakeRuntime();
   const { scheduler } = createObservedScheduler({ frameApi, fakeRuntime });
 
@@ -274,11 +274,12 @@ test("F06: restart establishes a fresh epoch without disposing Runtime", () => {
   scheduler.stop();
   scheduler.start();
 
-  frameApi.deliver(3, 5000);
+  assert.deepEqual(frameApi.pendingIds(), [4]);
+  frameApi.deliver(4, 5000);
   assert.deepEqual(fakeRuntime.ticks, [1000]);
   assert.equal(fakeRuntime.disposeCount, 0);
 
-  frameApi.deliver(4, 5000.5);
+  frameApi.deliver(5, 5000.5);
   assert.deepEqual(fakeRuntime.ticks, [1000, 500]);
 
   scheduler.stop();
