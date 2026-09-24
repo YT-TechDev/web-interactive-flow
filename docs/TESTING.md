@@ -234,6 +234,56 @@ Runtime disposal is not implied.
 Independent scheduler instances do not share normalization epoch state or pending-request ownership.
 
 
+## Browser Wasm Module-acquisition properties
+
+Wasm resource acquisition is host/bridge evidence, separate from the O/P core corpus, T clock-normalization properties, and F frame-scheduler properties.
+
+For the first acquisition contract in [ADR-0007](adr/0007-browser-wasm-module-acquisition.md), implementation evidence should establish at least:
+
+### L01 — Current WIF artifact success
+
+The actual built WIF Wasm artifact, supplied through a successful `Response` with exact `application/wasm` Content-Type, compiles and is returned as a compatible `WebAssembly.Module`.
+
+### L02 — Promise<Response> composition
+
+A promise resolving to the same valid Response is accepted through the same compiler boundary, preserving direct caller composition with `fetch(url)` without making the compiler own fetch or URL policy.
+
+### L03 — Unrelated valid Wasm is incompatible
+
+A syntactically valid WebAssembly module that lacks the required WIF scalar exports may compile successfully but must be rejected by WIF compatibility validation before being returned as a qualified WIF Module.
+
+### L04 — Imported module is incompatible
+
+A syntactically valid WebAssembly module with imports must be rejected by the current zero-import WIF compatibility boundary.
+
+### L05 — Streaming MIME failure stays closed
+
+Valid Wasm bytes supplied with missing, wrong, or parameterized Content-Type must not be silently rescued by an implicit buffered fallback in the first compiler.
+
+Tests should verify observable rejection without freezing platform error text.
+
+### L06 — Non-ok Response fails
+
+A non-ok Response containing otherwise-valid WIF bytes must fail acquisition rather than being compiled through an alternate path.
+
+### L07 — Malformed Wasm fails compilation
+
+Correct streaming response metadata does not make malformed bytes valid. Compilation failure must propagate as a host acquisition failure.
+
+### L08 — Returned Module remains reusable and Runtime-isolated
+
+One returned compatible Module can be passed to the existing semantic wrapper to create at least two independent Runtime instances whose semantic state does not alias.
+
+### L09 — Acquisition creates no Instance or Runtime
+
+Compiling and qualifying the resource alone does not initialize ABI lifecycle state, construct a semantic Runtime, start scheduling, or dispose anything.
+
+### L10 — No fetch/URL/package assumption
+
+The first compiler's implementation and tests require no repository-owned artifact URL, `fetch()` call, package-relative path, bundler rule, or Module cache.
+
+Environment-specific browser CORS, CSP, network, and deployment behavior may require later browser integration evidence. Node or other non-browser automated tests must not be described as exhaustive proof of those browser policies.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
