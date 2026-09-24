@@ -69,6 +69,22 @@ The scheduler does not own semantic Runtime lifetime or flow semantics. It recei
 
 Visibility-aware pause/rebase remains later DOM/Web host policy. The first scheduler does not inspect document visibility or own input-event policy.
 
+### Browser/Web Wasm Module acquisition
+
+The first Web Wasm acquisition boundary is governed by [ADR-0007](adr/0007-browser-wasm-module-acquisition.md).
+
+It accepts a caller-supplied `Response` or `Promise<Response>`, uses strict `WebAssembly.compileStreaming()`, reuses the existing WIF module compatibility validator, and returns a reusable `WebAssembly.Module`.
+
+This acquisition state is bridge/host validation, not flow-semantic state.
+
+The acquisition boundary does not create a `WebAssembly.Instance` or semantic Runtime. Fresh Instance creation remains owned by the semantic runtime wrapper.
+
+The first compiler does not own `fetch()`, URLs, artifact/package paths, bundler behavior, retry policy, or Module caching. Those remain caller/application/package concerns.
+
+Streaming response, MIME, status, CORS, CSP/environment, body-consumption, and compilation failures remain host acquisition failures. They must not be reclassified as known flow-request rejection.
+
+The compiler depends on WebAssembly streaming/`Response` semantics only and must not introduce DOM, frame scheduling, visibility, or input-event ownership.
+
 ## DOM/Web adapter
 
 The DOM adapter is expected to own host-specific policy and mechanics such as:
