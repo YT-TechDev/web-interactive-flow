@@ -1,11 +1,25 @@
 ///|
-fn abc(selected : Int) -> Runtime {
-  Runtime::new(["A", "B", "C"], selected, 100, 0)
+/// All known-valid white-box fixtures pass through checked construction.
+fn valid_runtime(
+  phases : Array[String],
+  selected : Int,
+  transition_duration : Int,
+  cooldown_duration : Int,
+) -> Runtime raise {
+  match Runtime::new(phases, selected, transition_duration, cooldown_duration) {
+    Valid(runtime) => runtime
+    Invalid => fail("expected valid test fixture")
+  }
 }
 
 ///|
-fn abcd(selected : Int) -> Runtime {
-  Runtime::new(["A", "B", "C", "D"], selected, 100, 0)
+fn abc(selected : Int) -> Runtime raise {
+  valid_runtime(["A", "B", "C"], selected, 100, 0)
+}
+
+///|
+fn abcd(selected : Int) -> Runtime raise {
+  valid_runtime(["A", "B", "C", "D"], selected, 100, 0)
 }
 
 ///|
@@ -40,8 +54,8 @@ fn assert_cooldown_active_at(runtime : Runtime, remaining : Int) -> Unit raise {
 }
 
 ///|
-fn cooled(selected : Int) -> Runtime {
-  Runtime::new(["A", "B", "C"], selected, 100, 300)
+fn cooled(selected : Int) -> Runtime raise {
+  valid_runtime(["A", "B", "C"], selected, 100, 300)
 }
 
 ///|
@@ -235,7 +249,7 @@ test "O06 partial tick preserves reverse direction" {
 
 ///|
 test "O06 normalized finer quanta retain exact fractional-host precision" {
-  let runtime = Runtime::new(["A", "B"], 0, 200, 0)
+  let runtime = valid_runtime(["A", "B"], 0, 200, 0)
   assert_true(runtime.request_next())
 
   runtime.tick(99)
@@ -279,7 +293,7 @@ test "O06 overshoot settles without changing the selected target" {
 
 ///|
 test "O06 bounded overshoot avoids an overflowing addition" {
-  let runtime = Runtime::new(["A", "B"], 0, 1_100_000_000, 0)
+  let runtime = valid_runtime(["A", "B"], 0, 1_100_000_000, 0)
   assert_true(runtime.request_next())
 
   runtime.tick(1_000_000_000)
@@ -294,8 +308,8 @@ test "O06 bounded overshoot avoids an overflowing addition" {
 
 ///|
 test "P02 combined and segmented ticks agree before completion" {
-  let combined = Runtime::new(["A", "B"], 0, 200, 0)
-  let segmented = Runtime::new(["A", "B"], 0, 200, 0)
+  let combined = valid_runtime(["A", "B"], 0, 200, 0)
+  let segmented = valid_runtime(["A", "B"], 0, 200, 0)
   assert_true(combined.request_next())
   assert_true(segmented.request_next())
 
@@ -311,8 +325,8 @@ test "P02 combined and segmented ticks agree before completion" {
 
 ///|
 test "P02 combined and segmented ticks agree from non-zero elapsed" {
-  let combined = Runtime::new(["A", "B"], 0, 200, 0)
-  let segmented = Runtime::new(["A", "B"], 0, 200, 0)
+  let combined = valid_runtime(["A", "B"], 0, 200, 0)
+  let segmented = valid_runtime(["A", "B"], 0, 200, 0)
   assert_true(combined.request_next())
   assert_true(segmented.request_next())
   combined.tick(1)
@@ -659,7 +673,7 @@ test "C12 P02 agrees while already in cooldown" {
 
 ///|
 test "C13 large bounded lifecycle avoids overflowing additions" {
-  let runtime = Runtime::new(["A", "B"], 0, 1_100_000_000, 1_100_000_000)
+  let runtime = valid_runtime(["A", "B"], 0, 1_100_000_000, 1_100_000_000)
   assert_true(runtime.request_next())
   runtime.tick(1_000_000_000)
   assert_active_at(runtime, Forward, 1_100_000_000, 1_000_000_000)
@@ -758,7 +772,7 @@ test "C19 settled time after cooldown is idempotent" {
 
 ///|
 test "Z1 O09 adjacent forward zero-duration lifecycle collapses" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 0)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 0)
 
   assert_true(runtime.request_next())
 
@@ -770,7 +784,7 @@ test "Z1 O09 adjacent forward zero-duration lifecycle collapses" {
 
 ///|
 test "Z2 O09 adjacent reverse zero-duration lifecycle collapses" {
-  let runtime = Runtime::new(["A", "B", "C"], 1, 0, 0)
+  let runtime = valid_runtime(["A", "B", "C"], 1, 0, 0)
 
   assert_true(runtime.request_previous())
 
@@ -781,7 +795,7 @@ test "Z2 O09 adjacent reverse zero-duration lifecycle collapses" {
 
 ///|
 test "Z3 O09 and P03 direct non-adjacent zero-duration selects only target" {
-  let runtime = Runtime::new(["A", "B", "C", "D"], 0, 0, 0)
+  let runtime = valid_runtime(["A", "B", "C", "D"], 0, 0, 0)
 
   assert_true(runtime.request_known_target(3))
 
@@ -792,7 +806,7 @@ test "Z3 O09 and P03 direct non-adjacent zero-duration selects only target" {
 
 ///|
 test "Z4 O09 positive cooldown starts synchronously at full duration" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
 
   assert_true(runtime.request_next())
 
@@ -803,7 +817,7 @@ test "Z4 O09 positive cooldown starts synchronously at full duration" {
 
 ///|
 test "Z5 O06 zero-duration acceptance consumes no cooldown time" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
   assert_true(runtime.request_next())
 
   runtime.tick(0)
@@ -816,7 +830,7 @@ test "Z5 O06 zero-duration acceptance consumes no cooldown time" {
 
 ///|
 test "Z6 O06 exact cooldown expiry after zero-duration acceptance" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
   assert_true(runtime.request_next())
 
   runtime.tick(299)
@@ -833,7 +847,7 @@ test "Z6 O06 exact cooldown expiry after zero-duration acceptance" {
 
 ///|
 test "Z7 O09 repeated zero-duration zero-cooldown acceptance" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 0)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 0)
 
   assert_true(runtime.request_next())
   assert_eq(runtime.selected, 1)
@@ -848,7 +862,7 @@ test "Z7 O09 repeated zero-duration zero-cooldown acceptance" {
 
 ///|
 test "Z8 O05 and P01 same-selected zero-duration rejection is stable" {
-  let runtime = Runtime::new(["A", "B", "C"], 1, 0, 300)
+  let runtime = valid_runtime(["A", "B", "C"], 1, 0, 300)
 
   assert_false(runtime.request_known_target(1))
 
@@ -859,7 +873,7 @@ test "Z8 O05 and P01 same-selected zero-duration rejection is stable" {
 
 ///|
 test "Z9 O05 and P01 locked zero-duration rejection is stable" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
   runtime.lock()
 
   assert_false(runtime.request_next())
@@ -872,7 +886,7 @@ test "Z9 O05 and P01 locked zero-duration rejection is stable" {
 
 ///|
 test "Z10 O06 zero-duration-origin cooldown uses ordinary tick semantics" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
   assert_true(runtime.request_next())
 
   runtime.tick(125)
@@ -884,7 +898,7 @@ test "Z10 O06 zero-duration-origin cooldown uses ordinary tick semantics" {
 
 ///|
 test "Z11 O10 settled time is idempotent from zero-zero origin" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 0)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 0)
   assert_true(runtime.request_next())
 
   runtime.tick(250)
@@ -897,7 +911,7 @@ test "Z11 O10 settled time is idempotent from zero-zero origin" {
 
 ///|
 test "Z12 O05 and P01 cooldown rejection after zero-duration is stable" {
-  let runtime = Runtime::new(["A", "B", "C"], 0, 0, 300)
+  let runtime = valid_runtime(["A", "B", "C"], 0, 0, 300)
   assert_true(runtime.request_next())
 
   assert_false(runtime.request_known_target(2))
@@ -905,4 +919,80 @@ test "Z12 O05 and P01 cooldown rejection after zero-duration is stable" {
   assert_eq(runtime.selected, 1)
   assert_inactive(runtime)
   assert_cooldown_active_at(runtime, 300)
+}
+
+///|
+test "V1 empty domain is invalid" {
+  assert_true(Runtime::new([], 0, 0, 0) is Invalid)
+}
+
+///|
+test "V2 adjacent duplicate phase is invalid" {
+  assert_true(Runtime::new(["A", "A"], 0, 0, 0) is Invalid)
+}
+
+///|
+test "V3 non-adjacent duplicate phase is invalid" {
+  assert_true(Runtime::new(["A", "B", "A"], 0, 0, 0) is Invalid)
+}
+
+///|
+test "V4 trailing duplicate phase is invalid" {
+  assert_true(Runtime::new(["A", "B", "B"], 0, 0, 0) is Invalid)
+}
+
+///|
+test "V5 negative selected index is invalid" {
+  assert_true(Runtime::new(["A", "B"], -1, 0, 0) is Invalid)
+}
+
+///|
+test "V6 selected index equal to domain length is invalid" {
+  assert_true(Runtime::new(["A", "B"], 2, 0, 0) is Invalid)
+}
+
+///|
+test "V7 negative transition duration is invalid" {
+  assert_true(Runtime::new(["A"], 0, -1, 0) is Invalid)
+}
+
+///|
+test "V8 negative cooldown duration is invalid" {
+  assert_true(Runtime::new(["A"], 0, 0, -1) is Invalid)
+}
+
+///|
+test "V9 one-phase zero-duration configuration is valid and ordinary" {
+  let runtime = valid_runtime(["A"], 0, 0, 0)
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+  assert_unlocked(runtime)
+}
+
+///|
+test "V10 zero transition and positive cooldown constructs inactive" {
+  let runtime = valid_runtime(["A", "B"], 0, 0, 300)
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+  assert_unlocked(runtime)
+}
+
+///|
+test "V11 final selected boundary is valid" {
+  let runtime = valid_runtime(["A", "B"], 1, 100, 0)
+  assert_eq(runtime.selected, 1)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+  assert_unlocked(runtime)
+}
+
+///|
+test "V12 large researched positive lifecycle values are valid" {
+  let runtime = valid_runtime(["A", "B"], 0, 1_100_000_000, 1_100_000_000)
+  assert_eq(runtime.selected, 0)
+  assert_inactive(runtime)
+  assert_cooldown_inactive(runtime)
+  assert_unlocked(runtime)
 }

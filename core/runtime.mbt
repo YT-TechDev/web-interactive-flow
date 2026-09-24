@@ -32,16 +32,36 @@ priv struct Runtime {
 }
 
 ///|
-/// Construction receives an already-valid ordered domain, selected member,
-/// a non-negative transition duration and uniform cooldown.
-/// Validation and a public constructor are deliberately outside this proof.
+/// Construction validity is intentionally a private binary outcome. Detailed
+/// validation errors and their precedence remain outside this proof.
+priv enum Construction {
+  Valid(Runtime)
+  Invalid
+}
+
+///|
+/// The only ordinary construction path validates the complete configuration
+/// before creating a Runtime value.
 fn Runtime::new(
   phases : Array[String],
   selected : Int,
   transition_duration : Int,
   cooldown_duration : Int,
-) -> Runtime {
-  {
+) -> Construction {
+  guard phases.length() > 0 else { return Invalid }
+  guard selected >= 0 && selected < phases.length() else { return Invalid }
+  guard transition_duration >= 0 else { return Invalid }
+  guard cooldown_duration >= 0 else { return Invalid }
+  let mut left = 0
+  while left < phases.length() {
+    let mut right = left + 1
+    while right < phases.length() {
+      guard phases[left] != phases[right] else { return Invalid }
+      right = right + 1
+    }
+    left = left + 1
+  }
+  Valid({
     phases,
     selected,
     transition_duration,
@@ -49,7 +69,7 @@ fn Runtime::new(
     transition: Inactive,
     cooldown: Inactive,
     locked: false,
-  }
+  })
 }
 
 ///|
