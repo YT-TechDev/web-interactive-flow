@@ -72,11 +72,6 @@ export function normalizeConfig(config) {
 }
 
 export function assertCompatibleModule(module) {
-  const imports = WebAssembly.Module.imports(module);
-  if (imports.length !== 0) {
-    fail("unexpected WebAssembly imports");
-  }
-
   const declaredExports = new Map(
     WebAssembly.Module.exports(module).map((entry) => [entry.name, entry.kind]),
   );
