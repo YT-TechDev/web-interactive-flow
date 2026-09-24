@@ -52,6 +52,9 @@ jobs:
           test -f _build/wasm/debug/build/core/core.wasm
           node tools/abi/verify.mjs _build/wasm/debug/build/core/core.wasm
 
+      - name: Test JS semantic wrapper
+        run: node --test tests/bridge/runtime.test.mjs
+
   differential-reference:
     runs-on: ubuntu-24.04
     steps:
