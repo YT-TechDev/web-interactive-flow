@@ -1,3 +1,4 @@
+import { compileFlowModule } from "/bridge/module_compiler.mjs";
 import { createFlowRuntime } from "/bridge/runtime.mjs";
 import { createFrameScheduler } from "/bridge/frame_scheduler.mjs";
 
@@ -83,7 +84,7 @@ function finishFail(error) {
 }
 
 try {
-  const module = await WebAssembly.compileStreaming(fetch("/core.wasm"));
+  const module = await compileFlowModule(fetch("/core.wasm"));
 
   runtime = createFlowRuntime(module, {
     phases: ["A", "B"],
