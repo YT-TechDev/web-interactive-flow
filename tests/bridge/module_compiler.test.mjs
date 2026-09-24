@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { compileFlowModule } from "../../bridge/module_compiler.mjs";
+import { REQUIRED_ABI_FUNCTIONS } from "../../bridge/internal.mjs";
 import { createFlowRuntime } from "../../bridge/runtime.mjs";
 
 const WASM_MIME = "application/wasm";
@@ -10,13 +11,6 @@ const EMPTY_WASM = new Uint8Array([
   0x00, 0x61, 0x73, 0x6d,
   0x01, 0x00, 0x00, 0x00,
 ]);
-const IMPORTING_WASM = new Uint8Array([
-  0x00, 0x61, 0x73, 0x6d,
-  0x01, 0x00, 0x00, 0x00,
-  0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
-  0x02, 0x07, 0x01, 0x01, 0x6d, 0x01, 0x66, 0x00, 0x00,
-]);
-
 const artifactUrl = new URL(
   "../../_build/wasm/debug/build/core/core.wasm",
   import.meta.url,
@@ -34,6 +28,58 @@ function wasmResponse(bytes, init = {}) {
     status: init.status ?? 200,
     headers,
   });
+}
+
+
+function encodeU32(value) {
+  const bytes = [];
+  let remaining = value;
+  do {
+    let byte = remaining & 0x7f;
+    remaining >>>= 7;
+    if (remaining !== 0) {
+      byte |= 0x80;
+    }
+    bytes.push(byte);
+  } while (remaining !== 0);
+  return bytes;
+}
+
+function encodeString(value) {
+  const bytes = [...new TextEncoder().encode(value)];
+  return [...encodeU32(bytes.length), ...bytes];
+}
+
+function wasmSection(id, payload) {
+  return [id, ...encodeU32(payload.length), ...payload];
+}
+
+function importingWifShapedWasm() {
+  const typeSection = wasmSection(1, [1, 0x60, 0, 0]);
+  const importSection = wasmSection(2, [
+    1,
+    ...encodeString("m"),
+    ...encodeString("f"),
+    0x00,
+    0x00,
+  ]);
+  const exportEntries = REQUIRED_ABI_FUNCTIONS.flatMap((name) => [
+    ...encodeString(name),
+    0x00,
+    0x00,
+  ]);
+  const exportSection = wasmSection(7, [
+    ...encodeU32(REQUIRED_ABI_FUNCTIONS.length),
+    ...exportEntries,
+  ]);
+
+  return new Uint8Array([
+    0x00, 0x61, 0x73, 0x6d,
+    0x01, 0x00, 0x00, 0x00,
+    ...typeSection,
+    ...importSection,
+    ...exportSection,
+  ]);
 }
 
 test("L01: current WIF artifact compiles from exact application/wasm Response", async () => {
@@ -62,12 +108,24 @@ test("L03: unrelated valid Wasm is rejected after successful compilation", async
   );
 });
 
-test("L04: valid Wasm with imports is rejected by WIF compatibility", async () => {
-  const compiled = await WebAssembly.compile(IMPORTING_WASM);
+test("L04: WIF-shaped valid Wasm with imports is rejected", async () => {
+  const bytes = importingWifShapedWasm();
+  const compiled = await WebAssembly.compile(bytes);
+
   assert.equal(WebAssembly.Module.imports(compiled).length, 1);
+  assert.deepEqual(
+    WebAssembly.Module.exports(compiled).map(({ name, kind }) => ({
+      name,
+      kind,
+    })),
+    REQUIRED_ABI_FUNCTIONS.map((name) => ({
+      name,
+      kind: "function",
+    })),
+  );
 
   await assert.rejects(
-    compileFlowModule(wasmResponse(IMPORTING_WASM)),
+    compileFlowModule(wasmResponse(bytes)),
   );
 });
 
