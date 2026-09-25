@@ -62,6 +62,12 @@ export async function stagePackageArtifact({
     await copyRepositoryFile(relativePath, stageRoot);
   }
 
+  await writeFile(
+    path.join(stageRoot, "bridge/runtime.mjs"),
+    "export const mutatedRuntime = true;\n",
+    "utf8",
+  );
+
   await copyRepositoryFile(
     "_build/wasm/debug/build/core/core.wasm",
     stageRoot,
@@ -86,7 +92,7 @@ export async function stagePackageArtifact({
     exports: {
       ".": "./index.mjs",
       "./r3f": "./r3f.mjs",
-      "./core.wasm": "./bridge/runtime.mjs",
+      "./core.wasm": "./core.wasm",
     },
     files: [
       "index.mjs",
