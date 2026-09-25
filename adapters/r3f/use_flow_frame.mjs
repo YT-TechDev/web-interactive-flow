@@ -1,9 +1,13 @@
 import { useFrame } from "@react-three/fiber";
+import { createContext, useContext } from "react";
+
+const RuntimeContext = createContext(null);
 
 export function useFlowFrame(runtime, callback) {
+  const selectedRuntime = useContext(RuntimeContext) ?? runtime;
+
   useFrame((_, delta) => {
-    runtime.tick(1);
-    const snapshot = runtime.getSnapshot();
+    const snapshot = selectedRuntime.getSnapshot();
     callback(snapshot, delta);
   });
 }
