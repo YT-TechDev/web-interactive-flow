@@ -23,6 +23,10 @@ const ROOT_FACADE = `export { createFlowRuntime } from "./bridge/runtime.mjs";
 export { compileFlowModule } from "./bridge/module_compiler.mjs";
 export { createFrameScheduler } from "./bridge/frame_scheduler.mjs";
 export { applyWheelNavigationIntent } from "./bridge/wheel_ownership.mjs";
+export async function loadFlowModule(url) {
+  const { compileFlowModule } = await import("./bridge/module_compiler.mjs");
+  return compileFlowModule(fetch(url));
+}
 `;
 
 const R3F_FACADE =
@@ -74,10 +78,6 @@ export async function stagePackageArtifact({
 
   await copyRepositoryFile("README.md", stageRoot);
   await copyRepositoryFile("LICENSE", stageRoot);
-  await copyRepositoryFile(
-    "tests/package/package_artifact.test.mjs",
-    stageRoot,
-  );
 
   await writeFile(path.join(stageRoot, "index.mjs"), ROOT_FACADE, "utf8");
   await writeFile(path.join(stageRoot, "r3f.mjs"), R3F_FACADE, "utf8");
@@ -100,7 +100,6 @@ export async function stagePackageArtifact({
       "core.wasm",
       "README.md",
       "LICENSE",
-      "tests/",
     ],
     peerDependencies: {
       "@react-three/fiber": r3fPeerVersion,
