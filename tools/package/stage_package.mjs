@@ -4,6 +4,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -39,7 +40,7 @@ async function copyRepositoryFile(relativePath, destinationRoot) {
   const destination = path.join(destinationRoot, relativePath);
 
   await mkdir(path.dirname(destination), { recursive: true });
-  await copyFile(source, destination);
+  execFileSync("cp", [source, destination]);
 }
 
 export async function stagePackageArtifact({
@@ -99,8 +100,6 @@ export async function stagePackageArtifact({
     ],
     peerDependencies: {
       "@react-three/fiber": r3fPeerVersion,
-      react: "19.3.0",
-      three: "0.186.1",
     },
     peerDependenciesMeta: {
       "@react-three/fiber": {
