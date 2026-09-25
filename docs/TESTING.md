@@ -563,6 +563,76 @@ W01-W08 do not establish:
 
 Those remain later host-policy frontiers.
 
+## R3F frame-consumer properties
+
+R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
+
+For the first read-only R3F frame-consumer contract in [ADR-0009](adr/0009-r3f-frame-consumer-read-only.md), implementation evidence should establish at least:
+
+### R01 — One delivered R3F frame reads one coherent semantic snapshot
+
+One frame-consumer invocation reads one current semantic Runtime snapshot and presents that single observation to its host callback/effect path.
+
+The proof must detect fabricated semantic state or multiple independently interpreted semantic reads within one consumer invocation.
+
+### R02 — R3F frame consumption does not tick the Runtime
+
+The first R3F frame consumer does not call `runtime.tick()` and does not invoke another lifecycle-advancement path.
+
+Delivered R3F frame callbacks are observation opportunities, not a second semantic clock.
+
+### R03 — Multiple R3F consumers do not accelerate lifecycle
+
+Adding or invoking more R3F frame consumers without additional input from the selected WIF lifecycle-time owner does not change semantic transition/cooldown state.
+
+Consumer count must not affect lifecycle speed.
+
+### R04 — R3F delta does not alter WIF semantic state
+
+Different R3F `delta` values supplied to otherwise equivalent read-only frame-consumer invocations do not independently change selected phase, transition lifecycle, cooldown, lock, direction, raw progress, or request eligibility.
+
+The frame delta may still be passed to presentation code as host metadata.
+
+### R05 — Presentation may consume raw progress and host delta without feedback
+
+A frame consumer may combine semantic snapshot fields such as raw progress with R3F host metadata to mutate scene-local presentation state.
+
+Those host effects must not feed presentation-eased or scene-derived values back into semantic lifecycle or request rules.
+
+### R06 — No duplicated flow state in R3F/React host state
+
+The first frame-consumer boundary does not maintain competing copies of phase, transition, cooldown, lock, direction, or request-eligibility state to determine semantic truth.
+
+Local refs may hold presentation-only state where the test clearly separates it from semantic ownership.
+
+### R07 — Selected semantic identity is not visual occupancy
+
+During an active transition, a projected selected identity is treated as the accepted destination and must not be asserted as current visual/camera/object occupancy.
+
+### R08 — Scheduling and package nonclaims remain explicit
+
+The first proof must not claim equivalent callback delivery or behavior across `frameloop="always"`, `"demand"`, `"never"`, XR, render-priority takeover, multiple Canvas roots, StrictMode, or hidden-page conditions unless separately evidenced.
+
+It must not freeze final React hook/component APIs, dependency placement, package/workspace layout, or npm export names merely to prove read-only frame sampling.
+
+### R3F frame-consumer evidence boundaries
+
+R01-R08 do not establish:
+
+- an R3F-owned WIF lifecycle clock;
+- a public `useFlowFrame` API;
+- React provider/subscription design;
+- package/export layout;
+- frameloop invalidation policy;
+- render-priority policy;
+- XR behavior;
+- multiple-Canvas synchronization;
+- R3F pointer/raycast input integration;
+- universal scene projection schema;
+- presentation easing API.
+
+Those remain later host or distribution frontiers.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
