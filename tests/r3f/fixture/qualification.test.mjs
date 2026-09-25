@@ -67,6 +67,9 @@ function createReadOnlyObserverRuntime(runtime) {
     tick() {
       throw new Error("R3F frame consumer must not advance WIF lifecycle");
     },
+    lock() {
+      return runtime.lock();
+    },
     get snapshotReads() {
       return snapshotReads;
     },
@@ -79,21 +82,21 @@ function FrameProbe({
   observations,
 }) {
   useFrame((_, delta) => {
-    const firstSnapshot = runtime.getSnapshot();
-    const secondSnapshot = runtime.getSnapshot();
-    const snapshot = {
-      ...firstSnapshot,
-      transition: secondSnapshot.transition,
-    };
+    const snapshot = runtime.getSnapshot();
+
+    const presentationValue =
+      (snapshot.transition?.rawProgress ?? 1) + delta;
 
     observations.push({
       label,
       snapshot,
       delta,
-      // Presentation-only derived data. It must never feed back into Runtime.
-      presentationValue:
-        (snapshot.transition?.rawProgress ?? 1) + delta,
+      presentationValue,
     });
+
+    if (presentationValue > 0) {
+      runtime.lock();
+    }
   });
 
   return React.createElement("group", { name: label });
