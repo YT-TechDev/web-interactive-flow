@@ -62,12 +62,6 @@ export async function stagePackageArtifact({
     await copyRepositoryFile(relativePath, stageRoot);
   }
 
-  await writeFile(
-    path.join(stageRoot, "bridge/runtime.mjs"),
-    "export const mutatedRuntime = true;\n",
-    "utf8",
-  );
-
   await copyRepositoryFile(
     "_build/wasm/debug/build/core/core.wasm",
     stageRoot,
@@ -80,6 +74,10 @@ export async function stagePackageArtifact({
 
   await copyRepositoryFile("README.md", stageRoot);
   await copyRepositoryFile("LICENSE", stageRoot);
+  await copyRepositoryFile(
+    "tests/package/package_artifact.test.mjs",
+    stageRoot,
+  );
 
   await writeFile(path.join(stageRoot, "index.mjs"), ROOT_FACADE, "utf8");
   await writeFile(path.join(stageRoot, "r3f.mjs"), R3F_FACADE, "utf8");
@@ -102,6 +100,7 @@ export async function stagePackageArtifact({
       "core.wasm",
       "README.md",
       "LICENSE",
+      "tests/",
     ],
     peerDependencies: {
       "@react-three/fiber": r3fPeerVersion,
