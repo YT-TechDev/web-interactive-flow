@@ -2,10 +2,10 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 
 export function useFlowFrame(runtime, callback) {
-  const runtimeRef = useRef(runtime);
+  const callbackRef = useRef(callback);
 
   useFrame((_, delta) => {
-    const snapshot = runtimeRef.current.getSnapshot();
-    callback(snapshot, delta);
+    const snapshot = runtime.getSnapshot();
+    callbackRef.current(snapshot, delta);
   });
 }
