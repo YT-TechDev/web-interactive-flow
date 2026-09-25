@@ -157,6 +157,27 @@ The selected semantic identity remains the accepted destination during an active
 
 This first boundary does not select frameloop-mode policy, `invalidate()`, render-priority takeover, XR scheduling, multiple Canvas roots, StrictMode behavior, visibility policy, R3F input/event integration, public React hooks, or package/export layout.
 
+### First production R3F hook
+
+The first production R3F hook is governed by [ADR-0010](adr/0010-r3f-hook-explicit-runtime.md).
+
+Its Runtime is supplied explicitly by the caller. The hook does not discover a Runtime through context/provider fallback, construct or dispose a Runtime, or start/stop semantic lifecycle scheduling.
+
+For one delivered R3F frame, the hook reads one current semantic snapshot and passes that unchanged snapshot plus the R3F frame `delta` to presentation code.
+
+The first hook:
+
+- does not expose R3F RootState or XR frame data;
+- does not expose render priority and therefore uses the R3F default;
+- does not mirror semantic state into React state;
+- does not add a second WIF callback-ref/effect lifecycle;
+- does not swallow presentation callback failures;
+- does not treat Runtime replacement as disposal/scheduler ownership transfer.
+
+After React re-render supplies a different Runtime or callback, subsequent delivered frames use the latest rendered values. Runtime lifetime remains caller-owned.
+
+Provider/context transport, final package exports, peer dependency ranges, and exact client/RSC packaging strategy remain later frontiers.
+
 ## Cross-host rule
 
 When DOM and R3F consumers receive equivalent normalized commands and valid deltas, shared semantic claims must be decided by the same core runtime.
