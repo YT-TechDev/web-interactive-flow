@@ -193,8 +193,12 @@ async function terminateDriver(driver) {
 }
 
 async function main() {
+  const outputRoot = process.argv[2];
+  if (outputRoot === undefined) {
+    throw new Error("usage: qualify_real_browser.mjs <absolute-build-output>");
+  }
   const qualificationDeadline = Date.now() + QUALIFICATION_TIMEOUT_MS;
-  const server = createQualificationServer();
+  const server = createQualificationServer(outputRoot);
   let baseUrl = null;
   let driver = null;
   let sessionId = null;

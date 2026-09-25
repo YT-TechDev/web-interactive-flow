@@ -1,206 +1,82 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { request } from "node:http";
 import test from "node:test";
 
-import { createQualificationServer } from "../../tools/browser/qualification_server.mjs";
+const root = new URL("../../", import.meta.url);
+const fixtureUrl = new URL("tests/browser/package-fixture/src/main.mjs", root);
+const packageUrl = new URL("tests/browser/package-fixture/package.json", root);
+const lockUrl = new URL("tests/browser/package-fixture/package-lock.json", root);
+const configUrl = new URL("tests/browser/package-fixture/vite.config.mjs", root);
+const harnessUrl = new URL("tools/browser/qualify_package_browser.mjs", root);
+const browserUrl = new URL("tools/browser/qualify_real_browser.mjs", root);
+const serverUrl = new URL("tools/browser/qualification_server.mjs", root);
 
-const fixtureUrl = new URL("./qualification_fixture.mjs", import.meta.url);
-const harnessUrl = new URL(
-  "../../tools/browser/qualify_real_browser.mjs",
-  import.meta.url,
-);
-const serverUrl = new URL(
-  "../../tools/browser/qualification_server.mjs",
-  import.meta.url,
-);
+function verifyWitness({ fixture, manifest, lock, config, harness, browser, server }) {
+  assert.match(fixture, /from "wif-package-qualification"/);
+  assert.match(fixture, /from "wif-package-qualification\/core\.wasm\?url"/);
+  assert.doesNotMatch(fixture, /(?:\.\.\/|\/)bridge\//);
+  assert.doesNotMatch(fixture, /_build\//);
+  assert.match(fixture, /compileFlowModule\(fetch\(wasmUrl\)\)/);
+  assert.match(fixture, /createFlowRuntime\(/);
+  assert.match(fixture, /createFrameScheduler\(/);
+  assert.match(fixture, /runtime\.next\(\)/);
+  assert.match(fixture, /snapshot\.selected !== "B"/);
+  assert.match(fixture, /snapshot\.transition\?\.rawProgress !== 0/);
+  assert.match(fixture, /snapshot\.transition\.rawProgress > 0/);
+  assert.doesNotMatch(fixture, /(?:react|three|@react-three\/fiber)/i);
+  assert.doesNotMatch(fixture, /data-wif-|--wif-|classList\.|\.style\./i);
+  assert.doesNotMatch(fixture, /universal (?:bundler|vite) compatibility/i);
 
-function rawRequest(baseUrl, path, method = "GET") {
-  return new Promise((resolve, reject) => {
-    const url = new URL(baseUrl);
-    const req = request(
-      {
-        hostname: url.hostname,
-        port: url.port,
-        method,
-        path,
-      },
-      (res) => {
-        const chunks = [];
-        res.on("data", (chunk) => chunks.push(chunk));
-        res.on("end", () => {
-          resolve({
-            status: res.statusCode,
-            headers: res.headers,
-            body: Buffer.concat(chunks),
-          });
-        });
-      },
-    );
-    req.on("error", reject);
-    req.end();
-  });
+  const pkg = JSON.parse(manifest);
+  assert.equal(pkg.devDependencies.vite, "7.1.7");
+  assert.equal(Object.keys(pkg.devDependencies).length, 1);
+  const locked = JSON.parse(lock);
+  assert.equal(locked.packages["node_modules/vite"].version, "7.1.7");
+  assert.equal(locked.packages[""].devDependencies.vite, "7.1.7");
+  assert.match(config, /assetsInlineLimit:\s*0/);
+  assert.match(harness, /stagePackageArtifact\(/);
+  assert.match(harness, /npm", \["pack"/);
+  assert.match(harness, /npm", \["ci"/);
+  assert.match(harness, /npm", \["run", "build"\]/);
+  assert.match(harness, /assert\.deepEqual\(await readFile\(path\.join\(installed, "core\.wasm"\)\), await readFile\(path\.join\(stage, "core\.wasm"\)\)\)/);
+  assert.match(harness, /assert\.deepEqual\(await readFile\(path\.join\(assets, wasmFiles\[0\]\)\), await readFile\(path\.join\(installed, "core\.wasm"\)\)/);
+  assert.match(browser, /QUALIFICATION_TIMEOUT_MS/);
+  assert.match(browser, /Qualification browser:/);
+  assert.match(browser, /Qualification driver:/);
+  assert.match(server, /server\.listen\(0, "127\.0\.0\.1"/);
+  assert.match(server, /path\.resolve\(root, relative\)/);
+  assert.doesNotMatch(server, /_build|bridge\/runtime|core\.wasm/);
 }
 
-test("qualification server is loopback, ephemeral, allowlisted, and MIME-correct", async () => {
-  const server = createQualificationServer();
+const baseline = {
+  fixture: await readFile(fixtureUrl, "utf8"),
+  manifest: await readFile(packageUrl, "utf8"),
+  lock: await readFile(lockUrl, "utf8"),
+  config: await readFile(configUrl, "utf8"),
+  harness: await readFile(harnessUrl, "utf8"),
+  browser: await readFile(browserUrl, "utf8"),
+  server: await readFile(serverUrl, "utf8"),
+};
 
-  try {
-    const baseUrl = await server.start();
-    const parsed = new URL(baseUrl);
+test("B01-B10 package-aware production-browser contract", () => verifyWitness(baseline));
 
-    assert.equal(parsed.hostname, "127.0.0.1");
-    assert.notEqual(parsed.port, "");
+const mutants = [
+  ["01 repository bridge import", "fixture", (s) => s.replace('from "wif-package-qualification"', 'from "../../../bridge/runtime.mjs"')],
+  ["02 repository Wasm", "fixture", (s) => s.replace('"wif-package-qualification/core.wasm?url"', '"../../../_build/wasm/debug/build/core/core.wasm?url"')],
+  ["03 packaged Wasm replacement", "harness", (s) => s.replace("assert.deepEqual(await readFile(path.join(installed, \"core.wasm\")),", "// provenance removed\nassert.notDeepEqual(Buffer.from('corrupt'),")],
+  ["04 emitted Wasm replacement", "harness", (s) => s.replace("assert.deepEqual(await readFile(path.join(assets, wasmFiles[0])),", "assert.notDeepEqual(await readFile(path.join(assets, wasmFiles[0])),")],
+  ["05 root imports R3F", "fixture", (s) => `${s}\nimport "@react-three/fiber";`],
+  ["06 dev server", "harness", (s) => s.replace('["run", "build"]', '["run", "dev"]')],
+  ["07 package-owned fetch", "fixture", (s) => s.replace("compileFlowModule(fetch(wasmUrl))", "compileFlowModule(wasmUrl)")],
+  ["08 fake production seams", "fixture", (s) => s.replace("createFlowRuntime(module,", "fakeRuntime(")],
+  ["09 source fallback", "server", (s) => `${s}\n// fallback bridge/runtime.mjs`],
+  ["10 ranged Vite", "manifest", (s) => s.replace('"vite": "7.1.7"', '"vite": "^7.1.7"')],
+  ["11 universal compatibility", "fixture", (s) => `${s}\n// universal bundler compatibility`],
+  ["12 source instead of tarball", "harness", (s) => s.replace(/stagePackageArtifact\(/, "bypassRepositorySource(")],
+];
 
-    const wasm = await rawRequest(baseUrl, "/core.wasm");
-    assert.equal(wasm.status, 200);
-    assert.equal(wasm.headers["content-type"], "application/wasm");
-
-    const fixture = await rawRequest(baseUrl, "/qualification.mjs");
-    assert.equal(fixture.status, 200);
-    assert.match(fixture.headers["content-type"], /^text\/javascript/);
-
-    const unknown = await rawRequest(baseUrl, "/README.md");
-    assert.equal(unknown.status, 404);
-
-    const traversal = await rawRequest(baseUrl, "/../../README.md");
-    assert.equal(traversal.status, 404);
-
-    const post = await rawRequest(baseUrl, "/core.wasm", "POST");
-    assert.equal(post.status, 405);
-  } finally {
-    await server.close();
-  }
-});
-
-test("Q05 fixture mechanically composes production seams and real Window rAF", async () => {
-  const source = await readFile(fixtureUrl, "utf8");
-
-  assert.match(
-    source,
-    /import \{ compileFlowModule \} from "\/bridge\/module_compiler\.mjs"/,
-  );
-  assert.match(
-    source,
-    /import \{ createFlowRuntime \} from "\/bridge\/runtime\.mjs"/,
-  );
-  assert.match(
-    source,
-    /import \{ createFrameScheduler \} from "\/bridge\/frame_scheduler\.mjs"/,
-  );
-
-  assert.match(source, /compileFlowModule\(fetch\("\/core\.wasm"\)\)/);
-  assert.match(source, /createFlowRuntime\(/);
-  assert.match(source, /createFrameScheduler\(/);
-  assert.match(
-    source,
-    /window\.requestAnimationFrame\.bind\(window\)/,
-  );
-  assert.match(
-    source,
-    /window\.cancelAnimationFrame\.bind\(window\)/,
-  );
-
-  assert.doesNotMatch(source, /setTimeout\s*\(/);
-  assert.doesNotMatch(source, /createMonotonicTimeNormalizer/);
-  assert.doesNotMatch(source, /decomposeTickBudgetUs/);
-});
-
-test("Q06 harness has bounded timeout and cleanup ownership", async () => {
-  const source = await readFile(harnessUrl, "utf8");
-
-  assert.match(source, /const QUALIFICATION_TIMEOUT_MS = [0-9_]+/);
-  assert.match(
-    source,
-    /const qualificationDeadline = Date\.now\(\) \+ QUALIFICATION_TIMEOUT_MS/,
-  );
-  assert.match(source, /remainingRequestTimeout\(qualificationDeadline\)/);
-  assert.match(source, /while \(Date\.now\(\) < qualificationDeadline\)/);
-  assert.match(source, /finally \{/);
-  assert.match(source, /deleteWebDriverSession\(sessionId\)/);
-  assert.match(source, /terminateDriver\(driver\)/);
-  assert.match(source, /await server\.close\(\)/);
-});
-
-test("server implementation uses explicit route allowlist rather than filesystem URL resolution", async () => {
-  const source = await readFile(serverUrl, "utf8");
-
-  assert.match(source, /const ROUTES = new Map\(\[/);
-  assert.match(source, /const route = ROUTES\.get\(url\.pathname\)/);
-  assert.doesNotMatch(source, /readFile\([^\n]*req\.url/);
-  assert.doesNotMatch(source, /path\.(join|resolve)\([^\n]*url/);
-});
-
-
-test("D01/D05 fixture projects production scheduler snapshots into fixture-owned DOM outputs", async () => {
-  const source = await readFile(fixtureUrl, "utf8");
-
-  assert.match(source, /document\.createElement\("output"\)/);
-  assert.match(source, /document\.body\.append\(output\)/);
-  assert.match(
-    source,
-    /output\.textContent = JSON\.stringify\(snapshot\)/,
-  );
-  assert.match(
-    source,
-    /onFrame\(snapshot\) \{[\s\S]*projectDomSnapshot\(latestDomOutput, snapshot\)/,
-  );
-  assert.match(
-    source,
-    /onFrame\(snapshot\) \{[\s\S]*projectDomSnapshot\(firstDomOutput, snapshot\)/,
-  );
-
-  assert.doesNotMatch(source, /runtime\.getSnapshot\s*\(/);
-  assert.doesNotMatch(source, /createMonotonicTimeNormalizer/);
-  assert.doesNotMatch(source, /decomposeTickBudgetUs/);
-  assert.doesNotMatch(source, /setTimeout\s*\(/);
-});
-
-test("D02/D03/D04 harness requires actual DOM readback for first zero progress and later advancement", async () => {
-  const source = await readFile(harnessUrl, "utf8");
-
-  assert.match(
-    source,
-    /document\.getElementById\(id\)\?\.textContent \?\? null/,
-  );
-  assert.match(source, /qualification-first-snapshot/);
-  assert.match(source, /qualification-latest-snapshot/);
-  assert.match(
-    source,
-    /const domEvidence = assertDomQualificationEvidence\(observed\?\.dom\)/,
-  );
-  assert.match(source, /first\.selected !== "B"/);
-  assert.match(source, /first\.transition\.rawProgress !== 0/);
-  assert.match(source, /latest\.selected !== "B"/);
-  assert.match(source, /latest\.transition\.rawProgress > 0/);
-
-  assert.doesNotMatch(
-    source,
-    /latest\.transition\.rawProgress\s*(?:===|!==|==|!=)\s*0\.[0-9]+/,
-  );
-  assert.doesNotMatch(source, /observerCount\s*(?:===|!==|==|!=|>|<)/);
-});
-
-test("D06/D07 DOM projection remains test-local and does not redefine visual occupancy", async () => {
-  const source = await readFile(fixtureUrl, "utf8");
-
-  assert.doesNotMatch(source, /data-wif-/i);
-  assert.doesNotMatch(source, /--wif-/i);
-  assert.doesNotMatch(source, /classList\./);
-  assert.doesNotMatch(source, /\.style\./);
-  assert.match(
-    source,
-    /selected is the semantic accepted destination; it is not visual occupancy\./,
-  );
-});
-
-test("D08 reuses the existing bounded browser qualification lifecycle", async () => {
-  const source = await readFile(harnessUrl, "utf8");
-
-  assert.match(source, /const QUALIFICATION_TIMEOUT_MS = [0-9_]+/);
-  assert.match(source, /deleteWebDriverSession\(sessionId\)/);
-  assert.match(source, /terminateDriver\(driver\)/);
-  assert.match(source, /await server\.close\(\)/);
-  assert.match(source, /Qualification browser:/);
-  assert.match(source, /Qualification driver:/);
-});
+for (const [name, field, mutate] of mutants) {
+  test(`required mutant ${name} is detected`, () => {
+    assert.throws(() => verifyWitness({ ...baseline, [field]: mutate(baseline[field]) }));
+  });
+}

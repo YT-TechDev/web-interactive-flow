@@ -91,7 +91,7 @@ jobs:
             exit 1
           fi
           chromedriver --version
-          node tools/browser/qualify_real_browser.mjs
+          node tools/browser/qualify_package_browser.mjs
           node --test tests/browser/qualification_contract.test.mjs
 
   differential-reference:
