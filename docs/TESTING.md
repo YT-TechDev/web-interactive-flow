@@ -823,6 +823,91 @@ K01-K10 qualify one local packed artifact topology before publication.
 
 They do not themselves authorize npm publishing or claim compatibility with package managers/bundlers that were not directly exercised.
 
+## Package-aware real-browser qualification
+
+Package-aware real-browser qualification is bounded integration and environment evidence layered on the K package-artifact evidence and the existing Q/D browser lifecycle discipline. It exercises an installed, locally packed artifact through one isolated production build; it does not define a new production API, distribution topology, browser adapter, or flow semantic.
+
+### B01 — Installed package-root provenance
+
+The browser application imports the installed local qualification package by package name and root export. It must not import repository `bridge/*.mjs` files. The installed dependency must come from the local npm tarball produced through the ADR-0011 copy-only staging path, rather than a source symlink or reconstructed fixture-local package.
+
+### B02 — Public packaged Wasm asset boundary
+
+The consumer obtains Wasm through the package's public `./core.wasm` export. Repository `_build/.../core.wasm` paths are not consumer inputs and must not be available as a fallback.
+
+### B03 — Caller-owned browser acquisition
+
+The application/build environment resolves the public asset URL. The caller obtains a `Response` or `Promise<Response>` and supplies it to production `compileFlowModule()`.
+
+WIF must not select the URL, fetch automatically, introduce CDN policy, or own a global asset cache. This evidence preserves ADR-0007 rather than adding a package-owned acquisition helper.
+
+### B04 — Production-build evidence
+
+Qualification requires an actual Vite production build. Success that depends only on a Vite development server is insufficient.
+
+Vite is isolated qualification infrastructure at one exact version with a committed lockfile. It is not a WIF runtime dependency, consumer requirement, or architectural owner.
+
+### B05 — Emitted Wasm provenance
+
+Production output must leave its emitted Wasm asset inspectable. Qualification may disable asset inlining and must compare the emitted asset's exact bytes, or a cryptographic digest of those exact bytes, with the installed package's `core.wasm`.
+
+Preventing inlining and retaining an inspectable asset are fixture policy for this proof, not general WIF consumer requirements. The build must not mutate the Wasm artifact.
+
+### B06 — Framework-neutral host isolation
+
+The isolated consumer proves that the framework-neutral root Web package resolves and executes without React, React Three Fiber, or Three.js. Root package loading must not trigger hidden R3F resolution. This evidence does not widen into R3F browser qualification.
+
+### B07 — Actual production WIF composition
+
+The built browser application exercises production `compileFlowModule()`, `createFlowRuntime()`, and `createFrameScheduler()` with the packaged Wasm. It must construct a valid flow, accept a real semantic request, observe the accepted destination and a coherent first transition state, and then observe scheduler-driven lifecycle advancement.
+
+A fake Runtime, fake scheduler, static fabricated snapshot, or module-loading-only witness is insufficient.
+
+### B08 — Build-output-only browser serving
+
+The real-browser server serves only files from production build output over a loopback-only listener. Repository source routes, including `bridge/*.mjs`, repository `_build/...`, and a repository-source `/core.wasm`, must not exist as fallbacks.
+
+The harness preserves bounded overall and WebDriver-request timeouts, deterministic server/session/driver cleanup, real Chrome execution, and browser/driver provenance logging from the existing qualification discipline.
+
+### B09 — Qualification-local presentation
+
+DOM or `window` status markers used for browser observation belong only to the qualification fixture. They do not establish a production DOM projection API or a CSS, class, attribute, or custom-property schema.
+
+The selected semantic identity remains the accepted destination during an active transition; it is not a statement of visual occupancy.
+
+### B10 — Bounded compatibility claim
+
+This proof establishes only one exact, lockfile-backed Vite qualification environment and the qualified real-Chrome environment. It does not establish:
+
+- universal Vite compatibility;
+- Webpack compatibility;
+- Next.js or Turbopack compatibility;
+- SSR or React Server Components compatibility;
+- support for every browser;
+- universal Wasm deployment behavior; or
+- a final npm package name or version.
+
+### Package-aware browser evidence boundaries
+
+The required composition is:
+
+```text
+qualified repository build
+  -> ADR-0011 copy-only staging
+  -> local npm pack tarball
+  -> isolated exact-locked Vite fixture
+  -> installed package-root and public core.wasm imports
+  -> caller-owned fetch and compileFlowModule(Response)
+  -> createFlowRuntime and createFrameScheduler
+  -> Vite production build
+  -> exact emitted-Wasm provenance check
+  -> build-output-only loopback server
+  -> real Chrome/WebDriver
+  -> observable semantic lifecycle advancement
+```
+
+Qualification must preserve package, Wasm, and server provenance mechanically. A passing browser marker alone is insufficient if repository-source fallback, a substituted artifact, dev-server behavior, hidden R3F coupling, ranged or unlocked tooling, or fabricated production seams could still satisfy the witness.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
