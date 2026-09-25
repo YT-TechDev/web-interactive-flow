@@ -79,6 +79,7 @@ function FrameProbe({
   observations,
 }) {
   useFrame((_, delta) => {
+    runtime.tick(delta);
     const snapshot = runtime.getSnapshot();
 
     observations.push({
