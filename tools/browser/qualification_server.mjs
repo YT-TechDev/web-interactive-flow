@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
+import { validateQualificationRoutes } from "./package_qualification_support.mjs";
+
 const TYPES = new Map([
   [".html", "text/html; charset=utf-8"],
   [".js", "text/javascript; charset=utf-8"],
@@ -9,10 +11,12 @@ const TYPES = new Map([
   [".wasm", "application/wasm"],
 ]);
 
-export function createQualificationServer(outputRoot) {
+export function createQualificationServer(outputRoot, allowedRoutes) {
   if (typeof outputRoot !== "string" || !path.isAbsolute(outputRoot)) {
     throw new Error("qualification output root must be absolute");
   }
+  validateQualificationRoutes(allowedRoutes);
+  const routes = new Map(allowedRoutes);
   const root = path.resolve(outputRoot);
   const server = createServer(async (req, res) => {
     if (req.method !== "GET") {
@@ -20,7 +24,11 @@ export function createQualificationServer(outputRoot) {
       return;
     }
     const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://127.0.0.1").pathname);
-    const relative = pathname === "/" ? "index.html" : pathname.slice(1);
+    const relative = routes.get(pathname);
+    if (relative === undefined) {
+      res.writeHead(404).end("not found");
+      return;
+    }
     const target = path.resolve(root, relative);
     if (target !== root && !target.startsWith(`${root}${path.sep}`)) {
       res.writeHead(404).end("not found");

@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 
 import { createQualificationServer } from "./qualification_server.mjs";
+import { findBuildOutputRoutes } from "./package_qualification_support.mjs";
 
 const QUALIFICATION_TIMEOUT_MS = 90_000;
 const WEBDRIVER_REQUEST_TIMEOUT_MS = 45_000;
@@ -198,7 +199,8 @@ async function main() {
     throw new Error("usage: qualify_real_browser.mjs <absolute-build-output>");
   }
   const qualificationDeadline = Date.now() + QUALIFICATION_TIMEOUT_MS;
-  const server = createQualificationServer(outputRoot);
+  const allowedRoutes = await findBuildOutputRoutes(outputRoot);
+  const server = createQualificationServer(outputRoot, allowedRoutes);
   let baseUrl = null;
   let driver = null;
   let sessionId = null;

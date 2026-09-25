@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { request } from "node:http";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
+
+import {
+  assertExactFileBytes,
+  installLocalTarball,
+  qualificationBuildRoot,
+  validateQualificationRoutes,
+} from "../../tools/browser/package_qualification_support.mjs";
+import { createQualificationServer } from "../../tools/browser/qualification_server.mjs";
 
 const root = new URL("../../", import.meta.url);
 const fixtureUrl = new URL("tests/browser/package-fixture/src/main.mjs", root);
@@ -38,13 +49,17 @@ function verifyWitness({ fixture, manifest, lock, config, harness, browser, serv
   assert.match(harness, /npm", \["pack"/);
   assert.match(harness, /npm", \["ci"/);
   assert.match(harness, /npm", \["run", "build"\]/);
-  assert.match(harness, /assert\.deepEqual\(await readFile\(path\.join\(installed, "core\.wasm"\)\), await readFile\(path\.join\(stage, "core\.wasm"\)\)\)/);
-  assert.match(harness, /assert\.deepEqual\(await readFile\(path\.join\(assets, wasmFiles\[0\]\)\), await readFile\(path\.join\(installed, "core\.wasm"\)\)/);
+  assert.match(harness, /installLocalTarball\(\{ run, consumerRoot: consumer, tarballPath: tarball \}\)/);
+  assert.match(harness, /const qualifiedWasm = path\.join\(ROOT, "_build\/wasm\/debug\/build\/core\/core\.wasm"\)/);
+  assert.match(harness, /assertExactFileBytes\(\s*qualifiedWasm,\s*path\.join\(installed, "core\.wasm"\)/);
+  assert.match(harness, /assertExactFileBytes\([\s\S]*path\.join\(installed, "core\.wasm"\)[\s\S]*path\.join\(assets, wasmFiles\[0\]\)/);
+  assert.match(harness, /const buildRoot = qualificationBuildRoot\(consumer\)/);
+  assert.match(harness, /qualify_real_browser\.mjs"\), buildRoot/);
   assert.match(browser, /QUALIFICATION_TIMEOUT_MS/);
   assert.match(browser, /Qualification browser:/);
   assert.match(browser, /Qualification driver:/);
   assert.match(server, /server\.listen\(0, "127\.0\.0\.1"/);
-  assert.match(server, /path\.resolve\(root, relative\)/);
+  assert.match(server, /routes\.get\(pathname\)/);
   assert.doesNotMatch(server, /_build|bridge\/runtime|core\.wasm/);
 }
 
@@ -63,16 +78,12 @@ test("B01-B10 package-aware production-browser contract", () => verifyWitness(ba
 const mutants = [
   ["01 repository bridge import", "fixture", (s) => s.replace('from "wif-package-qualification"', 'from "../../../bridge/runtime.mjs"')],
   ["02 repository Wasm", "fixture", (s) => s.replace('"wif-package-qualification/core.wasm?url"', '"../../../_build/wasm/debug/build/core/core.wasm?url"')],
-  ["03 packaged Wasm replacement", "harness", (s) => s.replace("assert.deepEqual(await readFile(path.join(installed, \"core.wasm\")),", "// provenance removed\nassert.notDeepEqual(Buffer.from('corrupt'),")],
-  ["04 emitted Wasm replacement", "harness", (s) => s.replace("assert.deepEqual(await readFile(path.join(assets, wasmFiles[0])),", "assert.notDeepEqual(await readFile(path.join(assets, wasmFiles[0])),")],
   ["05 root imports R3F", "fixture", (s) => `${s}\nimport "@react-three/fiber";`],
   ["06 dev server", "harness", (s) => s.replace('["run", "build"]', '["run", "dev"]')],
   ["07 package-owned fetch", "fixture", (s) => s.replace("compileFlowModule(fetch(wasmUrl))", "compileFlowModule(wasmUrl)")],
   ["08 fake production seams", "fixture", (s) => s.replace("createFlowRuntime(module,", "fakeRuntime(")],
-  ["09 source fallback", "server", (s) => `${s}\n// fallback bridge/runtime.mjs`],
   ["10 ranged Vite", "manifest", (s) => s.replace('"vite": "7.1.7"', '"vite": "^7.1.7"')],
   ["11 universal compatibility", "fixture", (s) => `${s}\n// universal bundler compatibility`],
-  ["12 source instead of tarball", "harness", (s) => s.replace(/stagePackageArtifact\(/, "bypassRepositorySource(")],
 ];
 
 for (const [name, field, mutate] of mutants) {
@@ -80,3 +91,93 @@ for (const [name, field, mutate] of mutants) {
     assert.throws(() => verifyWitness({ ...baseline, [field]: mutate(baseline[field]) }));
   });
 }
+
+function httpRequest(baseUrl, pathname, method = "GET") {
+  return new Promise((resolve, reject) => {
+    const url = new URL(baseUrl);
+    const req = request({ hostname: url.hostname, port: url.port, path: pathname, method }, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => resolve({ status: res.statusCode, type: res.headers["content-type"], body: Buffer.concat(chunks) }));
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+test("D08/B08 server behavior is finite, build-output-only, and MIME-correct", async () => {
+  const output = await mkdtemp(path.join(os.tmpdir(), "wif-output-routes-"));
+  await mkdir(path.join(output, "assets"));
+  await writeFile(path.join(output, "index.html"), "index");
+  await writeFile(path.join(output, "assets/app-123.js"), "app");
+  await writeFile(path.join(output, "assets/core-123.wasm"), "wasm");
+  await writeFile(path.join(output, "assets/unlisted.txt"), "secret");
+  const routes = new Map([
+    ["/", "index.html"],
+    ["/assets/app-123.js", "assets/app-123.js"],
+    ["/assets/core-123.wasm", "assets/core-123.wasm"],
+  ]);
+  const server = createQualificationServer(output, routes);
+  try {
+    const base = await server.start();
+    assert.equal((await httpRequest(base, "/")).status, 200);
+    assert.equal((await httpRequest(base, "/assets/app-123.js")).status, 200);
+    const wasm = await httpRequest(base, "/assets/core-123.wasm");
+    assert.equal(wasm.status, 200);
+    assert.equal(wasm.type, "application/wasm");
+    for (const route of [
+      "/assets/unlisted.txt", "/unknown", "/bridge/runtime.mjs",
+      "/_build/wasm/debug/build/core/core.wasm", "/core.wasm",
+      "/..%2fREADME.md", "/%2e%2e/README.md",
+    ]) assert.equal((await httpRequest(base, route)).status, 404, route);
+    assert.equal((await httpRequest(base, "/", "POST")).status, 405);
+  } finally {
+    await server.close();
+    await rm(output, { recursive: true, force: true });
+  }
+});
+
+test("mutant 03: actual packaged Wasm corruption fails qualified-build provenance", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "wif-mutant-03-"));
+  try {
+    const qualified = path.join(root, "qualified.wasm");
+    const packaged = path.join(root, "core.wasm");
+    await writeFile(qualified, Buffer.from([0, 97, 115, 109]));
+    await writeFile(packaged, await readFile(qualified));
+    await writeFile(packaged, Buffer.from([0, 97, 115, 110]));
+    await assert.rejects(assertExactFileBytes(qualified, packaged, "packaged provenance"));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("mutant 04: actual emitted Wasm corruption fails installed-byte provenance", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "wif-mutant-04-"));
+  try {
+    const installed = path.join(root, "installed.wasm");
+    const emitted = path.join(root, "emitted.wasm");
+    await writeFile(installed, Buffer.from([0, 97, 115, 109]));
+    await writeFile(emitted, await readFile(installed));
+    await writeFile(emitted, Buffer.from([0, 97, 115, 108]));
+    await assert.rejects(assertExactFileBytes(installed, emitted, "emitted provenance"));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("mutant 09: an actual repository-source fallback route is rejected", () => {
+  const routes = new Map([["/", "index.html"], ["/bridge/runtime.mjs", "../bridge/runtime.mjs"]]);
+  assert.throws(() => validateQualificationRoutes(routes), /forbidden qualification route/);
+});
+
+test("mutant 12: directory/source install bypass is rejected and tarball is exact", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "wif-mutant-12-"));
+  const tarball = path.join(root, "wif.tgz");
+  await writeFile(tarball, "tarball");
+  const calls = [];
+  const run = async (...args) => calls.push(args);
+  try {
+    await assert.rejects(installLocalTarball({ run, consumerRoot: root, tarballPath: root }), /produced local npm tarball/);
+    assert.equal(calls.length, 0);
+    await installLocalTarball({ run, consumerRoot: root, tarballPath: tarball });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][1].at(-1), tarball);
+    assert.equal(qualificationBuildRoot(root), path.join(root, "dist"));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
