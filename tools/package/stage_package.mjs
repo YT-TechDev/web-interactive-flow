@@ -23,6 +23,7 @@ const ROOT_FACADE = `export { createFlowRuntime } from "./bridge/runtime.mjs";
 export { compileFlowModule } from "./bridge/module_compiler.mjs";
 export { createFrameScheduler } from "./bridge/frame_scheduler.mjs";
 export { applyWheelNavigationIntent } from "./bridge/wheel_ownership.mjs";
+export { useFlowFrame } from "./adapters/r3f/use_flow_frame.mjs";
 `;
 
 const R3F_FACADE =
