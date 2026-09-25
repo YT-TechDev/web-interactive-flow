@@ -45,6 +45,16 @@ const EXPECTED_ROOT_FACADE =
 const EXPECTED_R3F_FACADE =
   'export { useFlowFrame } from "./adapters/r3f/use_flow_frame.mjs";\n';
 
+const EXPECTED_MANIFEST_FILES = [
+  "index.mjs",
+  "r3f.mjs",
+  "bridge/",
+  "adapters/",
+  "core.wasm",
+  "README.md",
+  "LICENSE",
+];
+
 const EXPECTED_PACKED_FILES = [
   "LICENSE",
   "README.md",
@@ -167,6 +177,7 @@ test("K01-K10: local packed artifact preserves host isolation and provenance", a
         optional: true,
       },
     });
+    assert.deepEqual(manifest.files, EXPECTED_MANIFEST_FILES);
     assert.equal(manifest.peerDependencies.react, undefined);
     assert.equal(manifest.peerDependencies.three, undefined);
     assert.equal(manifest.dependencies, undefined);
@@ -296,6 +307,14 @@ try {
 }
 `;
 
+    assert.match(
+      webSmoke,
+      new RegExp(`await import\\("${PACKAGE_NAME}"\\)`),
+    );
+    assert.doesNotMatch(webSmoke, /\.\.\/\.\.\/bridge\//);
+    assert.doesNotMatch(webSmoke, /REPOSITORY_ROOT/);
+    assert.doesNotMatch(webSmoke, /file:\/\//);
+
     await runNodeModule(webConsumerRoot, "web-smoke.mjs", webSmoke);
 
     const installedPackageRoot = path.join(
@@ -385,6 +404,12 @@ try {
   await renderer.unmount();
 }
 `;
+
+    assert.match(
+      r3fSmoke,
+      new RegExp(`from "${PACKAGE_NAME}\\/r3f"`),
+    );
+    assert.doesNotMatch(r3fSmoke, /adapters\/r3f\/use_flow_frame\.mjs/);
 
     await runNodeModule(
       R3F_FIXTURE_ROOT,
