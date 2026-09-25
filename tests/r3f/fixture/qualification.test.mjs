@@ -196,7 +196,8 @@ test("R01-R07: actual R3F useFrame is a read-only semantic consumer", async () =
     assert.equal(firstConsumer.at(-1).delta, 3.5);
     assert.equal(secondConsumer.at(-1).delta, 3.5);
 
-    // selected B means the scene is already visually occupying B.
+    // selected B is the accepted destination during the active transition;
+    // this qualification does not treat it as visual occupancy.
 
     wifFrameHost.deliverNext(2_000);
     assert.deepEqual(runtime.getSnapshot(), {
@@ -233,19 +234,29 @@ test("R01-R07: actual R3F useFrame is a read-only semantic consumer", async () =
 test("R02/R06/R07/R08: fixture source preserves R3F ownership boundaries", async () => {
   const source = await readFile(fixtureSourceUrl, "utf8");
 
-  assert.match(source, /import \{ useFrame \} from "@react-three\/fiber"/);
-  assert.match(
-    source,
-    /import ReactThreeTestRenderer from "@react-three\/test-renderer"/,
-  );
-  assert.match(
-    source,
-    /useFrame\(\(_\, delta\) => \{[\s\S]*const snapshot = runtime\.getSnapshot\(\)/,
-  );
-
+  // Scope every mechanical assertion to the code it is intended to police.
+  // This prevents the guard's own regex/string literals from satisfying it.
+  const importSource = source.slice(0, source.indexOf("const artifactUrl"));
   const frameProbeSource = source.slice(
     source.indexOf("function FrameProbe"),
     source.indexOf("function assertActiveDestination"),
+  );
+  const qualificationSource = source.slice(
+    source.indexOf('test("R01-R07:'),
+    source.indexOf('test("R02/R06/R07/R08:'),
+  );
+
+  assert.match(
+    importSource,
+    /import \{ useFrame \} from "@react-three\/fiber"/,
+  );
+  assert.match(
+    importSource,
+    /import ReactThreeTestRenderer from "@react-three\/test-renderer"/,
+  );
+  assert.match(
+    frameProbeSource,
+    /useFrame\(\(_\, delta\) => \{[\s\S]*const snapshot = runtime\.getSnapshot\(\)/,
   );
 
   assert.doesNotMatch(frameProbeSource, /\.tick\s*\(/);
@@ -258,7 +269,7 @@ test("R02/R06/R07/R08: fixture source preserves R3F ownership boundaries", async
   assert.doesNotMatch(frameProbeSource, /cooldownActive\s*=/);
   assert.doesNotMatch(frameProbeSource, /locked\s*=/);
   assert.match(
-    source,
+    qualificationSource,
     /selected B is the accepted destination[\s\S]*does not treat it as visual occupancy/,
   );
 
