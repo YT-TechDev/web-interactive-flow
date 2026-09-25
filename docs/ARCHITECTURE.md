@@ -75,6 +75,38 @@ It must not collapse validation failure into ordinary known-request rejection or
 
 The exact validation/error mapping remains open.
 
+## Distribution ownership
+
+The first package/export topology is governed by [ADR-0011](adr/0011-first-package-export-topology.md).
+
+Distribution is a host/public-entry boundary, not a new semantic layer.
+
+The first logical package keeps the framework-neutral/Web root surface independent from R3F:
+
+```text
+package root
+  -> createFlowRuntime
+  -> compileFlowModule
+  -> createFrameScheduler
+  -> applyWheelNavigationIntent
+
+package ./r3f
+  -> useFlowFrame
+
+package ./core.wasm
+  -> qualified Wasm asset
+```
+
+The root entry must not import the R3F adapter. R3F remains an opt-in host dependency behind its explicit subpath.
+
+Package exports encapsulate implementation details. Internal bridge helpers, raw ABI implementation, source-tree filenames, MoonBit source, tests, and qualification tooling are not public package paths merely because they are present in the repository or staged artifact.
+
+The first release artifact is generated through byte-preserving/copy-only staging. This distribution step may assemble facades, metadata, documentation, and the built Wasm artifact, but it does not bundle, transpile, or redefine runtime semantics.
+
+The packaged Wasm asset does not change ADR-0007 acquisition ownership. Package or consumer tooling may resolve the asset; the caller remains responsible for creating the resource/Response supplied to the compiler helper.
+
+A future package split, provider, TypeScript declaration strategy, CJS build, bundler-specific asset helper, or peer-range widening requires separate evidence.
+
 ## Adapter ownership
 
 Adapters own host-specific integration.
