@@ -67,6 +67,14 @@ jobs:
       - name: Test DOM wheel ownership
         run: node --test tests/bridge/wheel_ownership.test.mjs
 
+      - name: Resolve and test isolated R3F qualification fixture
+        shell: bash
+        run: |
+          npm --prefix tests/r3f/fixture install --package-lock-only --ignore-scripts --no-audit --no-fund
+          printf 'WIF_R3F_LOCK_B64=%s\n' "$(base64 -w0 tests/r3f/fixture/package-lock.json)"
+          npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
+          node --test tests/r3f/fixture/qualification.test.mjs
+
       - name: Qualify production Web composition in real Chrome
         shell: bash
         run: |
