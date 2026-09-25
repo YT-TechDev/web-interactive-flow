@@ -26,7 +26,7 @@ export { applyWheelNavigationIntent } from "./bridge/wheel_ownership.mjs";
 `;
 
 const R3F_FACADE =
-  'export function useFlowFrame() {}\n';
+  'export { useFlowFrame } from "./adapters/r3f/use_flow_frame.mjs";\n';
 
 function requireNonEmptyString(value, label) {
   if (typeof value !== "string" || value.length === 0) {
