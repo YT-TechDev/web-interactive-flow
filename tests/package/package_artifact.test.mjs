@@ -265,7 +265,9 @@ test("K01-K10: local packed artifact preserves host isolation and provenance", a
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const packageRoot = await import("${PACKAGE_NAME}");
+const packageRoot = await import(
+  new URL("../../bridge/runtime.mjs", import.meta.url).href
+);
 assert.deepEqual(Object.keys(packageRoot).sort(), [
   "applyWheelNavigationIntent",
   "compileFlowModule",
