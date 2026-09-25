@@ -23,14 +23,10 @@ const ROOT_FACADE = `export { createFlowRuntime } from "./bridge/runtime.mjs";
 export { compileFlowModule } from "./bridge/module_compiler.mjs";
 export { createFrameScheduler } from "./bridge/frame_scheduler.mjs";
 export { applyWheelNavigationIntent } from "./bridge/wheel_ownership.mjs";
-export async function loadFlowModule(url) {
-  const { compileFlowModule } = await import("./bridge/module_compiler.mjs");
-  return compileFlowModule(fetch(url));
-}
 `;
 
 const R3F_FACADE =
-  'export { useFlowFrame } from "./adapters/r3f/use_flow_frame.mjs";\n';
+  'export function useFlowFrame() {}\n';
 
 function requireNonEmptyString(value, label) {
   if (typeof value !== "string" || value.length === 0) {
