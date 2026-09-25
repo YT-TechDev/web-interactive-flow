@@ -141,6 +141,22 @@ An R3F adapter may own:
 
 R3F raycasting and event propagation remain R3F/host responsibilities.
 
+### First R3F frame-consumer ownership
+
+The first R3F frame-consumer boundary is governed by [ADR-0009](adr/0009-r3f-frame-consumer-read-only.md).
+
+For one delivered R3F frame callback, the first contract reads one current semantic Runtime snapshot and exposes it to R3F presentation code. It does not call `runtime.tick()` and does not become a second transition/cooldown lifecycle clock.
+
+R3F frame `delta` may be passed through as host/presentation metadata. In this first contract it is not WIF semantic lifecycle time.
+
+Multiple R3F consumers are read-only views of one Runtime. Adding consumers must not accelerate lifecycle or create duplicated phase, transition, cooldown, lock, direction, or request-eligibility state.
+
+R3F/Three.js scene, camera, object, and material mutations remain host effects. Presentation easing or scene-derived values must not redefine semantic transition completion, raw progress, selected phase, direction, cooldown, lock, or request disposition.
+
+The selected semantic identity remains the accepted destination during an active transition; it is not visual occupancy.
+
+This first boundary does not select frameloop-mode policy, `invalidate()`, render-priority takeover, XR scheduling, multiple Canvas roots, StrictMode behavior, visibility policy, R3F input/event integration, public React hooks, or package/export layout.
+
 ## Cross-host rule
 
 When DOM and R3F consumers receive equivalent normalized commands and valid deltas, shared semantic claims must be decided by the same core runtime.
