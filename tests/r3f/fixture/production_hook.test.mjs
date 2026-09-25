@@ -82,7 +82,7 @@ async function createRuntime(config) {
   return createFlowRuntime(await modulePromise, config);
 }
 
-test("H01-H05: production hook observes actual R3F frames without advancing semantics", async () => {
+test("H01/H02/H03/H04/H05: production hook observes actual R3F frames without advancing semantics", async () => {
   const runtime = await createRuntime({
     phases: ["A", "B", "C"],
     initial: "A",
