@@ -76,6 +76,9 @@ jobs:
       - name: Qualify production explicit-Runtime R3F hook
         run: node --test tests/r3f/fixture/production_hook.test.mjs
 
+      - name: Qualify local package artifact topology
+        run: node --test tests/package/package_artifact.test.mjs
+
       - name: Qualify production Web composition in real Chrome
         shell: bash
         run: |
