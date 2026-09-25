@@ -73,6 +73,9 @@ jobs:
       - name: Qualify read-only R3F frame consumption
         run: node --test tests/r3f/fixture/qualification.test.mjs
 
+      - name: Qualify production explicit-Runtime R3F hook
+        run: node --test tests/r3f/fixture/production_hook.test.mjs
+
       - name: Qualify production Web composition in real Chrome
         shell: bash
         run: |
