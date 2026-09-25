@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@react-three/fiber": "9.8.0",
+    "@react-three/fiber": "^9.8.0",
     "@react-three/test-renderer": "9.1.1",
     "react": "19.3.0",
     "three": "0.186.1"
