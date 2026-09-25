@@ -87,6 +87,7 @@ export async function stagePackageArtifact({
       ".": "./index.mjs",
       "./r3f": "./r3f.mjs",
       "./core.wasm": "./core.wasm",
+      "./bridge/internal.mjs": "./bridge/internal.mjs",
     },
     files: [
       "index.mjs",
@@ -102,7 +103,7 @@ export async function stagePackageArtifact({
     },
     peerDependenciesMeta: {
       "@react-three/fiber": {
-        optional: false,
+        optional: true,
       },
     },
   };
