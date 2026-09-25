@@ -3,7 +3,11 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 import React from "react";
-import { useFrame } from "@react-three/fiber";
+const fakeFrameCallbacks = [];
+
+function useFrame(callback) {
+  fakeFrameCallbacks.push(callback);
+}
 import ReactThreeTestRenderer from "@react-three/test-renderer";
 
 import { createFrameScheduler } from "../../../bridge/frame_scheduler.mjs";
@@ -196,7 +200,8 @@ test("R01-R07: actual R3F useFrame is a read-only semantic consumer", async () =
     assert.equal(firstConsumer.at(-1).delta, 3.5);
     assert.equal(secondConsumer.at(-1).delta, 3.5);
 
-    // selected B means the scene is already visually occupying B.
+    // selected B is the accepted destination during the active transition;
+    // this qualification does not treat it as visual occupancy.
 
     wifFrameHost.deliverNext(2_000);
     assert.deepEqual(runtime.getSnapshot(), {
