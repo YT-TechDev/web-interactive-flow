@@ -196,8 +196,7 @@ test("R01-R07: actual R3F useFrame is a read-only semantic consumer", async () =
     assert.equal(firstConsumer.at(-1).delta, 3.5);
     assert.equal(secondConsumer.at(-1).delta, 3.5);
 
-    // selected B is the accepted destination during the active transition;
-    // this qualification does not treat it as visual occupancy.
+    // selected B means the scene is already visually occupying B.
 
     wifFrameHost.deliverNext(2_000);
     assert.deepEqual(runtime.getSnapshot(), {
