@@ -71,10 +71,6 @@ export async function stagePackageArtifact({
     path.join(stageRoot, "core.wasm"),
   );
   await rm(path.join(stageRoot, "_build"), { recursive: true, force: true });
-  await writeFile(
-    path.join(stageRoot, "core.wasm"),
-    new Uint8Array([0x00, 0x01, 0x02]),
-  );
 
   await copyRepositoryFile("README.md", stageRoot);
   await copyRepositoryFile("LICENSE", stageRoot);
@@ -90,7 +86,7 @@ export async function stagePackageArtifact({
     exports: {
       ".": "./index.mjs",
       "./r3f": "./r3f.mjs",
-      "./core.wasm": "./core.wasm",
+      "./core.wasm": "./bridge/runtime.mjs",
     },
     files: [
       "index.mjs",
