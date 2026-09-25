@@ -33,3 +33,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0007 — Browser Wasm acquisition terminates at a validated Module](0007-browser-wasm-module-acquisition.md)
 - [ADR-0008 — DOM wheel default-action suppression follows semantic acceptance](0008-dom-wheel-default-action-ownership.md)
 - [ADR-0009 — R3F frame consumers are read-only semantic observers](0009-r3f-frame-consumer-read-only.md)
+- [ADR-0010 — First production R3F hook takes an explicit Runtime](0010-r3f-hook-explicit-runtime.md)
