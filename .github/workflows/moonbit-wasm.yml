@@ -67,6 +67,12 @@ jobs:
       - name: Test DOM wheel ownership
         run: node --test tests/bridge/wheel_ownership.test.mjs
 
+      - name: Install isolated R3F qualification fixture
+        run: npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
+
+      - name: Qualify read-only R3F frame consumption
+        run: node --test tests/r3f/fixture/qualification.test.mjs
+
       - name: Qualify production Web composition in real Chrome
         shell: bash
         run: |
