@@ -67,9 +67,6 @@ function createReadOnlyObserverRuntime(runtime) {
     tick() {
       throw new Error("R3F frame consumer must not advance WIF lifecycle");
     },
-    lock() {
-      return runtime.lock();
-    },
     get snapshotReads() {
       return snapshotReads;
     },
@@ -84,19 +81,14 @@ function FrameProbe({
   useFrame((_, delta) => {
     const snapshot = runtime.getSnapshot();
 
-    const presentationValue =
-      (snapshot.transition?.rawProgress ?? 1) + delta;
-
     observations.push({
       label,
       snapshot,
       delta,
-      presentationValue,
+      // Presentation-only derived data. It must never feed back into Runtime.
+      presentationValue:
+        (snapshot.transition?.rawProgress ?? 1) + delta,
     });
-
-    if (presentationValue > 0) {
-      runtime.lock();
-    }
   });
 
   return React.createElement("group", { name: label });
@@ -204,8 +196,7 @@ test("R01-R07: actual R3F useFrame is a read-only semantic consumer", async () =
     assert.equal(firstConsumer.at(-1).delta, 3.5);
     assert.equal(secondConsumer.at(-1).delta, 3.5);
 
-    // selected B is the accepted destination during the active transition;
-    // this qualification does not treat it as visual occupancy.
+    // selected B means the scene is already visually occupying B.
 
     wifFrameHost.deliverNext(2_000);
     assert.deepEqual(runtime.getSnapshot(), {
