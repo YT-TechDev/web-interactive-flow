@@ -4,7 +4,6 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -40,7 +39,7 @@ async function copyRepositoryFile(relativePath, destinationRoot) {
   const destination = path.join(destinationRoot, relativePath);
 
   await mkdir(path.dirname(destination), { recursive: true });
-  execFileSync("cp", [source, destination]);
+  await copyFile(source, destination);
 }
 
 export async function stagePackageArtifact({
