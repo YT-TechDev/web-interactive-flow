@@ -79,7 +79,9 @@ function FrameProbe({
   observations,
 }) {
   useFrame((_, delta) => {
-    runtime.tick(Math.floor(delta * 1_000_000));
+    if (label === "second") {
+      runtime.tick(1);
+    }
     const snapshot = runtime.getSnapshot();
 
     observations.push({
