@@ -1,7 +1,0 @@
-{
-  "name": "web-interactive-flow",
-  "private": true,
-  "exports": {
-    "./r3f": "./adapters/r3f/use_flow_frame.mjs"
-  }
-}
