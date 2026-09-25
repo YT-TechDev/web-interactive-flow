@@ -3,11 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 import React from "react";
-const fakeFrameCallbacks = [];
-
-function useFrame(callback) {
-  fakeFrameCallbacks.push(callback);
-}
+import { useFrame } from "@react-three/fiber";
 import ReactThreeTestRenderer from "@react-three/test-renderer";
 
 import { createFrameScheduler } from "../../../bridge/frame_scheduler.mjs";
