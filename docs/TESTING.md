@@ -633,6 +633,109 @@ R01-R08 do not establish:
 
 Those remain later host or distribution frontiers.
 
+## First production R3F hook properties
+
+First-hook evidence is adapter API evidence layered on top of the R01-R08 read-only R3F frame-consumer contract.
+
+For the first explicit-Runtime hook in [ADR-0010](adr/0010-r3f-hook-explicit-runtime.md), implementation evidence should establish at least:
+
+### H01 — Actual R3F invokes the production hook source
+
+The proof mounts a component using the production hook under actual `@react-three/fiber` frame delivery.
+
+A fake local frame callback or test-only reimplementation is insufficient.
+
+### H02 — Exactly one semantic snapshot read per delivered hook frame
+
+For one hook consumer and one delivered R3F frame, the production hook calls `runtime.getSnapshot()` exactly once.
+
+It must not combine multiple independently-read semantic observations.
+
+### H03 — Hook does not advance semantic lifecycle
+
+The production hook does not call `runtime.tick()` or another lifecycle-advancement path.
+
+R3F frame delta does not become WIF semantic time.
+
+### H04 — Existing semantic snapshot is forwarded unchanged
+
+The callback receives the same semantic snapshot object/value returned by the Runtime read for that frame.
+
+The hook does not fabricate, rename, omit, ease, or project semantic fields into a competing R3F-specific semantic state.
+
+### H05 — R3F delta is forwarded unchanged without semantic effect
+
+The callback receives the delivered R3F frame delta.
+
+Changing that delta while WIF semantic time is held fixed does not alter Runtime semantic state.
+
+### H06 — Presentation callback freshness follows React re-render
+
+When a component re-renders with a different presentation callback, the next delivered R3F frame invokes the latest callback.
+
+The first hook does not require a second WIF-owned callback-ref/effect lifecycle to achieve this.
+
+### H07 — Explicit Runtime freshness follows React re-render
+
+When a component re-renders with a different Runtime argument, the next delivered R3F frame reads the new Runtime.
+
+The hook does not dispose the previous Runtime or start lifecycle scheduling for the replacement Runtime.
+
+### H08 — Multiple hook consumers remain read-only
+
+Adding more production hook consumers for one Runtime does not change semantic lifecycle speed or Runtime state between WIF lifecycle-time inputs.
+
+### H09 — Unmount removes observation without disposing Runtime
+
+Unmounting a hook consumer stops that R3F frame subscription through normal R3F lifecycle behavior.
+
+The Runtime remains caller-owned and usable after consumer unmount.
+
+### H10 — Presentation callback failures propagate
+
+If the presentation callback throws, the production hook does not swallow, translate, or convert the failure into semantic state.
+
+This property does not freeze stable error wording or a public error class.
+
+### H11 — First hook does not widen into deferred React/R3F policy
+
+The production hook contains no:
+
+- Runtime context/provider acquisition;
+- React semantic-state mirror;
+- public render-priority argument;
+- R3F RootState/XR callback payload;
+- Runtime construction/disposal;
+- semantic scheduler/clock ownership;
+- presentation-eased semantic feedback.
+
+Mechanical evidence may guard these boundaries.
+
+### H12 — Source qualification remains isolated from package authority
+
+The exact production adapter source may be staged into the isolated R3F fixture so it resolves against that fixture's locked dependencies.
+
+The proof must verify that the staged source originates from the production source.
+
+This qualification does not create or require a root package manifest, final workspace topology, public export map, peer dependency range, or RSC packaging claim.
+
+### First-hook evidence boundaries
+
+H01-H12 do not establish:
+
+- a public package-root `useFlowFrame` export;
+- a React Runtime provider;
+- context fallback;
+- final TypeScript types;
+- render-priority support;
+- R3F RootState/XR forwarding;
+- frameloop/invalidate policy;
+- package/workspace layout;
+- npm peer dependency ranges;
+- `"use client"` preservation or Next.js/RSC compatibility.
+
+Those remain later adapter/distribution frontiers.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
