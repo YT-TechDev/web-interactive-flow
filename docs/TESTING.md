@@ -736,6 +736,93 @@ H01-H12 do not establish:
 
 Those remain later adapter/distribution frontiers.
 
+## Package artifact and export properties
+
+Package artifact evidence is distribution evidence. It is separate from the O/P core corpus and the T/F/L/Q/D/W/R/H host and adapter evidence.
+
+For the first package topology in [ADR-0011](adr/0011-first-package-export-topology.md), implementation evidence should establish at least:
+
+### K01 — Framework-neutral install/import isolation
+
+A clean consumer fixture with no React or R3F installed can install the packed WIF artifact and import the package root successfully.
+
+The root import must not require or resolve `@react-three/fiber`.
+
+### K02 — Explicit R3F subpath
+
+A separate consumer fixture with the selected qualified R3F host peer can import the package `./r3f` subpath and exercise the production `useFlowFrame` behavior against actual R3F.
+
+The R3F adapter is not re-exported from the package root.
+
+### K03 — Internal package paths remain encapsulated
+
+Known implementation paths such as `bridge/internal.mjs` are not valid package-name imports.
+
+The export map, not the repository file tree, defines the public package surface.
+
+### K04 — Packaged Wasm export is byte-correct
+
+The installed package's `./core.wasm` subpath resolves to the staged Wasm artifact.
+
+Its bytes match the qualified Wasm build input used to construct the package.
+
+### K05 — Wasm acquisition remains caller-owned
+
+A consumer obtains/resolves the packaged Wasm resource, constructs its own `Response` or `Promise<Response>`, and passes it to production `compileFlowModule()`.
+
+The package artifact introduces no implicit fetch, CDN, URL-selection, or global-cache behavior.
+
+### K06 — Production source provenance is preserved
+
+Copied production JavaScript modules used by package facades are byte-equivalent to the audited repository production sources unless the file is an explicitly generated facade/metadata file.
+
+Copied Wasm is byte-equivalent to the qualified build artifact.
+
+Package staging must not silently create a second implementation.
+
+### K07 — Packed file set is explicitly bounded
+
+The package construction/qualification inspects the `npm pack` artifact and verifies that only the authorized release files are present.
+
+Repository tests, tools, generated research fixtures, MoonBit source, and unrelated project files are not accidentally published.
+
+### K08 — Root facade contains no hidden R3F coupling
+
+The root facade and all modules reachable solely from the root import contain no R3F adapter import and require no R3F peer to resolve.
+
+A clean no-R3F consumer fixture is the primary behavioral witness; mechanical source/package-graph guards may supplement it.
+
+### K09 — R3F remains an optional host peer
+
+Package metadata must not make `@react-three/fiber` mandatory for framework-neutral install/use.
+
+The first package qualification must keep exact test-fixture versions distinct from any later public compatibility-range claim.
+
+No direct React or Three.js peer is added unless WIF production source imports or independently requires it.
+
+### K10 — Distribution nonclaims remain explicit
+
+The first package qualification does not establish:
+
+- final package name;
+- stable semver compatibility;
+- broad R3F peer-version support;
+- TypeScript declaration strategy;
+- CommonJS/dual-package support;
+- universal browser bundler handling for `.wasm`;
+- provider/context;
+- package split/workspace topology;
+- package-owned network acquisition;
+- RSC/`"use client"` compatibility.
+
+Those require later distribution evidence.
+
+### Package evidence boundaries
+
+K01-K10 qualify one local packed artifact topology before publication.
+
+They do not themselves authorize npm publishing or claim compatibility with package managers/bundlers that were not directly exercised.
+
 ## Validation-boundary cases
 
 The following are not part of the valid normalized trace corpus:
