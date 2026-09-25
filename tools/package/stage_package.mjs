@@ -99,6 +99,8 @@ export async function stagePackageArtifact({
     ],
     peerDependencies: {
       "@react-three/fiber": r3fPeerVersion,
+      react: "19.3.0",
+      three: "0.186.1",
     },
     peerDependenciesMeta: {
       "@react-three/fiber": {
