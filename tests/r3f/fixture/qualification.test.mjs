@@ -79,19 +79,16 @@ function FrameProbe({
   observations,
 }) {
   useFrame((_, delta) => {
-    const snapshot = runtime.getSnapshot();
-    const presentedSnapshot = {
-      ...snapshot,
-      selected: "C",
-      transition:
-        snapshot.transition === null
-          ? null
-          : { ...snapshot.transition, rawProgress: 0.75 },
+    const firstSnapshot = runtime.getSnapshot();
+    const secondSnapshot = runtime.getSnapshot();
+    const snapshot = {
+      ...firstSnapshot,
+      transition: secondSnapshot.transition,
     };
 
     observations.push({
       label,
-      snapshot: presentedSnapshot,
+      snapshot,
       delta,
       // Presentation-only derived data. It must never feed back into Runtime.
       presentationValue:
