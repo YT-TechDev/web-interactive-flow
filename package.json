@@ -1,0 +1,8 @@
+{
+  "name": "web-interactive-flow",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./r3f": "./bridge/useFlowFrame.mjs"
+  }
+}
