@@ -154,6 +154,160 @@
     results.abortSignalCleanupIsSafe = { count };
   }
 
+  {
+    const unrelated = document.createElement("div");
+    document.body.append(unrelated);
+    let count = 0;
+    const handler = () => {
+      count += 1;
+    };
+    window.addEventListener("wheel", handler);
+    unrelated.dispatchEvent(wheel());
+    results.windowObservesDescendantWheel = { count };
+    window.removeEventListener("wheel", handler);
+    unrelated.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const first = document.createElement("div");
+    const second = document.createElement("div");
+    parent.append(first, second);
+    document.body.append(parent);
+    const counts = { first: 0, second: 0 };
+    first.addEventListener("wheel", () => {
+      counts.first += 1;
+    });
+    second.addEventListener("wheel", () => {
+      counts.second += 1;
+    });
+    first.dispatchEvent(wheel());
+    results.disjointSiblingTargetsStayScoped = counts;
+    parent.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    const order = [];
+    child.addEventListener("wheel", (event) => {
+      order.push("child-first");
+      event.stopPropagation();
+    });
+    child.addEventListener("wheel", () => {
+      order.push("child-second");
+    });
+    parent.addEventListener("wheel", () => {
+      order.push("parent");
+    });
+    child.dispatchEvent(wheel());
+    results.stopPropagationDoesNotStopSameTargetListeners = { order };
+    parent.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    const order = [];
+    child.addEventListener("wheel", (event) => {
+      order.push("child-first");
+      event.stopImmediatePropagation();
+    });
+    child.addEventListener("wheel", () => {
+      order.push("child-second");
+    });
+    parent.addEventListener("wheel", () => {
+      order.push("parent");
+    });
+    child.dispatchEvent(wheel());
+    results.stopImmediatePropagationSuppressesLaterListeners = { order };
+    parent.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    let parentRequests = 0;
+    child.addEventListener("wheel", (event) => {
+      event.preventDefault();
+    }, { passive: false });
+    parent.addEventListener("wheel", (event) => {
+      if (!event.defaultPrevented) parentRequests += 1;
+    }, { passive: false });
+    child.dispatchEvent(wheel());
+    results.defaultPreventedGateWorksOnlyWhenCancellationSucceeds = {
+      parentRequests,
+    };
+    parent.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    let parentRequests = 0;
+    child.addEventListener("wheel", (event) => {
+      event.preventDefault();
+    }, { passive: false });
+    parent.addEventListener("wheel", (event) => {
+      if (!event.defaultPrevented) parentRequests += 1;
+    }, { passive: false });
+    const event = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: false,
+      deltaY: 1,
+    });
+    child.dispatchEvent(event);
+    results.defaultPreventedGateFailsForNonCancelableEvent = {
+      parentRequests,
+      defaultPrevented: event.defaultPrevented,
+    };
+    parent.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    let parentRequests = 0;
+    child.addEventListener("wheel", () => {
+      // Prevention intentionally disabled.
+    }, { passive: false });
+    parent.addEventListener("wheel", (event) => {
+      if (!event.defaultPrevented) parentRequests += 1;
+    }, { passive: false });
+    child.dispatchEvent(wheel());
+    results.defaultPreventedGateFailsWhenPreventionDisabled = {
+      parentRequests,
+    };
+    parent.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    const order = [];
+    parent.addEventListener("wheel", () => {
+      order.push("parent-capture");
+    }, { capture: true });
+    child.addEventListener("wheel", () => {
+      order.push("child-bubble");
+    });
+    child.dispatchEvent(wheel());
+    results.captureChangesOrderButNotMultiplicity = { order };
+    parent.remove();
+  }
+
   document.documentElement.setAttribute(
     "data-wif-wheel-research",
     encodeURIComponent(JSON.stringify(results)),
