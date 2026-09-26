@@ -568,10 +568,11 @@ async function main() {
     assert.ok(
       escapeMoves.some(
         (event) =>
-          event.targetId === "none" &&
-          event.hasCapture === true,
+          event.targetId === "none-content" &&
+          event.targetHasCapture === true &&
+          event.currentTargetHasCapture === false,
       ),
-      "direct-manipulation pointer movement outside visual bounds should remain routed through implicit pointer capture in the qualified witness",
+      "movement outside visual bounds should remain routed to the implicitly captured hit target rather than the observing ancestor",
     );
     assert.ok(
       eventsFor(
