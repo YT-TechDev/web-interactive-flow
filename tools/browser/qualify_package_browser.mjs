@@ -17,6 +17,15 @@ const exec = promisify(execFile);
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const FIXTURE = path.join(ROOT, "tests/browser/package-fixture");
 const NAME = "wif-package-qualification";
+const MINIMUM_SAFE_ROLLUP_VERSION = [4, 59, 0];
+
+function isSafeRollupVersion(version) {
+  assert.match(version, /^\d+\.\d+\.\d+$/);
+  const parts = version.split(".").map(Number);
+  return parts.some((part, index) => part > MINIMUM_SAFE_ROLLUP_VERSION[index]
+    && parts.slice(0, index).every((value, prior) => value === MINIMUM_SAFE_ROLLUP_VERSION[prior]))
+    || parts.every((part, index) => part === MINIMUM_SAFE_ROLLUP_VERSION[index]);
+}
 
 async function run(command, args, cwd) {
   return exec(command, args, { cwd, maxBuffer: 8 * 1024 * 1024 });
@@ -54,6 +63,17 @@ export async function qualifyPackageBrowser() {
   const tarball = path.join(packs, packed.filename);
   await cp(FIXTURE, consumer, { recursive: true });
   await run("npm", ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], consumer);
+  const fixtureManifest = JSON.parse(await readFile(path.join(FIXTURE, "package.json"), "utf8"));
+  const installedVite = JSON.parse(await readFile(path.join(consumer, "node_modules/vite/package.json"), "utf8"));
+  const installedRollup = JSON.parse(await readFile(path.join(consumer, "node_modules/rollup/package.json"), "utf8"));
+  const installedPlatformRollup = JSON.parse(await readFile(
+    path.join(consumer, "node_modules/@rollup/rollup-linux-x64-gnu/package.json"), "utf8",
+  ));
+  assert.equal(installedVite.version, fixtureManifest.devDependencies.vite);
+  assert.ok(isSafeRollupVersion(installedRollup.version),
+    `installed Rollup ${installedRollup.version} must be >= ${MINIMUM_SAFE_ROLLUP_VERSION.join(".")}`);
+  assert.equal(installedPlatformRollup.version, installedRollup.version);
+  console.log(`Qualification dependencies: Vite ${installedVite.version}; Rollup ${installedRollup.version}; ${installedPlatformRollup.name} ${installedPlatformRollup.version}; Node ${process.versions.node}`);
   await installLocalTarball({ run, consumerRoot: consumer, tarballPath: tarball });
 
   const installed = path.join(consumer, "node_modules", NAME);
@@ -100,7 +120,7 @@ export async function qualifyPackageBrowser() {
   const browser = await run(process.execPath, [path.join(ROOT, "tools/browser/qualify_real_browser.mjs"), buildRoot], ROOT);
   process.stdout.write(browser.stdout);
   process.stderr.write(browser.stderr);
-  console.log(`Package-aware qualification PASS (Vite 7.1.7; tarball ${path.basename(tarball)})`);
+  console.log(`Package-aware qualification PASS (Vite ${fixtureManifest.devDependencies.vite}; tarball ${path.basename(tarball)})`);
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }

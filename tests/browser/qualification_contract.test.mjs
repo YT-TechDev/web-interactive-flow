@@ -21,6 +21,21 @@ const configUrl = new URL("tests/browser/package-fixture/vite.config.mjs", root)
 const harnessUrl = new URL("tools/browser/qualify_package_browser.mjs", root);
 const browserUrl = new URL("tools/browser/qualify_real_browser.mjs", root);
 const serverUrl = new URL("tools/browser/qualification_server.mjs", root);
+const QUALIFIED_VITE_VERSION = "7.3.1";
+const MINIMUM_SAFE_ROLLUP_VERSION = "4.59.0";
+
+function compareVersions(left, right) {
+  const parse = (version) => {
+    assert.match(version, /^\d+\.\d+\.\d+$/, `expected an exact semantic version, received ${version}`);
+    return version.split(".").map(Number);
+  };
+  const leftParts = parse(left);
+  const rightParts = parse(right);
+  for (let index = 0; index < 3; index += 1) {
+    if (leftParts[index] !== rightParts[index]) return leftParts[index] - rightParts[index];
+  }
+  return 0;
+}
 
 function verifyWitness({ fixture, manifest, lock, config, harness, browser, server }) {
   assert.match(fixture, /from "wif-package-qualification"/);
@@ -39,11 +54,15 @@ function verifyWitness({ fixture, manifest, lock, config, harness, browser, serv
   assert.doesNotMatch(fixture, /universal (?:bundler|vite) compatibility/i);
 
   const pkg = JSON.parse(manifest);
-  assert.equal(pkg.devDependencies.vite, "7.1.7");
+  assert.equal(pkg.devDependencies.vite, QUALIFIED_VITE_VERSION);
   assert.equal(Object.keys(pkg.devDependencies).length, 1);
   const locked = JSON.parse(lock);
-  assert.equal(locked.packages["node_modules/vite"].version, "7.1.7");
-  assert.equal(locked.packages[""].devDependencies.vite, "7.1.7");
+  assert.equal(locked.packages["node_modules/vite"].version, QUALIFIED_VITE_VERSION);
+  assert.equal(locked.packages[""].devDependencies.vite, QUALIFIED_VITE_VERSION);
+  const rollupVersion = locked.packages["node_modules/rollup"].version;
+  assert.ok(compareVersions(rollupVersion, MINIMUM_SAFE_ROLLUP_VERSION) >= 0,
+    `resolved Rollup ${rollupVersion} must be >= ${MINIMUM_SAFE_ROLLUP_VERSION}`);
+  assert.equal(locked.packages["node_modules/@rollup/rollup-linux-x64-gnu"].version, rollupVersion);
   assert.match(config, /assetsInlineLimit:\s*0/);
   assert.match(harness, /stagePackageArtifact\(/);
   assert.match(harness, /npm", \["pack"/);
@@ -82,7 +101,7 @@ const mutants = [
   ["06 dev server", "harness", (s) => s.replace('["run", "build"]', '["run", "dev"]')],
   ["07 package-owned fetch", "fixture", (s) => s.replace("compileFlowModule(fetch(wasmUrl))", "compileFlowModule(wasmUrl)")],
   ["08 fake production seams", "fixture", (s) => s.replace("createFlowRuntime(module,", "fakeRuntime(")],
-  ["10 ranged Vite", "manifest", (s) => s.replace('"vite": "7.1.7"', '"vite": "^7.1.7"')],
+  ["10 ranged Vite", "manifest", (s) => s.replace(`"vite": "${QUALIFIED_VITE_VERSION}"`, `"vite": "^${QUALIFIED_VITE_VERSION}"`)],
   ["11 universal compatibility", "fixture", (s) => `${s}\n// universal bundler compatibility`],
 ];
 
