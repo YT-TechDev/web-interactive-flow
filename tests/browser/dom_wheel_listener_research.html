@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF DOM wheel listener research</title>
+</head>
+<body>
+<script>
+(() => {
+  const results = {};
+
+  function wheel() {
+    return new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaY: 1,
+    });
+  }
+
+  {
+    const handler = (event) => event.preventDefault();
+    document.addEventListener("wheel", handler);
+    const event = wheel();
+    const dispatchResult = document.dispatchEvent(event);
+    results.documentOmittedPassive = {
+      defaultPrevented: event.defaultPrevented,
+      dispatchResult,
+    };
+    document.removeEventListener("wheel", handler);
+  }
+
+  {
+    const handler = (event) => event.preventDefault();
+    document.addEventListener("wheel", handler, { passive: false });
+    const event = wheel();
+    const dispatchResult = document.dispatchEvent(event);
+    results.documentExplicitNonPassive = {
+      defaultPrevented: event.defaultPrevented,
+      dispatchResult,
+    };
+    document.removeEventListener("wheel", handler);
+  }
+
+  {
+    const target = document.createElement("div");
+    document.body.append(target);
+    const handler = (event) => event.preventDefault();
+    target.addEventListener("wheel", handler);
+    const event = wheel();
+    const dispatchResult = target.dispatchEvent(event);
+    results.elementOmittedPassive = {
+      defaultPrevented: event.defaultPrevented,
+      dispatchResult,
+    };
+    target.removeEventListener("wheel", handler);
+    target.remove();
+  }
+
+  {
+    const target = document.createElement("div");
+    document.body.append(target);
+    const handler = (event) => event.preventDefault();
+    target.addEventListener("wheel", handler, { passive: true });
+    const event = wheel();
+    const dispatchResult = target.dispatchEvent(event);
+    results.elementExplicitPassive = {
+      defaultPrevented: event.defaultPrevented,
+      dispatchResult,
+    };
+    target.removeEventListener("wheel", handler);
+    target.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    const order = [];
+    const parentSeen = [];
+    const childHandler = (event) => {
+      order.push("child");
+      event.preventDefault();
+    };
+    const parentHandler = (event) => {
+      order.push("parent");
+      parentSeen.push(event.defaultPrevented);
+    };
+    child.addEventListener("wheel", childHandler, { passive: false });
+    parent.addEventListener("wheel", parentHandler, { passive: false });
+    const event = wheel();
+    child.dispatchEvent(event);
+    results.preventDefaultDoesNotStopPropagation = {
+      order,
+      parentSawDefaultPrevented: parentSeen[0] ?? null,
+      finalDefaultPrevented: event.defaultPrevented,
+    };
+    child.removeEventListener("wheel", childHandler);
+    parent.removeEventListener("wheel", parentHandler);
+    parent.remove();
+  }
+
+  {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.append(child);
+    document.body.append(parent);
+    const order = [];
+    child.addEventListener("wheel", () => order.push("child"));
+    parent.addEventListener("wheel", () => order.push("parent"));
+    child.dispatchEvent(wheel());
+    results.nestedListenersReceiveSameBubblingEvent = {
+      order,
+      count: order.length,
+    };
+    parent.remove();
+  }
+
+  {
+    const target = document.createElement("div");
+    let count = 0;
+    target.addEventListener("wheel", () => {
+      count += 1;
+    });
+    document.body.append(target);
+    target.remove();
+    target.dispatchEvent(wheel());
+    results.detachedTargetRetainsListenerUntilCleanup = { count };
+  }
+
+  {
+    const target = document.createElement("div");
+    let count = 0;
+    const handler = () => {
+      count += 1;
+    };
+    target.addEventListener("wheel", handler);
+    target.removeEventListener("wheel", handler);
+    target.removeEventListener("wheel", handler);
+    target.dispatchEvent(wheel());
+    results.repeatedExplicitRemovalIsSafe = { count };
+  }
+
+  {
+    const target = document.createElement("div");
+    let count = 0;
+    const controller = new AbortController();
+    target.addEventListener("wheel", () => {
+      count += 1;
+    }, { signal: controller.signal });
+    controller.abort();
+    controller.abort();
+    target.dispatchEvent(wheel());
+    results.abortSignalCleanupIsSafe = { count };
+  }
+
+  document.documentElement.setAttribute(
+    "data-wif-wheel-research",
+    encodeURIComponent(JSON.stringify(results)),
+  );
+})();
+</script>
+</body>
+</html>
