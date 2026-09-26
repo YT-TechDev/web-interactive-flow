@@ -668,6 +668,146 @@ The classic WebDriver held-key probe produced only one observed non-repeat keydo
 
 The research environment did not create a real IME composition session. Standards evidence therefore constrains future composition policy, but current browser qualification does not claim IME coverage.
 
+
+## DOM keyboard-listener properties
+
+DOM keyboard-listener evidence is host lifecycle/routing evidence layered above the KB01-KB08 normalized keyboard ownership contract in [ADR-0013](adr/0013-dom-keyboard-default-action-ownership.md).
+
+For the first listener boundary in [ADR-0014](adr/0014-dom-keyboard-listener-explicit-target.md), implementation evidence should establish at least:
+
+### KBL01 — EventTarget ownership is explicit
+
+The binding consumes an explicitly supplied/owned `EventTarget`.
+
+It must not silently choose `window`, `document`, an inferred flow root, the currently focused element, or another global target.
+
+Trusted browser evidence should show that a focused descendant on the explicit event path reaches the binding while an unrelated focused element outside that path does not.
+
+### KBL02 — Binding owns exactly one keydown listener
+
+One binding installs one ordinary `keydown` listener.
+
+Listener count must not grow merely because one event is delivered.
+
+The first listener does not establish capture-phase ownership.
+
+### KBL03 — Cleanup is explicit, isolated, and repeat-safe
+
+Cleanup removes only the listener installed by that binding.
+
+Calling cleanup repeatedly must not remove unrelated listeners or another WIF binding.
+
+A trusted event delivered after cleanup must no longer reach the cleaned-up binding.
+
+DOM detachment is not cleanup.
+
+A detached-target lifecycle witness may use synthetic dispatch if it is clearly labeled as lifecycle evidence rather than physical-keyboard evidence.
+
+### KBL04 — Raw KeyboardEvent reaches replaceable resolver
+
+The caller-supplied resolver receives the delivered host keyboard event before semantic request ownership.
+
+Listener mechanics do not hard-code:
+
+- key maps;
+- `key` / `code` choice;
+- repeat policy;
+- composition policy;
+- modifier policy;
+- native-control classification;
+- ignore selectors.
+
+Synthetic repeat/composition models may prove policy placement, but must not be described as physical repeat or real IME evidence.
+
+### KBL05 — Resolver decline/failure occurs before semantic request
+
+A resolver decline produces no Runtime request and no WIF default-action suppression.
+
+Resolver failure propagates or fails closed according to the implementation boundary before any semantic request is issued.
+
+An invalid produced intent is a validation/policy failure, not an ordinary known-request rejection.
+
+### KBL06 — One produced intent delegates exactly once
+
+For one listener invocation, one valid `next` / `previous` resolver result produces exactly one corresponding ADR-0013 ownership call / Runtime request.
+
+The listener does not retry or replay based on focus, cancelability, `defaultPrevented`, or semantic snapshot state.
+
+### KBL07 — Keyboard passivity remains distinct from semantic acceptance
+
+The first keyboard listener must not rely on wheel's top-level default-passive exception as though it applied to `keydown`.
+
+Qualification should retain two browser witnesses when prevention matters:
+
+1. ordinary keydown registration can successfully cancel the qualified default after accepted semantic disposition;
+2. an explicit `passive: true` mutant still permits the semantic request to be accepted but prevents successful `preventDefault()` and leaves the native default available.
+
+This proves that semantic acceptance and browser cancellation remain distinct.
+
+### KBL08 — defaultPrevented remains resolver-visible host state
+
+Listener mechanics do not universally translate `event.defaultPrevented === true` into semantic decline.
+
+The resolver may choose to decline such an event or intentionally map it.
+
+Qualification should preserve evidence that already-prevented state does not itself become Runtime semantic truth.
+
+### KBL09 — Propagation is not semantic deduplication
+
+The first listener does not call `stopPropagation()` or `stopImmediatePropagation()` to manufacture single-delivery ownership.
+
+Capture phase is not selected as a deduplication mechanism.
+
+Mechanical source evidence may guard these boundaries.
+
+### KBL10 — Overlapping bindings have an explicit non-guarantee
+
+Qualification must preserve a counterexample with overlapping explicit keyboard bindings on one bubbling path.
+
+Under a valid zero-duration/zero-cooldown Runtime, one trusted key event can be observed by an inner and outer binding and produce two accepted semantic requests.
+
+The qualified research witness observed:
+
+```text
+inner binding:
+  Runtime A -> B
+  accepted
+  defaultPrevented false -> true
+
+outer binding:
+  receives same event
+  defaultPreventedBefore = true
+  Runtime B -> C
+  accepted
+```
+
+Final selected phase: `C`.
+
+A future implementation or documentation must not claim one semantic request per DOM keyboard event across overlapping bindings unless a separate ownership mechanism is researched and qualified.
+
+### DOM keyboard-listener evidence boundaries
+
+KBL01-KBL10 do not establish:
+
+- one canonical raw key map;
+- `key` versus `code` public mapping;
+- physical repeat policy;
+- real IME/composition behavior;
+- modifier policy;
+- native-control classifier;
+- universal `defaultPrevented` arbitration;
+- overlapping-binding deduplication;
+- Shadow DOM/composed-path ownership;
+- focus management;
+- accessibility conformance;
+- React hook/component API;
+- AbortSignal public lifecycle API;
+- final adapter name/signature;
+- package export layout;
+- broad cross-browser compatibility.
+
+Those remain later host-policy, adapter-API, accessibility, or distribution frontiers.
+
 ## DOM wheel-listener properties
 
 DOM wheel-listener evidence is host lifecycle/routing evidence layered above the W01-W08 normalized-intent ownership contract. It must not redefine semantic request eligibility or import a raw wheel gesture algorithm into the listener layer.

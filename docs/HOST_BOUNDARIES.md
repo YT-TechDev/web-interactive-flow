@@ -208,6 +208,46 @@ Focus remains host/application/browser state. Semantic phase selection does not 
 
 The qualified Chrome/WebDriver research for ADR-0013 establishes bounded native-default and Runtime-disposition evidence only. It does not establish physical keyboard-repeat behavior, real IME coverage, keyboard-layout equivalence, broad browser compatibility, or accessibility certification.
 
+
+### First DOM keyboard-listener boundary
+
+The first DOM keyboard-listener boundary is governed by [ADR-0014](adr/0014-dom-keyboard-listener-explicit-target.md).
+
+It layers listener ownership above the ADR-0013 normalized keyboard default-action boundary without standardizing a raw keyboard mapping algorithm.
+
+The first keyboard listener requires an explicitly supplied/owned DOM `EventTarget`. It does not silently select `window`, `document`, an inferred flow root, the active element, or another global target.
+
+Listener lifetime is explicit host ownership:
+
+- the binding owns the keydown listener it installs;
+- cleanup removes that binding's listener;
+- cleanup is repeat-safe and must not remove unrelated listeners;
+- DOM detachment does not count as cleanup.
+
+For each delivered `keydown`, the listener passes the host event to caller-supplied raw policy. That resolver may decline or produce one normalized `next` / `previous` intent. A valid produced intent is delegated exactly once to ADR-0013.
+
+The listener itself does not select or encode:
+
+- default keys;
+- `key` versus `code`;
+- repeat handling;
+- IME/composition handling;
+- modifier handling;
+- editable/actionable target classification;
+- ignore selectors;
+- native-control ownership;
+- already-`defaultPrevented` arbitration.
+
+The listener does not inspect semantic Runtime snapshots to predict request eligibility. Boundary, transition, cooldown, lock, and selected-phase rules remain Runtime-owned.
+
+The first keyboard listener uses ordinary bubbling keydown routing. Keyboard does not inherit the wheel event system's top-level default-passive special case. A binding that may request ADR-0013 native-default suppression must not run its keydown handler as a passive listener, because `preventDefault()` cannot take effect in that context.
+
+The listener does not call `stopPropagation()` or `stopImmediatePropagation()`, and capture phase is not used to manufacture semantic single-delivery ownership.
+
+The first listener explicitly does **not** guarantee one semantic request per DOM event when multiple WIF keyboard bindings overlap on one bubbling path. Qualified trusted-browser research demonstrated one keydown producing two accepted requests through nested inner/outer bindings under a valid zero-duration/zero-cooldown Runtime.
+
+Overlapping-binding arbitration, Shadow DOM/composed-path ownership, focus/accessibility policy, default raw keyboard policy, React ergonomics, final public API shape, and package export remain later host-policy frontiers.
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
