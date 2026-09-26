@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF pointer Runtime ownership research</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    body { padding: 24px; }
+    .region {
+      width: 380px;
+      height: 180px;
+      overflow-y: auto;
+      border: 2px solid;
+      margin-bottom: 28px;
+      overscroll-behavior: contain;
+    }
+    .content {
+      height: 900px;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    #sequence { touch-action: auto; }
+    #rejected { touch-action: none; }
+    #multi { touch-action: none; }
+    #mouse { touch-action: none; }
+  </style>
+</head>
+<body>
+  <div id="sequence" class="region"><div id="sequence-content" class="content">cancel then fresh owned gesture</div></div>
+  <div id="rejected" class="region"><div id="rejected-content" class="content">semantic rejection</div></div>
+  <div id="multi" class="region"><div id="multi-content" class="content">multi-pointer invalidation</div></div>
+  <div id="mouse" class="region"><div id="mouse-content" class="content">mouse control</div></div>
+  <pre id="qualification-output"></pre>
+  <script type="module" src="/fixture/main.mjs"></script>
+</body>
+</html>
