@@ -89,6 +89,7 @@ jobs:
         run: |
           node --test tests/research/*.test.mjs
           node tools/browser/research_dom_wheel_listener.mjs
+          node tools/browser/research_raw_wheel_traces.mjs
 
       - name: Install isolated R3F qualification fixture
         run: npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
