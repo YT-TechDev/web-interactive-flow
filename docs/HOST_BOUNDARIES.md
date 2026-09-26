@@ -248,6 +248,39 @@ The first listener explicitly does **not** guarantee one semantic request per DO
 
 Overlapping-binding arbitration, Shadow DOM/composed-path ownership, focus/accessibility policy, default raw keyboard policy, React ergonomics, final public API shape, and package export remain later host-policy frontiers.
 
+
+### Overlapping DOM binding arbitration
+
+Overlapping DOM binding behavior is governed by [ADR-0015](adr/0015-no-implicit-dom-binding-arbitration.md).
+
+WIF does not implicitly arbitrate independently installed wheel, keyboard, or future DOM bindings merely because they observe the same host `Event`.
+
+Independent bindings remain independent unless a later explicit arbitration contract is separately authorized.
+
+Current DOM integration must not silently use any of the following as universal semantic ownership:
+
+- `defaultPrevented`;
+- first-observer Event claiming;
+- first-produced-intent Event claiming;
+- first-accepted global Event claiming;
+- hidden first-accepted per-Runtime Event claiming;
+- persistent Event-object WeakSet/WeakMap identity;
+- Event mutation markers;
+- process-global binding registries;
+- `stopPropagation()` or `stopImmediatePropagation()`;
+- capture-phase winner selection;
+- implicit nearest-target or `composedPath()` winner selection.
+
+The same host Event may validly reach different Runtime instances. An accepted request in one Runtime does not imply rejection or suppression in another Runtime.
+
+A research-only per-Runtime accepted claim can suppress duplicate same-Runtime navigation, but it is not an implicit WIF rule. Trusted evidence showed that two opposite-intent bindings on the same EventTarget reach different final semantic phases when only listener registration order is reversed. DOM listener order is therefore not authorized as hidden semantic priority.
+
+Event object identity is also not treated as a one-dispatch identifier. A synthetic Event object may be dispatched again after one dispatch completes, so persistent identity-based claims require additional explicit ownership evidence.
+
+Applications that install overlapping bindings currently own arbitration. They may avoid overlap, make policies mutually exclusive, or coordinate ownership explicitly in application code.
+
+If WIF later provides arbitration, the only surviving architectural direction from current research is an explicitly caller-owned arbitration domain/scope. Its API, participation rules, priority, dispatch identity, Runtime policy, path policy, and Shadow DOM behavior remain unselected.
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
