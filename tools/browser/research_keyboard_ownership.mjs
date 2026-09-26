@@ -419,7 +419,7 @@ async function main() {
     cases.linkEnter = await snapshot(sessionId, deadline);
     assertTrustedKeydown(
       requireOneTargetEvent(cases.linkEnter, "link"),
-      { key: "Enter", code: "Enter", targetId: "link" },
+      { key: "Enter", code: "NumpadEnter", targetId: "link" },
     );
     assert.equal(
       cases.linkEnter.linkClicks,
