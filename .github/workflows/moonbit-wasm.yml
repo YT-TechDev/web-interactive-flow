@@ -67,6 +67,11 @@ jobs:
       - name: Test DOM wheel ownership
         run: node --test tests/bridge/wheel_ownership.test.mjs
 
+      - name: Research DOM wheel listener boundary
+        run: |
+          node --test tests/research/dom_wheel_listener.test.mjs
+          node tools/browser/research_dom_wheel_listener.mjs
+
       - name: Install isolated R3F qualification fixture
         run: npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
 
