@@ -1,175 +1,63 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
+import path from "node:path";
 
-const ROOT = new URL("../../", import.meta.url);
+import { validateQualificationRoutes } from "./package_qualification_support.mjs";
 
-const PAGE = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>WIF real-browser qualification</title>
-    <script>
-      window.__WIF_QUALIFICATION__ = {
-        state: "pending",
-        details: null,
-      };
-
-      function recordBootstrapFailure(kind, value) {
-        if (window.__WIF_QUALIFICATION__.state === "pass") {
-          return;
-        }
-
-        const message =
-          value instanceof Error
-            ? value.message
-            : String(value ?? kind);
-
-        window.__WIF_QUALIFICATION__ = {
-          state: "fail",
-          details: { kind, message },
-        };
-      }
-
-      window.addEventListener("error", (event) => {
-        recordBootstrapFailure("window-error", event.error ?? event.message);
-      });
-
-      window.addEventListener("unhandledrejection", (event) => {
-        recordBootstrapFailure("unhandled-rejection", event.reason);
-      });
-    </script>
-    <script type="module" src="/qualification.mjs"></script>
-  </head>
-  <body>WIF qualification</body>
-</html>
-`;
-
-const ROUTES = new Map([
-  [
-    "/",
-    {
-      contentType: "text/html; charset=utf-8",
-      body: async () => Buffer.from(PAGE),
-    },
-  ],
-  [
-    "/qualification.mjs",
-    {
-      contentType: "text/javascript; charset=utf-8",
-      body: async () =>
-        readFile(new URL("../../tests/browser/qualification_fixture.mjs", import.meta.url)),
-    },
-  ],
-  [
-    "/bridge/module_compiler.mjs",
-    {
-      contentType: "text/javascript; charset=utf-8",
-      body: async () => readFile(new URL("../../bridge/module_compiler.mjs", import.meta.url)),
-    },
-  ],
-  [
-    "/bridge/internal.mjs",
-    {
-      contentType: "text/javascript; charset=utf-8",
-      body: async () => readFile(new URL("../../bridge/internal.mjs", import.meta.url)),
-    },
-  ],
-  [
-    "/bridge/runtime.mjs",
-    {
-      contentType: "text/javascript; charset=utf-8",
-      body: async () => readFile(new URL("../../bridge/runtime.mjs", import.meta.url)),
-    },
-  ],
-  [
-    "/bridge/clock.mjs",
-    {
-      contentType: "text/javascript; charset=utf-8",
-      body: async () => readFile(new URL("../../bridge/clock.mjs", import.meta.url)),
-    },
-  ],
-  [
-    "/bridge/frame_scheduler.mjs",
-    {
-      contentType: "text/javascript; charset=utf-8",
-      body: async () => readFile(new URL("../../bridge/frame_scheduler.mjs", import.meta.url)),
-    },
-  ],
-  [
-    "/core.wasm",
-    {
-      contentType: "application/wasm",
-      body: async () =>
-        readFile(new URL("../../_build/wasm/debug/build/core/core.wasm", import.meta.url)),
-    },
-  ],
+const TYPES = new Map([
+  [".html", "text/html; charset=utf-8"],
+  [".js", "text/javascript; charset=utf-8"],
+  [".css", "text/css; charset=utf-8"],
+  [".wasm", "application/wasm"],
 ]);
 
-function send(res, statusCode, contentType, body) {
-  res.writeHead(statusCode, {
-    "Content-Type": contentType,
-    "Cache-Control": "no-store",
-  });
-  res.end(body);
-}
-
-export function createQualificationServer() {
+export function createQualificationServer(outputRoot, allowedRoutes) {
+  if (typeof outputRoot !== "string" || !path.isAbsolute(outputRoot)) {
+    throw new Error("qualification output root must be absolute");
+  }
+  validateQualificationRoutes(allowedRoutes);
+  const routes = new Map(allowedRoutes);
+  const root = path.resolve(outputRoot);
   const server = createServer(async (req, res) => {
     if (req.method !== "GET") {
-      send(res, 405, "text/plain; charset=utf-8", "method not allowed");
+      res.writeHead(405).end("method not allowed");
       return;
     }
-
-    const url = new URL(req.url ?? "/", "http://127.0.0.1");
-    const route = ROUTES.get(url.pathname);
-
-    if (route === undefined) {
-      send(res, 404, "text/plain; charset=utf-8", "not found");
+    const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://127.0.0.1").pathname);
+    const relative = routes.get(pathname);
+    if (relative === undefined) {
+      res.writeHead(404).end("not found");
       return;
     }
-
+    const target = path.resolve(root, relative);
+    if (target !== root && !target.startsWith(`${root}${path.sep}`)) {
+      res.writeHead(404).end("not found");
+      return;
+    }
     try {
-      const body = await route.body();
-      send(res, 200, route.contentType, body);
-    } catch (error) {
-      send(
-        res,
-        500,
-        "text/plain; charset=utf-8",
-        error instanceof Error ? error.message : String(error),
-      );
+      if (!(await stat(target)).isFile()) throw new Error("not a file");
+      const body = await readFile(target);
+      res.writeHead(200, {
+        "Content-Type": TYPES.get(path.extname(target)) ?? "application/octet-stream",
+        "Cache-Control": "no-store",
+      }).end(body);
+    } catch {
+      res.writeHead(404).end("not found");
     }
   });
-
   return {
     async start() {
       await new Promise((resolve, reject) => {
         server.once("error", reject);
         server.listen(0, "127.0.0.1", resolve);
       });
-
       const address = server.address();
-      if (address === null || typeof address === "string") {
-        throw new Error("qualification server did not expose a TCP address");
-      }
-
+      if (!address || typeof address === "string") throw new Error("missing address");
       return `http://127.0.0.1:${address.port}`;
     },
-
     async close() {
-      if (!server.listening) {
-        return;
-      }
-
-      await new Promise((resolve, reject) => {
-        server.close((error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        });
-      });
+      if (server.listening) await new Promise((resolve, reject) =>
+        server.close((error) => error ? reject(error) : resolve()));
     },
   };
 }
