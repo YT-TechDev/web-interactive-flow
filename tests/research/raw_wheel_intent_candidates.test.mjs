@@ -7,6 +7,11 @@ function signOnlyY(event) {
   return null;
 }
 
+function guardedSignOnlyY(event) {
+  if (event.ctrlKey === true) return null;
+  return signOnlyY(event);
+}
+
 function signOnlyX(event) {
   if (event.deltaX > 0) return "next";
   if (event.deltaX < 0) return "previous";
@@ -144,6 +149,14 @@ test("H6 evidence: a delta-only resolver cannot distinguish modifier-bearing whe
 
   assert.equal(signOnlyY(ordinary), "next");
   assert.equal(signOnlyY(modified), "next");
+});
+
+test("H6 candidate: ctrlKey guard declines modified wheel before direction mapping", () => {
+  const ordinary = { deltaX: 0, deltaY: 50, deltaMode: 0, ctrlKey: false };
+  const modified = { deltaX: 0, deltaY: 50, deltaMode: 0, ctrlKey: true };
+
+  assert.equal(guardedSignOnlyY(ordinary), "next");
+  assert.equal(guardedSignOnlyY(modified), null);
 });
 
 test("large accelerated-looking deltas do not provide gesture cardinality", () => {
