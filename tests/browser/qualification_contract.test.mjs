@@ -21,7 +21,7 @@ const configUrl = new URL("tests/browser/package-fixture/vite.config.mjs", root)
 const harnessUrl = new URL("tools/browser/qualify_package_browser.mjs", root);
 const browserUrl = new URL("tools/browser/qualify_real_browser.mjs", root);
 const serverUrl = new URL("tools/browser/qualification_server.mjs", root);
-const QUALIFIED_VITE_VERSION = "7.3.1";
+const QUALIFIED_VITE_VERSION = "7.3.6";
 const MINIMUM_SAFE_ROLLUP_VERSION = "4.59.0";
 
 function compareVersions(left, right) {
