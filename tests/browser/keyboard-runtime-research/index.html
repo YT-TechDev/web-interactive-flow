@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF normalized keyboard ownership research</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    #flow-root {
+      width: 620px;
+      margin: 24px;
+      padding: 16px;
+      border: 2px solid;
+    }
+    #flow-scroller {
+      width: 440px;
+      height: 160px;
+      overflow-y: auto;
+      border: 1px solid;
+    }
+    #flow-scroller-content { height: 1400px; }
+    .row { margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <div id="flow-root">
+    <div id="flow-scroller" tabindex="0">
+      <div id="flow-scroller-content">flow-owned scroller</div>
+    </div>
+    <button id="native-button" class="row" type="button">native button</button>
+    <input id="native-input" class="row" type="text" value="">
+  </div>
+  <pre id="qualification-output"></pre>
+  <script type="module" src="/fixture/main.mjs"></script>
+</body>
+</html>
