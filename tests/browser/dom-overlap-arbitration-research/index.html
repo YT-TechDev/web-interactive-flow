@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF DOM overlap arbitration research</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    section {
+      margin: 18px;
+      padding: 14px;
+      border: 1px solid;
+    }
+    .focusable {
+      display: block;
+      padding: 10px;
+      border: 1px dashed;
+    }
+    .nested {
+      padding: 18px;
+      border: 1px solid;
+    }
+  </style>
+</head>
+<body>
+  <section>
+    <div id="same-target-next-first" class="focusable" tabindex="0">
+      same target — next registered first
+    </div>
+    <div id="same-target-previous-first" class="focusable" tabindex="0">
+      same target — previous registered first
+    </div>
+  </section>
+
+  <section id="independent-outer" class="nested">
+    independent outer
+    <div id="independent-inner" class="nested focusable" tabindex="0">
+      independent inner
+    </div>
+  </section>
+
+  <section id="same-runtime-outer" class="nested">
+    same runtime outer
+    <div id="same-runtime-inner" class="nested focusable" tabindex="0">
+      same runtime inner
+    </div>
+  </section>
+
+  <section id="fallback-outer" class="nested">
+    fallback outer
+    <div id="fallback-inner" class="nested focusable" tabindex="0">
+      fallback inner
+    </div>
+  </section>
+
+  <section>
+    <div id="propagation-stop" class="focusable" tabindex="0">
+      stopPropagation mutant
+    </div>
+    <div id="propagation-immediate" class="focusable" tabindex="0">
+      stopImmediatePropagation mutant
+    </div>
+  </section>
+
+  <div id="synthetic-reuse-target"></div>
+
+  <pre id="research-output"></pre>
+  <script type="module" src="/fixture/main.mjs"></script>
+</body>
+</html>
