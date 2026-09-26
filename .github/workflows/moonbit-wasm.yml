@@ -70,6 +70,21 @@ jobs:
       - name: Qualify production DOM wheel listener
         run: node --test tests/dom/wheel_listener.test.mjs
 
+      - name: Qualify production DOM wheel listener in real Chrome
+        shell: bash
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+          elif command -v chromium >/dev/null 2>&1; then
+            chromium --version
+          else
+            echo "No Chrome/Chromium executable found on runner" >&2
+            exit 1
+          fi
+          chromedriver --version
+          node tools/browser/qualify_dom_wheel_listener_browser.mjs
+          node --test tests/browser/dom_listener_qualification_contract.test.mjs
+
       - name: Research DOM wheel listener boundary
         run: |
           node --test tests/research/*.test.mjs
