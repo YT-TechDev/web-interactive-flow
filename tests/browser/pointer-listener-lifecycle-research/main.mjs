@@ -368,6 +368,78 @@ try {
       return caseSnapshot(cases[name]);
     },
 
+    runDetachedSyntheticProbe() {
+      const detached = document.createElement("div");
+      detached.id = "detached-pointer-probe";
+      document.body.appendChild(detached);
+
+      const runtime = createRuntime();
+      const observations = [];
+      const decisions = [];
+      const policy = createResearchGesturePolicy({
+        label: "detached-pointer-probe",
+        observations,
+      });
+
+      const binding = bindPointerLifecycle({
+        label: "detached-pointer-probe",
+        target: detached,
+        runtime,
+        policy,
+        decisions,
+      });
+
+      detached.remove();
+
+      const first = new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        pointerId: 77,
+        pointerType: "touch",
+        isPrimary: true,
+        clientX: 10,
+        clientY: 200,
+      });
+
+      const firstDispatchResult = detached.dispatchEvent(first);
+      const afterDetachedDispatch = {
+        observations: observations.map((entry) => ({ ...entry })),
+        policy: policy.snapshot(),
+        runtime: runtime.getSnapshot(),
+      };
+
+      binding.cleanup();
+
+      const second = new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        pointerId: 78,
+        pointerType: "touch",
+        isPrimary: true,
+        clientX: 10,
+        clientY: 300,
+      });
+
+      const secondDispatchResult = detached.dispatchEvent(second);
+      const afterCleanupDispatch = {
+        observations: observations.map((entry) => ({ ...entry })),
+        policy: policy.snapshot(),
+        runtime: runtime.getSnapshot(),
+      };
+
+      runtime.dispose();
+
+      return {
+        isConnected: detached.isConnected,
+        firstIsTrusted: first.isTrusted,
+        firstDispatchResult,
+        afterDetachedDispatch,
+        secondIsTrusted: second.isTrusted,
+        secondDispatchResult,
+        afterCleanupDispatch,
+      };
+    },
+
     snapshotAll() {
       return {
         scope: caseSnapshot(scope),
