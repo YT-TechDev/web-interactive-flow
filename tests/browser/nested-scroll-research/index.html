@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF nested scroll coexistence research</title>
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    #outer {
+      width: 520px;
+      height: 360px;
+      overflow: auto;
+      margin: 24px;
+      border: 2px solid;
+    }
+
+    #outer-content {
+      min-height: 1800px;
+      padding-top: 500px;
+      box-sizing: border-box;
+    }
+
+    #inner {
+      width: 420px;
+      height: 180px;
+      overflow-y: auto;
+      overscroll-behavior-y: auto;
+      margin-left: 32px;
+      border: 1px solid;
+      box-sizing: border-box;
+    }
+
+    #inner-content {
+      width: 100%;
+      height: 720px;
+    }
+  </style>
+</head>
+<body>
+  <div id="outer">
+    <div id="outer-content">
+      <div id="inner">
+        <div id="inner-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const outer = document.getElementById("outer");
+      const inner = document.getElementById("inner");
+      const innerContent = document.getElementById("inner-content");
+      const events = [];
+      let preventAtOuter = false;
+
+      function metrics(element) {
+        const style = getComputedStyle(element);
+        return {
+          scrollTop: element.scrollTop,
+          scrollHeight: element.scrollHeight,
+          clientHeight: element.clientHeight,
+          maxScrollTop: Math.max(0, element.scrollHeight - element.clientHeight),
+          overflowY: style.overflowY,
+          overscrollBehaviorY: style.overscrollBehaviorY,
+        };
+      }
+
+      function setInnerPosition(position) {
+        const max = Math.max(0, inner.scrollHeight - inner.clientHeight);
+
+        if (position === "start") {
+          inner.scrollTop = 0;
+          return;
+        }
+
+        if (position === "middle") {
+          inner.scrollTop = Math.floor(max / 2);
+          return;
+        }
+
+        if (position === "near-end") {
+          inner.scrollTop = Math.max(0, max - 20);
+          return;
+        }
+
+        if (position === "end") {
+          inner.scrollTop = max;
+          return;
+        }
+
+        if (typeof position === "number") {
+          inner.scrollTop = position;
+          return;
+        }
+
+        throw new Error("unknown inner position");
+      }
+
+      window.__WIF_NESTED_SCROLL_RESEARCH__ = {
+        configure({
+          overflowY = "auto",
+          overscrollBehaviorY = "auto",
+          contentHeight = 720,
+          innerPosition = "middle",
+          outerScrollTop = 300,
+          preventDefault = false,
+        } = {}) {
+          events.length = 0;
+          preventAtOuter = preventDefault;
+          inner.style.overflowY = overflowY;
+          inner.style.overscrollBehaviorY = overscrollBehaviorY;
+          innerContent.style.height = contentHeight + "px";
+
+          outer.scrollTop = outerScrollTop;
+          setInnerPosition(innerPosition);
+
+          return this.snapshot();
+        },
+
+        snapshot() {
+          return {
+            inner: metrics(inner),
+            outer: metrics(outer),
+            events: events.map((event) => ({ ...event })),
+            preventAtOuter,
+          };
+        },
+      };
+
+      outer.addEventListener("wheel", (event) => {
+        const before = event.defaultPrevented;
+
+        if (preventAtOuter) {
+          event.preventDefault();
+        }
+
+        events.push({
+          isTrusted: event.isTrusted,
+          deltaX: event.deltaX,
+          deltaY: event.deltaY,
+          deltaMode: event.deltaMode,
+          cancelable: event.cancelable,
+          defaultPreventedBefore: before,
+          defaultPreventedAfter: event.defaultPrevented,
+          targetId: event.target instanceof Element ? event.target.id : null,
+          currentTargetId:
+            event.currentTarget instanceof Element ? event.currentTarget.id : null,
+          timeStamp: event.timeStamp,
+        });
+      }, { passive: false });
+
+      window.__WIF_NESTED_SCROLL_RESEARCH__.configure();
+    })();
+  </script>
+</body>
+</html>
