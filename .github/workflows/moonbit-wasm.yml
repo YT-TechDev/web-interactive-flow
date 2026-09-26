@@ -95,6 +95,7 @@ jobs:
           node tools/browser/research_raw_wheel_traces.mjs
           node tools/browser/research_nested_scroll_coexistence.mjs
           node tools/browser/research_keyboard_ownership.mjs
+          node tools/browser/research_normalized_keyboard_runtime_ownership.mjs
 
       - name: Install isolated R3F qualification fixture
         run: npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
