@@ -36,6 +36,12 @@
             events: events.map((event) => ({ ...event })),
             scrollTop: target.scrollTop,
             scrollLeft: target.scrollLeft,
+            viewport: {
+              devicePixelRatio: window.devicePixelRatio,
+              innerWidth: window.innerWidth,
+              innerHeight: window.innerHeight,
+              visualViewportScale: window.visualViewport?.scale ?? null,
+            },
           };
         },
       };
