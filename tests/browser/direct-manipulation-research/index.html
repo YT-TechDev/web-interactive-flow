@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF direct manipulation research</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    body { padding: 24px; }
+    .region {
+      width: 360px;
+      height: 180px;
+      overflow-y: auto;
+      border: 2px solid;
+      margin-bottom: 28px;
+      overscroll-behavior: contain;
+    }
+    .content {
+      height: 900px;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    #auto { touch-action: auto; }
+    #none { touch-action: none; }
+    #pan-y { touch-action: pan-y; }
+    #mutate { touch-action: auto; }
+    #mouse { touch-action: none; }
+  </style>
+</head>
+<body>
+  <div id="auto" class="region"><div id="auto-content" class="content">auto</div></div>
+  <div id="none" class="region"><div id="none-content" class="content">none</div></div>
+  <div id="pan-y" class="region"><div id="pan-y-content" class="content">pan-y</div></div>
+  <div id="mutate" class="region"><div id="mutate-content" class="content">mutate after down</div></div>
+  <div id="mouse" class="region"><div id="mouse-content" class="content">mouse control</div></div>
+  <pre id="output"></pre>
+  <script>
+    (() => {
+      const ids = ["auto", "none", "pan-y", "mutate", "mouse"];
+      const pointerEvents = [];
+      const touchEvents = [];
+      const scrollEvents = [];
+      let mutateOnPointerDown = false;
+
+      function elementId(value) {
+        return value instanceof Element ? value.id || value.parentElement?.id || null : null;
+      }
+
+      function pointerRecord(event, currentTarget) {
+        return {
+          type: event.type,
+          isTrusted: event.isTrusted,
+          pointerId: event.pointerId,
+          pointerType: event.pointerType,
+          isPrimary: event.isPrimary,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          buttons: event.buttons,
+          button: event.button,
+          cancelable: event.cancelable,
+          defaultPrevented: event.defaultPrevented,
+          targetId: elementId(event.target),
+          currentTargetId: currentTarget.id,
+          targetHasCapture:
+            event.target instanceof Element &&
+            typeof event.target.hasPointerCapture === "function"
+              ? event.target.hasPointerCapture(event.pointerId)
+              : null,
+          currentTargetHasCapture:
+            typeof currentTarget.hasPointerCapture === "function"
+              ? currentTarget.hasPointerCapture(event.pointerId)
+              : null,
+        };
+      }
+
+      function touchRecord(event, currentTarget) {
+        return {
+          type: event.type,
+          isTrusted: event.isTrusted,
+          cancelable: event.cancelable,
+          defaultPrevented: event.defaultPrevented,
+          targetId: elementId(event.target),
+          currentTargetId: currentTarget.id,
+          touches: Array.from(event.touches).map((touch) => ({
+            identifier: touch.identifier,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+          })),
+          changedTouches: Array.from(event.changedTouches).map((touch) => ({
+            identifier: touch.identifier,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+          })),
+        };
+      }
+
+      for (const id of ids) {
+        const element = document.getElementById(id);
+
+        for (const type of [
+          "pointerdown",
+          "pointermove",
+          "pointerup",
+          "pointercancel",
+          "gotpointercapture",
+          "lostpointercapture",
+        ]) {
+          element.addEventListener(type, (event) => {
+            if (id === "mutate" && type === "pointerdown" && mutateOnPointerDown) {
+              element.style.touchAction = "none";
+            }
+            pointerEvents.push(pointerRecord(event, element));
+          });
+        }
+
+        for (const type of ["touchstart", "touchmove", "touchend", "touchcancel"]) {
+          element.addEventListener(type, (event) => {
+            touchEvents.push(touchRecord(event, element));
+          }, { passive: true });
+        }
+
+        element.addEventListener("scroll", () => {
+          scrollEvents.push({
+            targetId: id,
+            scrollTop: element.scrollTop,
+          });
+        }, { passive: true });
+      }
+
+      window.__WIF_DIRECT_MANIPULATION_RESEARCH__ = {
+        reset() {
+          pointerEvents.length = 0;
+          touchEvents.length = 0;
+          scrollEvents.length = 0;
+          mutateOnPointerDown = false;
+
+          for (const id of ids) {
+            const element = document.getElementById(id);
+            element.scrollTop = 0;
+            if (id === "mutate") element.style.touchAction = "auto";
+          }
+
+          return this.snapshot();
+        },
+
+        enableMutationAfterPointerDown() {
+          mutateOnPointerDown = true;
+          return true;
+        },
+
+        rect(id) {
+          const element = document.getElementById(id);
+          const rect = element.getBoundingClientRect();
+          return {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+            centerX: rect.left + rect.width / 2,
+            centerY: rect.top + rect.height / 2,
+          };
+        },
+
+        snapshot() {
+          const regions = {};
+          for (const id of ids) {
+            const element = document.getElementById(id);
+            regions[id] = {
+              scrollTop: element.scrollTop,
+              scrollHeight: element.scrollHeight,
+              clientHeight: element.clientHeight,
+              touchAction: getComputedStyle(element).touchAction,
+            };
+          }
+
+          return {
+            pointerEvents: pointerEvents.map((event) => ({ ...event })),
+            touchEvents: touchEvents.map((event) => ({ ...event })),
+            scrollEvents: scrollEvents.map((event) => ({ ...event })),
+            regions,
+          };
+        },
+      };
+    })();
+  </script>
+</body>
+</html>
