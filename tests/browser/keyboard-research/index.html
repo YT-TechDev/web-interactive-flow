@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF keyboard native-default research</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    #flow-root {
+      width: 620px;
+      margin: 24px;
+      padding: 16px;
+      border: 2px solid;
+    }
+    #scroller {
+      width: 420px;
+      height: 140px;
+      overflow-y: auto;
+      border: 1px solid;
+    }
+    #scroller-content { height: 1200px; }
+    .row { margin: 12px 0; }
+  </style>
+</head>
+<body>
+  <div id="flow-root">
+    <div id="neutral" class="row" tabindex="0">neutral focus target</div>
+    <div id="scroller" class="row" tabindex="0">
+      <div id="scroller-content">scroll content</div>
+    </div>
+    <button id="button" class="row" type="button">button</button>
+    <a id="link" class="row" href="#destination">link</a>
+    <select id="select" class="row">
+      <option>alpha</option>
+      <option>beta</option>
+      <option>gamma</option>
+    </select>
+    <input id="input" class="row" type="text" value="">
+    <div id="editable" class="row" contenteditable="true"></div>
+    <button id="tab-start" class="row" type="button">tab start</button>
+    <button id="tab-next" class="row" type="button">tab next</button>
+    <div id="destination"></div>
+  </div>
+
+  <button id="outside" type="button">outside root</button>
+
+  <script>
+    (() => {
+      const root = document.getElementById("flow-root");
+      const scroller = document.getElementById("scroller");
+      const button = document.getElementById("button");
+      const link = document.getElementById("link");
+      const select = document.getElementById("select");
+      const input = document.getElementById("input");
+      const editable = document.getElementById("editable");
+
+      const rootEvents = [];
+      const windowEvents = [];
+      let buttonClicks = 0;
+      let linkClicks = 0;
+      let inputEvents = 0;
+      let editableInputEvents = 0;
+      let selectChanges = 0;
+      let preventRule = null;
+
+      function eventRecord(event, currentTargetLabel) {
+        return {
+          currentTargetLabel,
+          isTrusted: event.isTrusted,
+          key: event.key,
+          code: event.code,
+          repeat: event.repeat,
+          isComposing: event.isComposing,
+          ctrlKey: event.ctrlKey,
+          shiftKey: event.shiftKey,
+          altKey: event.altKey,
+          metaKey: event.metaKey,
+          cancelable: event.cancelable,
+          defaultPrevented: event.defaultPrevented,
+          targetId: event.target instanceof Element ? event.target.id : null,
+          activeElementId:
+            document.activeElement instanceof Element
+              ? document.activeElement.id
+              : null,
+          timeStamp: event.timeStamp,
+        };
+      }
+
+      root.addEventListener("keydown", (event) => {
+        const targetId =
+          event.target instanceof Element ? event.target.id : null;
+
+        if (
+          preventRule !== null &&
+          preventRule.targetId === targetId &&
+          preventRule.key === event.key
+        ) {
+          event.preventDefault();
+        }
+
+        rootEvents.push(eventRecord(event, "flow-root"));
+      });
+
+      window.addEventListener("keydown", (event) => {
+        windowEvents.push(eventRecord(event, "window"));
+      });
+
+      button.addEventListener("click", (event) => {
+        if (event.isTrusted) buttonClicks += 1;
+      });
+
+      link.addEventListener("click", (event) => {
+        if (event.isTrusted) linkClicks += 1;
+      });
+
+      input.addEventListener("input", (event) => {
+        if (event.isTrusted) inputEvents += 1;
+      });
+
+      editable.addEventListener("input", (event) => {
+        if (event.isTrusted) editableInputEvents += 1;
+      });
+
+      select.addEventListener("change", (event) => {
+        if (event.isTrusted) selectChanges += 1;
+      });
+
+      window.__WIF_KEYBOARD_RESEARCH__ = {
+        reset() {
+          rootEvents.length = 0;
+          windowEvents.length = 0;
+          buttonClicks = 0;
+          linkClicks = 0;
+          inputEvents = 0;
+          editableInputEvents = 0;
+          selectChanges = 0;
+          preventRule = null;
+          scroller.scrollTop = 0;
+          select.selectedIndex = 0;
+          input.value = "";
+          editable.textContent = "";
+          history.replaceState(null, "", location.pathname);
+          return this.snapshot();
+        },
+
+        focus(id) {
+          const element = document.getElementById(id);
+          if (!(element instanceof HTMLElement)) {
+            throw new Error("unknown focus target: " + id);
+          }
+          element.focus();
+          return document.activeElement === element;
+        },
+
+        setPreventRule(targetId, key) {
+          preventRule = { targetId, key };
+        },
+
+        snapshot() {
+          return {
+            rootEvents: rootEvents.map((event) => ({ ...event })),
+            windowEvents: windowEvents.map((event) => ({ ...event })),
+            buttonClicks,
+            linkClicks,
+            inputEvents,
+            editableInputEvents,
+            selectChanges,
+            inputValue: input.value,
+            editableText: editable.textContent,
+            selectedIndex: select.selectedIndex,
+            scrollerScrollTop: scroller.scrollTop,
+            activeElementId:
+              document.activeElement instanceof Element
+                ? document.activeElement.id
+                : null,
+            preventRule:
+              preventRule === null ? null : { ...preventRule },
+          };
+        },
+      };
+    })();
+  </script>
+</body>
+</html>
