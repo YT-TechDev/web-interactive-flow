@@ -27,11 +27,11 @@
   </style>
 </head>
 <body>
-  <div id="auto" class="region"><div class="content">auto</div></div>
-  <div id="none" class="region"><div class="content">none</div></div>
-  <div id="pan-y" class="region"><div class="content">pan-y</div></div>
-  <div id="mutate" class="region"><div class="content">mutate after down</div></div>
-  <div id="mouse" class="region"><div class="content">mouse control</div></div>
+  <div id="auto" class="region"><div id="auto-content" class="content">auto</div></div>
+  <div id="none" class="region"><div id="none-content" class="content">none</div></div>
+  <div id="pan-y" class="region"><div id="pan-y-content" class="content">pan-y</div></div>
+  <div id="mutate" class="region"><div id="mutate-content" class="content">mutate after down</div></div>
+  <div id="mouse" class="region"><div id="mouse-content" class="content">mouse control</div></div>
   <pre id="output"></pre>
   <script>
     (() => {
@@ -60,7 +60,12 @@
           defaultPrevented: event.defaultPrevented,
           targetId: elementId(event.target),
           currentTargetId: currentTarget.id,
-          hasCapture:
+          targetHasCapture:
+            event.target instanceof Element &&
+            typeof event.target.hasPointerCapture === "function"
+              ? event.target.hasPointerCapture(event.pointerId)
+              : null,
+          currentTargetHasCapture:
             typeof currentTarget.hasPointerCapture === "function"
               ? currentTarget.hasPointerCapture(event.pointerId)
               : null,
