@@ -281,6 +281,76 @@ Applications that install overlapping bindings currently own arbitration. They m
 
 If WIF later provides arbitration, the only surviving architectural direction from current research is an explicitly caller-owned arbitration domain/scope. Its API, participation rules, priority, dispatch identity, Runtime policy, path policy, and Shadow DOM behavior remain unselected.
 
+
+### First DOM direct-manipulation substrate
+
+The first DOM direct-manipulation event substrate is governed by [ADR-0016](adr/0016-pointer-events-direct-manipulation-substrate.md).
+
+WIF selects Pointer Events for the first direct-manipulation host boundary.
+
+This chooses event representation and lifecycle, not a WIF-wide swipe algorithm.
+
+The host boundary remains:
+
+```text
+author CSS / browser
+  touch-action
+      |
+      v
+PointerEvent lifecycle
+  pointerdown / pointermove
+  pointerup | pointercancel
+      |
+      v
+caller-owned gesture policy
+      |
+      +--> decline / canceled / invalid
+      |      -> no semantic request
+      |
+      +--> next | previous
+             |
+             v
+           Runtime
+      owns semantic eligibility
+```
+
+Application/author CSS owns browser direct-manipulation panning/zooming policy through `touch-action`. WIF does not move `touch-action` into semantic Runtime state and does not use PointerEvent `preventDefault()` as the first pan-ownership mechanism.
+
+A browser-canceled pointer sequence is a host lifecycle boundary. Accumulated gesture state for that sequence must not survive to produce stale semantic navigation.
+
+Pointer identity and routing remain host data:
+
+- `pointerId` is opaque browser-assigned identity;
+- `isPrimary` does not prove only one pointer is active;
+- pointer capture is host routing state;
+- qualified Chrome exposed implicit capture on the actual hit target rather than on an observing ancestor listener;
+- current evidence does not require explicit WIF `setPointerCapture()`.
+
+Pointer Events unify touch, mouse, pen, and other pointer classes as an event substrate, but WIF does not thereby assign those pointer types one universal gesture policy.
+
+The first boundary does not install simultaneous PointerEvent and TouchEvent navigation bindings by default. Qualified Chrome emitted both trusted streams for one injected touch sequence, and ADR-0015 prohibits silently hiding such overlap through global implicit deduplication.
+
+The following remain host/application policy rather than ADR-0016 authority:
+
+- gesture threshold;
+- axis and diagonal policy;
+- velocity/duration;
+- reversal and commit-point policy;
+- pointerType allowlist;
+- multi-pointer policy;
+- `isPrimary` filtering;
+- explicit pointer capture;
+- native-control/ignore policy;
+- listener target/lifecycle API;
+- default `touch-action` value;
+- overscroll policy;
+- Shadow DOM/composed-path ownership;
+- focus/accessibility behavior;
+- React direct-manipulation API;
+- package export.
+
+Once such caller-owned policy produces a normalized `next` or `previous`, the semantic Runtime remains the sole eligibility owner.
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
