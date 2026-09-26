@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WIF raw wheel trace research</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    #wheel-target {
+      width: 480px;
+      height: 320px;
+      overflow: auto;
+      margin: 40px;
+      border: 1px solid;
+    }
+    #wheel-content { height: 2400px; width: 1600px; }
+  </style>
+</head>
+<body>
+  <div id="wheel-target">
+    <div id="wheel-content"></div>
+  </div>
+  <script>
+    (() => {
+      const target = document.getElementById("wheel-target");
+      const events = [];
+
+      window.__WIF_RAW_WHEEL_TRACE__ = {
+        events,
+        reset() {
+          events.length = 0;
+          target.scrollTop = 800;
+          target.scrollLeft = 400;
+        },
+        snapshot() {
+          return {
+            events: events.map((event) => ({ ...event })),
+            scrollTop: target.scrollTop,
+            scrollLeft: target.scrollLeft,
+          };
+        },
+      };
+
+      target.scrollTop = 800;
+      target.scrollLeft = 400;
+
+      target.addEventListener("wheel", (event) => {
+        events.push({
+          isTrusted: event.isTrusted,
+          deltaX: event.deltaX,
+          deltaY: event.deltaY,
+          deltaZ: event.deltaZ,
+          deltaMode: event.deltaMode,
+          ctrlKey: event.ctrlKey,
+          shiftKey: event.shiftKey,
+          altKey: event.altKey,
+          metaKey: event.metaKey,
+          cancelable: event.cancelable,
+          defaultPrevented: event.defaultPrevented,
+          targetId: event.target instanceof Element ? event.target.id : null,
+          currentTargetId:
+            event.currentTarget instanceof Element ? event.currentTarget.id : null,
+          timeStamp: event.timeStamp,
+          momentumSupported: "momentum" in event,
+          momentum: "momentum" in event ? event.momentum : null,
+        });
+      }, { passive: true });
+    })();
+  </script>
+</body>
+</html>
