@@ -12,6 +12,9 @@ const DRIVER_PORT = 9525;
 const OVERALL_TIMEOUT_MS = 120_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 const CLEANUP_TIMEOUT_MS = 10_000;
+const SCROLL_SETTLE_TIMEOUT_MS = 2_000;
+const SCROLL_SETTLE_INTERVAL_MS = 50;
+const SCROLL_SETTLE_STABLE_SAMPLES = 4;
 
 const ROUTES = new Map([
   ["/", "tests/browser/pointer-runtime-research/index.html"],
@@ -292,6 +295,44 @@ async function resetObservations(sessionId, id, deadline) {
   );
 }
 
+async function waitForStableScrollTop(sessionId, id, deadline) {
+  const settleDeadline = Math.min(
+    deadline,
+    Date.now() + SCROLL_SETTLE_TIMEOUT_MS,
+  );
+
+  let previous = (await snapshot(sessionId, id, deadline)).scrollTop;
+  let stableSamples = 0;
+  const samples = [previous];
+
+  while (Date.now() < settleDeadline) {
+    await delay(SCROLL_SETTLE_INTERVAL_MS);
+
+    const current = (await snapshot(sessionId, id, deadline)).scrollTop;
+    samples.push(current);
+
+    if (current === previous) {
+      stableSamples += 1;
+
+      if (stableSamples >= SCROLL_SETTLE_STABLE_SAMPLES) {
+        return { scrollTop: current, samples };
+      }
+    } else {
+      previous = current;
+      stableSamples = 0;
+    }
+  }
+
+  throw new Error(
+    "scrollTop did not settle for " +
+      id +
+      " within " +
+      SCROLL_SETTLE_TIMEOUT_MS +
+      " ms: " +
+      JSON.stringify(samples),
+  );
+}
+
 async function setTouchAction(sessionId, id, value, deadline) {
   return control(
     sessionId,
@@ -538,7 +579,18 @@ async function main() {
       "browser-owned touch-action:auto gesture should scroll natively",
     );
 
-    const scrollAfterBrowserOwned = cases.browserOwned.scrollTop;
+    const settledBrowserOwned = await waitForStableScrollTop(
+      sessionId,
+      "sequence",
+      deadline,
+    );
+    const scrollAfterBrowserOwned = settledBrowserOwned.scrollTop;
+
+    console.log(
+      "Pointer Runtime browser-owned scroll settled:",
+      JSON.stringify(settledBrowserOwned),
+    );
+
     const newTouchAction = await setTouchAction(
       sessionId,
       "sequence",
