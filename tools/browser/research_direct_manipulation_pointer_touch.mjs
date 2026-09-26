@@ -554,6 +554,11 @@ async function main() {
     await reset(sessionId, deadline);
     cases.captureEscape = await performCaptureEscape(sessionId, deadline);
 
+    console.log(
+      "Direct-manipulation capture probe:",
+      JSON.stringify(cases.captureEscape),
+    );
+
     const escapeMoves = eventsFor(
       cases.captureEscape,
       "none",
