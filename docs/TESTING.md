@@ -1076,6 +1076,216 @@ OA01-OA10 do not establish:
 
 Under current authority, applications that install overlapping bindings own the arbitration problem.
 
+
+## DOM direct-manipulation Pointer Events properties
+
+Direct-manipulation evidence is DOM/Web host evidence governed by [ADR-0016](adr/0016-pointer-events-direct-manipulation-substrate.md).
+
+It selects the first event substrate and lifecycle boundary only. It does not authorize one universal gesture recognizer.
+
+### DM01 — Trusted PointerEvent lifecycle is primary evidence
+
+Browser ownership claims must use browser-generated trusted PointerEvents where native panning, pointer cancellation, capture, or multi-pointer behavior matters.
+
+Synthetic PointerEvents may supplement deterministic state-machine tests, but they are insufficient evidence for browser direct-manipulation ownership.
+
+Qualification should record at least:
+
+- `isTrusted`;
+- event type;
+- `pointerId`;
+- `pointerType`;
+- `isPrimary`;
+- coordinates;
+- cancelability/defaultPrevented;
+- target/currentTarget;
+- capture state where meaningful;
+- relevant scroll position.
+
+### DM02 — touch-action changes browser ownership without entering Runtime semantics
+
+Qualified browser evidence must retain the contrast:
+
+```text
+touch-action:auto
+  -> native scrolling occurs
+  -> pointercancel may terminate the pointer stream
+
+touch-action:none
+  -> native pan scrolling is suppressed
+  -> pointer movement remains observable
+  -> pointerup completes
+```
+
+An axis-specific witness such as `pan-y` may further qualify browser behavior.
+
+The proof must not replace this host/CSS ownership with PointerEvent `preventDefault()`.
+
+### DM03 — touch-action policy must exist before the active gesture
+
+Qualification should preserve the timing counterexample:
+
+```text
+gesture starts under touch-action:auto
+pointerdown handler changes style to none
+current gesture still scrolls natively
+pointercancel still occurs
+```
+
+A future implementation must not claim that changing `touch-action` after gesture start retroactively transfers browser ownership.
+
+### DM04 — pointercancel terminates accumulated host gesture state
+
+A canceled pointer sequence must not produce a later stale semantic request from accumulated coordinates or pointer identity.
+
+The qualified Runtime witness preserves:
+
+```text
+touch-action:auto
+native scroll
+pointercancel
+Runtime unchanged
+semantic request count = 0
+gesture state reset
+```
+
+A later fresh pointer sequence must be able to start from clean host state.
+
+The exact future commit point remains unselected.
+
+### DM05 — Runtime disposition remains semantic authority
+
+Once research/caller gesture policy produces a normalized intent, pointer lifecycle observations do not predict semantic eligibility.
+
+Qualification preserves both:
+
+```text
+next
+Runtime A -> B
+accepted
+```
+
+and:
+
+```text
+previous at A
+Runtime -> rejected
+Runtime remains A
+```
+
+No pointer/touch/CSS/capture state may replace Runtime disposition.
+
+### DM06 — multi-pointer state is host policy
+
+Qualification must preserve a trusted sequence containing both:
+
+```text
+touch pointer: isPrimary = true
+touch pointer: isPrimary = false
+```
+
+at the same time.
+
+This prevents `isPrimary` from becoming a false single-pointer theorem.
+
+A research recognizer may invalidate multi-pointer sequences to prove lifecycle reset, but that invalidation rule is not production authority.
+
+### DM07 — capture owner and listener observer remain distinct
+
+Qualification must preserve evidence that implicit pointer capture belongs to the actual pointer target rather than automatically to an ancestor observing the bubbling event.
+
+The qualified trace observed:
+
+```text
+event.target = child
+event.currentTarget = ancestor
+
+target.hasPointerCapture(pointerId) = true
+currentTarget.hasPointerCapture(pointerId) = false
+```
+
+Movement outside visual bounds remained routed to the captured target, followed by capture release.
+
+A future test must not infer capture ownership from listener `currentTarget`.
+
+Current evidence does not require an explicit WIF `setPointerCapture()` call.
+
+### DM08 — pointerId is opaque browser identity
+
+Qualification must not assume that an external input-injection identifier equals `PointerEvent.pointerId`.
+
+The research harness initially expected that equality and failed:
+
+```text
+injected touch id = 2
+browser PointerEvent.pointerId = 3
+```
+
+Tests may compare pointer identity consistently within the browser event stream, but must not manufacture cross-layer identity equivalence.
+
+### DM09 — dual PointerEvent/TouchEvent observation remains an overlap hazard
+
+Qualified Chrome evidence must preserve that one injected touch sequence produced both trusted PointerEvents and trusted TouchEvents.
+
+This evidence supports one first direct-manipulation WIF substrate.
+
+A future implementation must not bind both streams as independent navigation sources and then claim deduplication through an implicit global Event registry; ADR-0015 forbids that architecture.
+
+Legacy Touch Events remain reference/compatibility evidence only unless later authority explicitly adds a fallback.
+
+### DM10 — pointerType remains raw host policy
+
+Trusted controls should retain evidence that Pointer Events represent at least:
+
+- qualified touch input with `pointerType="touch"`;
+- qualified mouse input with `pointerType="mouse"`.
+
+Selecting Pointer Events as a substrate does not authorize one gesture policy across touch, mouse, pen, and other pointer classes.
+
+The first research Runtime witness may decline one pointer type to prove policy placement, but that choice is not a WIF-wide default.
+
+### DM11 — no PointerEvent cancellation theorem for pan ownership
+
+The qualified WIF-owned `touch-action:none` Runtime witness must remain valid without calling PointerEvent `preventDefault()`.
+
+Observed:
+
+```text
+normalized research intent = next
+Runtime accepted A -> B
+PointerEvent defaultPrevented = false
+native pan scroll did not advance
+```
+
+This distinguishes CSS direct-manipulation ownership from wheel/keyboard accepted-only default-action suppression.
+
+### DM12 — evidence limits stay explicit
+
+DM01-DM11 do not establish:
+
+- a production swipe/gesture algorithm;
+- threshold or axis defaults;
+- velocity/duration policy;
+- reversal policy;
+- pointerdown/move/up commit policy;
+- pointerType allowlist;
+- multi-pointer policy;
+- explicit capture policy;
+- native-control classifier;
+- listener target/lifecycle API;
+- one universal `touch-action` value;
+- overscroll policy;
+- Shadow DOM/composed-path ownership;
+- Safari/iOS compatibility;
+- physical-device equivalence;
+- pen behavior;
+- universal implicit-capture behavior;
+- accessibility conformance;
+- React pointer/touch API;
+- package export.
+
+Those remain later host-policy, compatibility, accessibility, adapter-API, or distribution frontiers.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.

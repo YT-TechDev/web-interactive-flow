@@ -39,3 +39,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0013 — DOM keyboard default-action suppression follows semantic acceptance](0013-dom-keyboard-default-action-ownership.md)
 - [ADR-0014 — First DOM keyboard listener uses explicit target and replaceable raw policy](0014-dom-keyboard-listener-explicit-target.md)
 - [ADR-0015 — Overlapping DOM bindings have no implicit WIF arbitration](0015-no-implicit-dom-binding-arbitration.md)
+- [ADR-0016 — Pointer Events are the first DOM direct-manipulation substrate](0016-pointer-events-direct-manipulation-substrate.md)
