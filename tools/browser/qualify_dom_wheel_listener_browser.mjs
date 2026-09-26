@@ -7,7 +7,9 @@ import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
-const REPOSITORY_ROOT = path.resolve(\n  fileURLToPath(new URL("../../", import.meta.url)),\n);
+const REPOSITORY_ROOT = path.resolve(
+  fileURLToPath(new URL("../../", import.meta.url)),
+);
 const QUALIFICATION_TIMEOUT_MS = 90_000;
 const WEBDRIVER_REQUEST_TIMEOUT_MS = 45_000;
 const CLEANUP_REQUEST_TIMEOUT_MS = 10_000;
