@@ -81,6 +81,33 @@ assert.deepEqual(results.abortSignalCleanupIsSafe, {
   count: 0,
 });
 
+assert.deepEqual(results.windowObservesDescendantWheel, {
+  count: 1,
+});
+assert.deepEqual(results.disjointSiblingTargetsStayScoped, {
+  first: 1,
+  second: 0,
+});
+assert.deepEqual(results.stopPropagationDoesNotStopSameTargetListeners, {
+  order: ["child-first", "child-second"],
+});
+assert.deepEqual(results.stopImmediatePropagationSuppressesLaterListeners, {
+  order: ["child-first"],
+});
+assert.deepEqual(results.defaultPreventedGateWorksOnlyWhenCancellationSucceeds, {
+  parentRequests: 0,
+});
+assert.deepEqual(results.defaultPreventedGateFailsForNonCancelableEvent, {
+  parentRequests: 1,
+  defaultPrevented: false,
+});
+assert.deepEqual(results.defaultPreventedGateFailsWhenPreventionDisabled, {
+  parentRequests: 1,
+});
+assert.deepEqual(results.captureChangesOrderButNotMultiplicity, {
+  order: ["parent-capture", "child-bubble"],
+});
+
 console.log(
   "Real-browser DOM wheel listener research PASS:",
   JSON.stringify({ browserCommand: command, results }),
