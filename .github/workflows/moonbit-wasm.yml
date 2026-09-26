@@ -69,7 +69,7 @@ jobs:
 
       - name: Research DOM wheel listener boundary
         run: |
-          node --test tests/research/dom_wheel_listener.test.mjs
+          node --test tests/research/*.test.mjs
           node tools/browser/research_dom_wheel_listener.mjs
 
       - name: Install isolated R3F qualification fixture
