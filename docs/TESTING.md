@@ -563,6 +563,111 @@ W01-W08 do not establish:
 
 Those remain later host-policy frontiers.
 
+
+## DOM keyboard default-action ownership properties
+
+DOM keyboard ownership evidence is host evidence for the already-normalized-intent boundary in [ADR-0013](adr/0013-dom-keyboard-default-action-ownership.md).
+
+It is separate from raw key mapping, listener lifecycle, focus management, accessibility policy, and the host-independent semantic corpus.
+
+### KB01 — Runtime rejection preserves browser default ownership
+
+For a valid normalized `next` or `previous` intent, if the semantic Runtime returns `rejected`, WIF does not call `preventDefault()`.
+
+Browser-native behavior associated with that key event remains available.
+
+The qualified Chrome witness demonstrates this with PageUp on a focused scroll container at the first semantic phase: normalized `previous` is rejected while native scrolling proceeds.
+
+### KB02 — Runtime acceptance precedes optional prevention
+
+For a valid normalized keyboard intent, semantic Runtime disposition is obtained before WIF requests native-default suppression.
+
+When the Runtime returns `accepted`, prevention is enabled, and the event is cancelable, WIF may call `preventDefault()`.
+
+The qualified Chrome witness demonstrates accepted `next` from phase A to B while the corresponding native PageDown scroll is suppressed.
+
+### KB03 — Cancelability is not semantic eligibility
+
+Event cancelability must not decide whether a normalized semantic request is accepted or rejected.
+
+A non-cancelable host event associated with an accepted request remains semantically accepted even though WIF cannot request cancellation through `preventDefault()`.
+
+Tests should keep semantic disposition and host cancellation observably distinct.
+
+### KB04 — Host decline occurs before semantic request
+
+A raw keyboard policy may decline an event before producing a normalized intent.
+
+A decline issues no Runtime request and no WIF native-default suppression request.
+
+Qualified browser evidence includes explicit decline preserving:
+
+- Space activation on a button;
+- printable text insertion in an input.
+
+### KB05 — Native keyboard defaults are target-sensitive
+
+Research evidence must not assume a key value alone establishes WIF ownership.
+
+The trusted Chrome witness records target-specific native behavior including:
+
+- PageDown scrolling on a focused scroll container;
+- Space activation on a button;
+- Enter activation on a link;
+- ArrowDown changing a select control;
+- printable-key text insertion;
+- Tab focus movement.
+
+Cancellation witnesses show that preventing `keydown` can suppress these native effects.
+
+### KB06 — Key meaning and physical-key identity remain distinct
+
+Research and future adapter tests must not treat `KeyboardEvent.key` and `KeyboardEvent.code` as interchangeable.
+
+Qualified evidence includes:
+
+- `key="a"` and `key="A"` sharing `code="KeyA"` under modifier change;
+- a WebDriver Enter action exposing `key="Enter"` with `code="NumpadEnter"` in the qualified Chrome environment.
+
+This evidence does not select a public mapping representation.
+
+### KB07 — Focus remains outside semantic ownership
+
+Semantic navigation does not itself move, restore, trap, or select DOM focus.
+
+The qualified accepted/rejected Runtime witness preserves focus on the same scroll container while semantic disposition changes.
+
+Native Tab focus movement and its cancellation are browser-host evidence, not Runtime flow state.
+
+### KB08 — Listener scope and raw policy remain bounded
+
+The first keyboard ownership theorem does not establish a production keyboard listener.
+
+Research demonstrated that a global/window observer receives trusted keyboard input from a focused control outside a narrower flow root while the explicit root does not.
+
+No default listener target, key map, repeat rule, IME/composition rule, modifier rule, actionable/editable classifier, ignore-selector API, propagation policy, or React keyboard API is authorized by KB01-KB08.
+
+### DOM keyboard evidence boundaries
+
+The current trusted-browser evidence is bounded to the qualified Chrome/ChromeDriver environment.
+
+It does not establish:
+
+- universal cross-browser keyboard behavior;
+- physical keyboard repeat rate or repeat timing;
+- real IME composition behavior;
+- keyboard-layout equivalence;
+- one canonical `key` or `code` mapping strategy;
+- a default WIF key list;
+- automatic focus movement/restoration;
+- WCAG conformance or screen-reader certification;
+- a production keyboard listener API;
+- React keyboard hook/component ergonomics.
+
+The classic WebDriver held-key probe produced only one observed non-repeat keydown and is not physical-repeat evidence.
+
+The research environment did not create a real IME composition session. Standards evidence therefore constrains future composition policy, but current browser qualification does not claim IME coverage.
+
 ## DOM wheel-listener properties
 
 DOM wheel-listener evidence is host lifecycle/routing evidence layered above the W01-W08 normalized-intent ownership contract. It must not redefine semantic request eligibility or import a raw wheel gesture algorithm into the listener layer.
