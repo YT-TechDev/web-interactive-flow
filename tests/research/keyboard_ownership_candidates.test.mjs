@@ -77,6 +77,14 @@ test("H5: key can change while physical code remains stable", () => {
   assert.equal(unshifted.code, shifted.code);
 });
 
+test("H5: one effective key meaning can arrive from different physical codes", () => {
+  const standardEnter = { key: "Enter", code: "Enter" };
+  const numpadEnter = { key: "Enter", code: "NumpadEnter" };
+
+  assert.equal(standardEnter.key, numpadEnter.key);
+  assert.notEqual(standardEnter.code, numpadEnter.code);
+});
+
 test("H6: cancelability cannot be semantic acceptance", () => {
   const acceptedCancelable = { disposition: "accepted", cancelable: true };
   const acceptedNonCancelable = { disposition: "accepted", cancelable: false };
