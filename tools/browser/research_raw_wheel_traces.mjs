@@ -14,6 +14,7 @@ const OVERALL_TIMEOUT_MS = 90_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 const CLEANUP_TIMEOUT_MS = 10_000;
 const ELEMENT_KEY = "element-6066-11e4-a52e-4f735466cecf";
+const WEBDRIVER_CONTROL_KEY = "\uE009";
 
 function createServerForFixture() {
   const server = createServer(async (request, response) => {
@@ -218,10 +219,62 @@ async function performWheel(
   );
 }
 
-function assertCommonEvent(event) {
+async function performCtrlWheel(
+  sessionId,
+  element,
+  { deltaX, deltaY, id },
+  deadline,
+) {
+  await webdriverRequest(
+    "POST",
+    "/session/" + sessionId + "/actions",
+    {
+      actions: [
+        {
+          type: "key",
+          id: id + "-keyboard",
+          actions: [
+            { type: "keyDown", value: WEBDRIVER_CONTROL_KEY },
+            { type: "pause", duration: 0 },
+            { type: "keyUp", value: WEBDRIVER_CONTROL_KEY },
+          ],
+        },
+        {
+          type: "wheel",
+          id: id + "-wheel",
+          actions: [
+            { type: "pause", duration: 0 },
+            {
+              type: "scroll",
+              x: 0,
+              y: 0,
+              deltaX,
+              deltaY,
+              duration: 0,
+              origin: element,
+            },
+            { type: "pause", duration: 0 },
+          ],
+        },
+      ],
+    },
+    remaining(deadline),
+  );
+}
+
+async function releaseActions(sessionId, deadline) {
+  await webdriverRequest(
+    "DELETE",
+    "/session/" + sessionId + "/actions",
+    undefined,
+    remaining(deadline),
+  );
+}
+
+function assertCommonEvent(event, { ctrlKey = false } = {}) {
   assert.equal(event.isTrusted, true);
   assert.equal(event.deltaMode, 0);
-  assert.equal(event.ctrlKey, false);
+  assert.equal(event.ctrlKey, ctrlKey);
   assert.equal(event.shiftKey, false);
   assert.equal(event.altKey, false);
   assert.equal(event.metaKey, false);
@@ -238,6 +291,7 @@ function summarizeTrace(trace) {
     events: trace.events,
     scrollTop: trace.scrollTop,
     scrollLeft: trace.scrollLeft,
+    viewport: trace.viewport,
   };
 }
 
@@ -258,6 +312,37 @@ async function collectCase(
   }
 
   return summarizeTrace(trace);
+}
+
+async function collectCtrlWheelCase(
+  sessionId,
+  element,
+  spec,
+  deadline,
+) {
+  await resetTrace(sessionId, deadline);
+  const before = await readTrace(sessionId, deadline);
+
+  try {
+    await performCtrlWheel(sessionId, element, spec, deadline);
+    await delay(100);
+    const after = await readTrace(sessionId, deadline);
+
+    assert.ok(after.events.length >= 1, spec.id + " produced no wheel events");
+    for (const event of after.events) {
+      assertCommonEvent(event, { ctrlKey: true });
+    }
+
+    return {
+      ...summarizeTrace(after),
+      viewportBefore: before.viewport,
+      viewportAfter: after.viewport,
+      viewportChanged:
+        JSON.stringify(before.viewport) !== JSON.stringify(after.viewport),
+    };
+  } finally {
+    await releaseActions(sessionId, deadline);
+  }
 }
 
 async function deleteSession(sessionId) {
@@ -355,6 +440,19 @@ async function main() {
       ),
     );
 
+    const ctrlModified = await collectCtrlWheelCase(
+      sessionId,
+      element,
+      {
+        id: "ctrl-y-positive",
+        deltaX: 0,
+        deltaY: 120,
+      },
+      deadline,
+    );
+
+    assert.ok(ctrlModified.events.every((event) => event.ctrlKey === true));
+
     const momentumExposure = Object.fromEntries(
       Object.entries(cases).map(([name, trace]) => [
         name,
@@ -367,7 +465,7 @@ async function main() {
 
     console.log(
       "Trusted virtualized raw wheel traces PASS:",
-      JSON.stringify({ cases, momentumExposure }),
+      JSON.stringify({ cases, ctrlModified, momentumExposure }),
     );
   } finally {
     if (sessionId !== null) await deleteSession(sessionId);
