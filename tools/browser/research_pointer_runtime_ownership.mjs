@@ -558,15 +558,17 @@ async function main() {
     assertRuntime(cases.freshOwned, "B");
     assertGestureReset(cases.freshOwned);
     assert.equal(cases.freshOwned.decisions.length, 1);
-    assert.deepEqual(cases.freshOwned.decisions[0], {
-      label: "sequence",
-      intent: "next",
-      disposition: "accepted",
-      eventType: "pointerup",
-      pointerId: 2,
-      pointerType: "touch",
-      defaultPrevented: false,
-    });
+    assert.equal(cases.freshOwned.decisions[0].label, "sequence");
+    assert.equal(cases.freshOwned.decisions[0].intent, "next");
+    assert.equal(cases.freshOwned.decisions[0].disposition, "accepted");
+    assert.equal(cases.freshOwned.decisions[0].eventType, "pointerup");
+    assert.equal(cases.freshOwned.decisions[0].pointerType, "touch");
+    assert.equal(cases.freshOwned.decisions[0].defaultPrevented, false);
+    assert.equal(
+      typeof cases.freshOwned.decisions[0].pointerId,
+      "number",
+      "PointerEvent.pointerId is browser-assigned identity and must not be equated with the CDP touch injection id",
+    );
     assert.equal(
       cases.freshOwned.scrollTop,
       scrollAfterBrowserOwned,
