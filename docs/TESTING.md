@@ -918,6 +918,164 @@ E01-E10 do not establish:
 
 Those remain later host-policy, adapter-API, or distribution frontiers.
 
+
+## Overlapping DOM binding arbitration properties
+
+Overlap-arbitration evidence is host-composition evidence governed by [ADR-0015](adr/0015-no-implicit-dom-binding-arbitration.md).
+
+It is shared by the wheel and keyboard listener boundaries.
+
+The current contract is a negative one:
+
+> independently installed overlapping WIF DOM bindings do not gain implicit semantic arbitration from Event identity, cancellation, propagation, listener order, Runtime identity, or path position.
+
+### OA01 — defaultPrevented is not universal ownership
+
+Tests must preserve counterexamples showing that `defaultPrevented` reports successful browser cancellation rather than WIF semantic ownership.
+
+At minimum, evidence should retain cases where:
+
+- cancellation cannot succeed;
+- prevention is disabled;
+- a later binding intentionally maps an already-default-prevented event.
+
+### OA02 — observation and intent production do not claim the Event
+
+Research evidence should preserve both:
+
+```text
+inner resolver declines
+outer resolver can still produce a useful request
+```
+
+and:
+
+```text
+inner produces a normalized request that Runtime rejects
+outer can still produce a different accepted request
+```
+
+A first-observer or first-produced-intent claim would erase these valid fallbacks.
+
+### OA03 — independent Runtimes remain independent
+
+One host Event may reach bindings backed by different Runtime instances.
+
+Qualification should preserve a witness in which both Runtimes independently accept:
+
+```text
+Runtime 1: A -> B
+Runtime 2: X -> Y
+```
+
+A global Event claim must not silently couple those state machines.
+
+### OA04 — per-Runtime accepted-only arbitration is not an implicit theorem
+
+Research may retain the bounded positive witness:
+
+```text
+same Runtime
+inner accepted A -> B
+outer suppressed
+final B
+```
+
+and the rejection-fallback witness:
+
+```text
+inner previous at A -> rejected
+outer next -> accepted
+final B
+```
+
+But qualification must also preserve the same-target registration-order counterexample.
+
+With the same target, same Runtime, same trusted event, and opposite intents:
+
+```text
+next registered first     -> final C
+previous registered first -> final A
+```
+
+Only listener order changes.
+
+A production implementation must not silently promote DOM listener order into semantic priority.
+
+### OA05 — Event object identity is not a one-dispatch identifier
+
+Research should preserve a synthetic lifecycle/arbitration witness in which the same Event object is dispatched twice after the first dispatch completes.
+
+A persistent Event/Runtime identity claim that accepts the first dispatch and suppresses the second demonstrates why WeakSet/WeakMap Event identity alone cannot be treated as one-dispatch authority.
+
+This evidence is synthetic and must not be described as trusted physical input.
+
+### OA06 — path proximity does not identify one binding owner
+
+Nearest-target/composed-path policies must retain counterexamples for:
+
+- multiple bindings sharing the same nearest EventTarget;
+- nearest resolver decline with a useful ancestor fallback.
+
+No Shadow DOM or composed-path public policy is established by this evidence.
+
+### OA07 — propagation mutation is not semantic arbitration
+
+Tests should preserve:
+
+- `stopPropagation()` does not suppress later same-target listeners;
+- `stopImmediatePropagation()` suppresses unrelated later listeners.
+
+A candidate that makes duplicate navigation disappear by broad host-listener suppression has widened event-system ownership rather than proved semantic arbitration.
+
+### OA08 — capture changes order, not ownership
+
+Capture-phase evidence must not be interpreted as semantic winner selection.
+
+A capture coordinator would require additional policy about resolver priority, Runtime identity, nested ownership, and fallback.
+
+### OA09 — no hidden process-global binding registry
+
+Mechanical/source evidence for production DOM adapters should reject hidden global registries or Event-claim tables that coordinate otherwise independent bindings.
+
+Any future shared coordination requires explicit repository authority.
+
+### OA10 — explicit arbitration scope remains a future direction only
+
+Research models may demonstrate independent explicit arbitration scopes without coupling.
+
+That does not authorize a production API.
+
+Future work must separately justify:
+
+- scope/group ownership;
+- binding participation;
+- winner priority;
+- semantic-acceptance policy;
+- dispatch identity;
+- same-target behavior;
+- nested fallback;
+- lifecycle;
+- Shadow DOM behavior.
+
+### Overlap-arbitration evidence boundaries
+
+OA01-OA10 do not establish:
+
+- a production arbitration coordinator;
+- a WeakSet/WeakMap implementation strategy;
+- Event mutation markers;
+- a public arbitration-group API;
+- a Runtime-keyed winner policy;
+- listener-order priority;
+- nearest-target priority;
+- capture ownership;
+- propagation takeover;
+- Shadow DOM/composed-path ownership;
+- one semantic request per DOM Event.
+
+Under current authority, applications that install overlapping bindings own the arbitration problem.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
