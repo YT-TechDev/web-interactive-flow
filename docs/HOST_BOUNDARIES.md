@@ -169,6 +169,45 @@ The first listener boundary still does not select:
 
 Those remain later host-policy frontiers.
 
+
+### First DOM keyboard default-action ownership
+
+The first normalized keyboard ownership boundary is governed by [ADR-0013](adr/0013-dom-keyboard-default-action-ownership.md).
+
+It receives an already-normalized `next` or `previous` intent associated with a keyboard host event and delegates exactly one corresponding request to the semantic Runtime.
+
+The Runtime remains the sole owner of known-request eligibility:
+
+- a `rejected` request does not trigger WIF native-default suppression;
+- an `accepted` request remains semantically accepted independently of event cancelability;
+- when prevention is enabled, an accepted request may call `preventDefault()` only when the supplied event is cancelable;
+- a failure before semantic disposition does not request default suppression.
+
+Raw keyboard ownership and mapping occur before this boundary.
+
+A host policy may decline an event before any semantic request is issued. Decline produces no WIF default suppression, allowing browser-native editing, control activation, focus navigation, scrolling, composition, or other host behavior to remain available.
+
+This ownership theorem does not select:
+
+- a default key map;
+- `KeyboardEvent.key` versus `KeyboardEvent.code`;
+- repeat policy;
+- IME/composition policy;
+- modifier policy;
+- editable/actionable target classification;
+- selector or ignore APIs;
+- listener target, installation, cleanup, capture, or propagation;
+- global/window defaults;
+- already-`defaultPrevented` arbitration;
+- focus movement or restoration;
+- roving tabindex or focus traps;
+- React keyboard hooks/components;
+- accessibility conformance.
+
+Focus remains host/application/browser state. Semantic phase selection does not itself move or restore DOM focus.
+
+The qualified Chrome/WebDriver research for ADR-0013 establishes bounded native-default and Runtime-disposition evidence only. It does not establish physical keyboard-repeat behavior, real IME coverage, keyboard-layout equivalence, broad browser compatibility, or accessibility certification.
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
