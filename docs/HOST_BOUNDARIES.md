@@ -123,6 +123,52 @@ A future listener that intends to suppress a default action must execute in a li
 
 Rejected requests preserving native default behavior at this layer is not a claim of complete native-scroll coexistence. Determining which wheel events a future DOM adapter owns remains a separate host-policy frontier.
 
+### First DOM wheel-listener boundary
+
+The first DOM wheel-listener boundary is governed by [ADR-0012](adr/0012-dom-wheel-listener-explicit-target.md).
+
+It layers listener ownership above the stateless ADR-0008 normalized-intent boundary without standardizing a raw wheel gesture algorithm.
+
+The first listener boundary requires an explicitly supplied/owned DOM `EventTarget`. It does not silently select a global target or infer a flow root or scroll container.
+
+Listener lifetime is explicit host ownership:
+
+- the binding owns the listener it installs;
+- cleanup removes the binding's listener;
+- DOM detachment does not count as cleanup;
+- the exact cleanup mechanism remains an implementation choice subject to evidence.
+
+When the binding may request accepted-only native-default suppression, the wheel listener executes in an explicitly non-passive registration context. The project does not rely on target-specific passive defaults.
+
+Raw `WheelEvent` interpretation remains replaceable host policy before ADR-0008. A resolver/policy may produce `next`, `previous`, or no intent. Decline or failure occurs before semantic request/default suppression. A valid produced intent is delegated exactly once to the ADR-0008 ownership layer.
+
+The listener does not inspect or mirror semantic Runtime state to predict request eligibility. Boundary, lock, transition, cooldown, and same-target rules remain Runtime-owned.
+
+Existing `defaultPrevented` state may be considered by caller-supplied host policy, but it is not semantic truth and is not a universal WIF deduplication signal.
+
+The first listener does not call `stopPropagation()` or `stopImmediatePropagation()`, and capture phase is not used to establish semantic single-delivery ownership.
+
+This first boundary explicitly does **not** guarantee deduplication when multiple WIF wheel bindings overlap on one bubbling event path. That ownership problem requires separate evidence.
+
+The first listener boundary still does not select:
+
+- raw `deltaX` / `deltaY` axis policy;
+- `deltaMode` conversion constants;
+- wheel thresholds or accumulation;
+- burst/inactivity timing;
+- input-local cooldown;
+- one-navigation-per-burst behavior;
+- ignored/actionable/editable target selectors;
+- nested-scroll detection or scroll-boundary release;
+- scroll chaining or `overscroll-behavior`;
+- Shadow DOM ownership;
+- touch/pointer/keyboard mapping;
+- React DOM hook/component ergonomics;
+- accessibility/focus policy;
+- final public adapter API or package export.
+
+Those remain later host-policy frontiers.
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
