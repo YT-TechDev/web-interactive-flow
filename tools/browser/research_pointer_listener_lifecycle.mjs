@@ -675,6 +675,40 @@ async function main() {
       "touch-action:auto witness should retain native scrolling",
     );
 
+    cases.detachedSynthetic = await control(
+      sessionId,
+      "runDetachedSyntheticProbe();",
+      [],
+      deadline,
+    );
+
+    assert.equal(cases.detachedSynthetic.isConnected, false);
+    assert.equal(cases.detachedSynthetic.firstIsTrusted, false);
+    assert.equal(
+      cases.detachedSynthetic.afterDetachedDispatch.observations.length,
+      1,
+      "detached EventTarget should retain its direct listener until explicit cleanup",
+    );
+    assert.equal(
+      cases.detachedSynthetic.afterDetachedDispatch.policy.trackedPointerId,
+      77,
+    );
+    assert.ok(
+      cases.detachedSynthetic.afterCleanupDispatch.policy.resets.includes(
+        "binding-cleanup",
+      ),
+    );
+    assert.equal(
+      cases.detachedSynthetic.afterCleanupDispatch.observations.length,
+      1,
+      "explicit cleanup should stop later direct dispatch to detached target",
+    );
+    assert.equal(
+      cases.detachedSynthetic.afterCleanupDispatch.policy.trackedPointerId,
+      null,
+    );
+    assert.equal(cases.detachedSynthetic.secondIsTrusted, false);
+
     const finalState = await control(
       sessionId,
       "finish();",
