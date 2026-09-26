@@ -97,6 +97,7 @@ jobs:
           node tools/browser/research_keyboard_ownership.mjs
           node tools/browser/research_normalized_keyboard_runtime_ownership.mjs
           node tools/browser/research_keyboard_listener_boundary.mjs
+          node tools/browser/research_dom_overlap_arbitration.mjs
 
       - name: Install isolated R3F qualification fixture
         run: npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
