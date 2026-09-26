@@ -35,3 +35,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0009 — R3F frame consumers are read-only semantic observers](0009-r3f-frame-consumer-read-only.md)
 - [ADR-0010 — First production R3F hook takes an explicit Runtime](0010-r3f-hook-explicit-runtime.md)
 - [ADR-0011 — First distribution uses one package with isolated host subpaths](0011-first-package-export-topology.md)
+- [ADR-0012 — First DOM wheel listener uses explicit target and replaceable intent policy](0012-dom-wheel-listener-explicit-target.md)

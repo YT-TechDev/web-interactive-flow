@@ -563,6 +563,116 @@ W01-W08 do not establish:
 
 Those remain later host-policy frontiers.
 
+## DOM wheel-listener properties
+
+DOM wheel-listener evidence is host lifecycle/routing evidence layered above the W01-W08 normalized-intent ownership contract. It must not redefine semantic request eligibility or import a raw wheel gesture algorithm into the listener layer.
+
+For the first listener boundary in [ADR-0012](adr/0012-dom-wheel-listener-explicit-target.md), implementation evidence should establish at least:
+
+### E01 — EventTarget ownership is explicit
+
+The binding consumes an explicitly supplied/owned `EventTarget`.
+
+The production listener must not silently choose `window`, `document`, `document.documentElement`, `document.body`, an inferred flow root, or an automatically discovered scroll container.
+
+A test should detect introduction of an implicit global/default target.
+
+### E02 — One binding owns its listener lifecycle
+
+One binding installs the wheel listener it owns and exposes/participates in an explicit cleanup lifecycle.
+
+After cleanup, later wheel dispatch on that target must not enter the binding.
+
+DOM detachment alone must not be treated as cleanup.
+
+The exact public disposer shape and cleanup mechanism are not frozen by this property.
+
+### E03 — Cleanup is isolated and repeat-safe
+
+Cleaning up one binding must not remove unrelated listeners or another independent binding's listener.
+
+Repeating the binding's cleanup must not reattach, duplicate, or invoke semantic work.
+
+Evidence may qualify explicit `removeEventListener()`, `AbortSignal`, or another implementation, but must verify the observable ownership rather than assuming platform behavior.
+
+### E04 — Suppression-capable listener registration is explicitly non-passive
+
+When the binding is configured so that ADR-0008 may call `preventDefault()` after semantic acceptance, the installed wheel listener must be registered with explicit non-passive behavior.
+
+The proof must detect reliance on omitted/default passive behavior.
+
+This property does not require a prevention-disabled binding to use `passive: true` and makes no performance claim.
+
+### E05 — Raw event policy runs before semantic ownership
+
+For one delivered wheel event, the replaceable raw-event policy/resolver runs before any semantic request or native-default suppression request.
+
+If that policy declines to produce an intent, the binding issues zero semantic requests and performs zero prevention.
+
+The exact resolver callback/API shape is not frozen.
+
+### E06 — Resolver failure or invalid intent is side-effect-free with respect to semantics
+
+If the raw-event policy fails before producing a normalized intent, that failure occurs before semantic request/default suppression.
+
+If it produces an unsupported intent, existing normalized-intent validation must fail before semantic request/default suppression.
+
+Tests should detect a Runtime call or `preventDefault()` that occurs before resolver success and normalized-intent validation.
+
+### E07 — One produced normalized intent delegates exactly once
+
+For one resolver result of `next` or `previous`, the listener delegates exactly once to the ADR-0008 ownership path.
+
+It must not retry, replay, fan out, or issue a second semantic request based on cancelability, cancellation state, cleanup state, or Runtime disposition.
+
+Accepted-only prevention ordering remains governed by W01-W08.
+
+### E08 — Listener does not predict Runtime eligibility
+
+The production listener/resolver layer does not call `runtime.getSnapshot()` or maintain copies of selected phase, boundary position, lock, transition, cooldown, or request-eligibility state to predict whether navigation will be accepted.
+
+The semantic Runtime remains the owner of known-request eligibility.
+
+Mechanical source evidence may supplement behavioral evidence.
+
+### E09 — Cancellation and propagation are not semantic deduplication
+
+The first listener does not use `defaultPrevented` as semantic truth or a universal WIF deduplication flag.
+
+It does not call `stopPropagation()` or `stopImmediatePropagation()` to claim semantic single-delivery ownership, and capture phase is not used as a deduplication mechanism.
+
+A caller-supplied raw-event policy may choose to decline an already-default-prevented event, but that remains host policy outside Runtime semantics.
+
+### E10 — Gesture policy and overlapping-binding guarantees remain explicitly bounded
+
+The first listener implementation must not embed or freeze unqualified raw-wheel policy such as fixed `deltaMode` multipliers, thresholds, burst accumulation/timers, input-local cooldown, one-navigation-per-burst behavior, or target-ignore selectors merely to make the listener usable.
+
+It must also not claim semantic single-delivery for multiple WIF bindings that overlap on one bubbling event path.
+
+Qualification should retain a counterexample demonstrating that duplicate normalized-intent delivery can produce two accepted navigations under a valid zero-duration/zero-cooldown Runtime configuration.
+
+### DOM wheel-listener evidence boundaries
+
+E01-E10 do not establish:
+
+- one canonical raw wheel-to-intent algorithm;
+- device-independent wheel feel;
+- threshold or burst defaults;
+- native-scroll boundary release;
+- automatic nested-scroll ownership;
+- scroll chaining / `overscroll-behavior` policy;
+- Shadow DOM event ownership;
+- editable/actionable target policy;
+- overlapping WIF-listener deduplication;
+- touch/pointer/keyboard behavior;
+- focus/accessibility policy;
+- React DOM hook/component API;
+- final public DOM adapter name/argument shape;
+- package export layout;
+- broad cross-browser compatibility.
+
+Those remain later host-policy, adapter-API, or distribution frontiers.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
