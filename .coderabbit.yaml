@@ -1,0 +1,131 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: en-US
+enable_free_tier: true
+
+tone_instructions: >-
+  Be concise and evidence-driven. Prioritize correctness, architectural
+  boundary violations, behavioral regressions, test gaps, and CI or security
+  risks. Skip cosmetic style nits unless they indicate a concrete defect.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  review_details: true
+  collapse_walkthrough: true
+  changed_files_summary: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  assess_linked_issues: true
+  related_issues: false
+  related_prs: false
+  suggested_labels: false
+  auto_apply_labels: false
+  suggested_reviewers: false
+  auto_assign_reviewers: false
+  in_progress_fortune: false
+  poem: false
+  enable_prompt_for_ai_agents: true
+
+  path_filters:
+    - "!core/differential_generated_wbtest.mbt"
+    - "!tests/differential/generated/**"
+
+  path_instructions:
+    - path: "**/*"
+      instructions: >-
+        Follow repository authority before implementation details. Flag material
+        authority conflicts instead of guessing. Distinguish tested facts from
+        interpretation. Do not treat green CI as proof of semantic correctness.
+        Flag semantic widening that lacks linked evidence or authority. Keep
+        comments concrete, scoped, and evidence based.
+
+    - path: "core/**"
+      instructions: >-
+        Enforce a host independent MoonBit and Wasm core. Flag DOM, React, R3F,
+        Three.js, Canvas, browser event, rendering, or host policy dependencies.
+        Check single semantic ownership, deterministic observable behavior, and
+        unresearched ABI or representation widening.
+
+    - path: "bridge/**"
+      instructions: >-
+        Review bridge code as normalization and transport around the semantic
+        Runtime. Flag duplicated phase, transition, cooldown, lock, direction,
+        or request eligibility semantics. Check explicit disposition and failure
+        ordering and prevent host framework ownership from leaking into Runtime.
+
+    - path: "adapters/dom/**"
+      instructions: >-
+        Keep DOM adapters host specific. Check event and lifecycle ownership,
+        normalized Runtime commands, cleanup, and request origin boundaries.
+        Flag semantic eligibility prediction from snapshots, duplicated core
+        semantics, or gesture policy widening not supported by authority.
+
+    - path: "adapters/r3f/**"
+      instructions: >-
+        Keep R3F a consumer and reference host. Check that Runtime ownership
+        stays external where required, frame consumers do not become a second
+        semantic clock, and presentation state or easing does not redefine flow
+        semantics or mirror semantic truth in React or R3F state.
+
+    - path: ".github/workflows/**"
+      instructions: >-
+        Require external Actions to be pinned to full commit SHAs. Check minimum
+        token permissions, avoid unnecessary write access, preserve protected
+        main and CI security, and keep qualification commands reproducible.
+
+    - path: "docs/adr/**"
+      instructions: >-
+        Review ADR changes against higher authority and recorded evidence. Flag
+        unsupported semantic freezing, missing counterexamples or limits, and
+        premature decisions about deferred package, API, ABI, serialization,
+        plugin, animation ownership, or WebGPU matters.
+
+    - path: "docs/*.md"
+      instructions: >-
+        Check top level authority documents for consistency with the repository
+        authority order. New normative claims should be backed by evidence and
+        should state important nonclaims or limits where needed.
+
+    - path: "tests/**"
+      instructions: >-
+        Prefer tests of observable behavior over implementation trivia. Preserve
+        counterexamples and boundary cases. Do not generalize synthetic or
+        untrusted browser evidence to physical input, or host specific evidence
+        across hosts without support. Keep research evidence distinct from
+        production qualification.
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    ignore_title_keywords:
+      - WIP
+      - DO NOT REVIEW
+      - DO NOT MERGE
+
+finishing_touches:
+  docstrings:
+    enabled: false
+  unit_tests:
+    enabled: false
+  simplify:
+    enabled: false
+
+chat:
+  art: false
+  auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - AGENTS.md
+      - docs/INVARIANTS.md
+      - docs/adr/*.md
+      - docs/ARCHITECTURE.md
+      - docs/HOST_BOUNDARIES.md
+      - docs/TESTING.md
+      - docs/BEHAVIORAL_CONTRACT.md
