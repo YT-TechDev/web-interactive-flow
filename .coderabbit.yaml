@@ -100,19 +100,20 @@ reviews:
   auto_review:
     enabled: true
     auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 0
     drafts: false
     ignore_title_keywords:
       - WIP
       - DO NOT REVIEW
       - DO NOT MERGE
 
-finishing_touches:
-  docstrings:
-    enabled: false
-  unit_tests:
-    enabled: false
-  simplify:
-    enabled: false
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
 
 chat:
   art: false
