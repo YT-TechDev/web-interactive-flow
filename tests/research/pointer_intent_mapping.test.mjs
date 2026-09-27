@@ -414,6 +414,65 @@ test("PIM-H6: changing only mapping changes proposal for unchanged qualified dis
   assert.equal(mapperB(delta), "previous");
 });
 
+test("PIM-H6 boundary: changing mapping during one active sequence changes a later proposal without displacement change", () => {
+  const mapperA = createSignMapper({
+    positiveIntent: "next",
+    negativeIntent: "previous",
+  });
+  const mapperB = createSignMapper({
+    positiveIntent: "previous",
+    negativeIntent: "next",
+  });
+  let currentMapper = mapperA;
+
+  const policy = createMappingProbePolicy({
+    project: projectY,
+    qualifies: (delta) =>
+      strictMagnitudeQualifier(delta, 40),
+    mapDirection(delta) {
+      return currentMapper(delta);
+    },
+  });
+  const { runtime, calls } =
+    createRecordingRuntime("rejected");
+  const { target, cleanup } =
+    bindPolicy(policy, runtime);
+
+  try {
+    target.dispatch(
+      "pointerdown",
+      pointerEvent("pointerdown", {
+        pointerId: 6,
+        clientY: 200,
+      }),
+    );
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", {
+        pointerId: 6,
+        clientY: 140,
+      }),
+    );
+
+    currentMapper = mapperB;
+
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", {
+        pointerId: 6,
+        clientY: 140,
+      }),
+    );
+
+    assert.deepEqual(
+      calls.map(({ intent }) => intent),
+      ["next", "previous"],
+    );
+  } finally {
+    cleanup();
+  }
+});
+
 test("PIM-H7: displacement reversal changes current mapped proposal without mapping-level commitment", () => {
   const mapper = createSignMapper({
     positiveIntent: "next",
