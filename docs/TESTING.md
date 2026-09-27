@@ -1785,7 +1785,7 @@ Capture remains host routing state under ADR-0016.
 
 ### GS11 — semantic commitment and host membership remain separate
 
-Accepted case:
+Accepted case for an accepted-only policy:
 
 ```text
 pointer remains active
@@ -1808,7 +1808,9 @@ Runtime disposition must not rewrite active-pointer membership.
 
 ### GS12 — application abort clears reusable sequence state
 
-Binding cleanup/abort must clear accumulated reusable gesture state before that policy can participate in a later binding.
+Application abort must immediately clear accumulated reusable gesture state.
+
+Binding cleanup must terminate accumulated reusable gesture state before that policy can participate in a later binding.
 
 At minimum this includes active membership, tracked-pointer identity, contamination, and candidate state.
 
