@@ -2515,6 +2515,110 @@ PTM01-PTM10 do not establish:
 - core/Wasm changes.
 
 
+
+## Pointer recognizer composition properties
+
+Recognizer-composition evidence is governed by [ADR-0025](adr/0025-pointer-recognizer-composition-boundary.md).
+
+These properties qualify ownership/composability only. They do not promote the local research helper into production or select public recognizer defaults.
+
+### PRC01 — composition requires no new Runtime/core state
+
+A qualified recognizer composition keeps pointer membership, projection, qualification, mapping, timing, and conditional commitment state in host policy.
+
+Runtime receives normalized semantic requests only.
+
+### PRC02 — production pointer listener remains recognizer-agnostic
+
+Qualification uses production `bindPointerNavigation()` unchanged.
+
+The listener must not interpret admission, sequence state, projection, displacement, threshold, mapping, timing, reversal, or commitment.
+
+### PRC03 — projector choice remains explicit
+
+At least two scalar projectors must be able to reuse the same composition machinery without changing listener or Runtime shape.
+
+Projector orientation may vary with mapping according to ADR-0023.
+
+### PRC04 — qualification policy remains explicit
+
+Different qualification collaborators must reuse the same composition machinery while being able to classify the same displacement differently.
+
+This does not select a threshold, comparator, or unit.
+
+### PRC05 — sign mapping remains explicit
+
+Different mapping collaborators must reuse the same composition machinery while being able to produce different normalized intents from the same qualified displacement.
+
+This does not select a repository-wide sign convention.
+
+### PRC06 — proposal timing remains explicit
+
+Move-time and pointerup-time candidates must be able to reuse the same composition machinery while preserving ADR-0024's observable timing distinction.
+
+This does not select either as default.
+
+### PRC07 — accepted-only composition does not read Runtime snapshots
+
+The research Runtime witness must fail if `getSnapshot()` is used by recognizer policy.
+
+Normalized intent plus ADR-0019 synchronous disposition feedback must be sufficient for the tested accepted-only composition.
+
+### PRC08 — rejection does not necessarily consume or direction-lock
+
+For the conditional ADR-0018 class, qualification must preserve a case where a rejected proposal leaves the active sequence uncommitted and later eligible movement can produce another proposal, including the opposite direction.
+
+This does not define universal reversal UX.
+
+### PRC09 — acceptance may consume the conditional accepted-only sequence
+
+For the same conditional class, an authoritative `accepted` disposition may commit the host sequence so later eligible movement produces no second semantic request.
+
+This remains conditional rather than universal gesture authority.
+
+### PRC10 — ADR-0020 contamination survives full composition
+
+A second admitted participating pointer must contaminate the single-pointer candidate.
+
+Dropping back to one already-down pointer must not revive it. Fresh recognition requires zero participating membership and a later fresh admitted `pointerdown`.
+
+### PRC11 — cancellation and abort reset host recognizer state
+
+`pointercancel` and listener cleanup/abort must clear the appropriate host policy state without fabricating a semantic Runtime request or requiring core state.
+
+### PRC12 — pointer admission remains caller-owned
+
+Different explicit pointerType admission collaborators must be able to reuse the same composition machinery.
+
+This does not establish touch, mouse, pen, or any combination as the default.
+
+### Pointer recognizer composition evidence boundaries
+
+PRC01-PRC12 do not establish:
+
+- the production recognizer representation;
+- the research helper as production code;
+- a public constructor/factory/configuration shape;
+- collaborator function signatures;
+- default projector/axis/coordinate frame;
+- default threshold/comparator/unit;
+- default sign mapping;
+- move-time or pointerup-time default;
+- universal reversal/direction-locking behavior;
+- universal retry/cardinality policy;
+- pointerType defaults;
+- writing-mode / RTL/LTR behavior;
+- velocity/acceleration;
+- native scrolling or `touch-action` policy;
+- pointer capture requirements;
+- Shadow DOM/composed-path ownership;
+- accessibility suitability;
+- physical-device or cross-browser equivalence;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.

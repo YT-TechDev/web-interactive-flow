@@ -811,6 +811,72 @@ Still deferred:
 - core/Wasm changes.
 
 
+### Reusable pointer recognizer composition boundary
+
+The composability boundary is governed by [ADR-0025](adr/0025-pointer-recognizer-composition-boundary.md).
+
+The accepted pointer authorities are sufficient to express a reusable host-side accepted-only single-pointer recognizer boundary without moving recognition into Runtime/core or the generic listener.
+
+A representative ownership composition is:
+
+```text
+caller-owned admission
+  -> ADR-0020 sequence lifecycle
+  -> explicit scalar projection / ADR-0021
+  -> explicit qualification / ADR-0022
+  -> explicit sign mapping / ADR-0023
+  -> explicit proposal timing / ADR-0024
+  -> next | previous | no proposal
+  -> bindPointerNavigation()
+  -> Runtime disposition
+  -> ADR-0018 commitment via ADR-0019 feedback
+```
+
+This is an ownership theorem, not one required internal call order or public configuration shape.
+
+The recognizer remains host policy. It may own admitted-pointer membership, tracked-pointer identity, contamination state, projected baseline, and conditional accepted-only commitment state. Runtime remains unaware of those details and receives only normalized semantic requests.
+
+Production `bindPointerNavigation()` remains recognizer-agnostic. It does not acquire admission, projection, threshold, mapping, timing, reversal, or commitment semantics.
+
+Runtime snapshot access is not required for the qualified composition. The accepted-only policy class needs only normalized intent plus synchronous authoritative `accepted | rejected` feedback.
+
+Projector/axis, qualification policy, mapper, proposal timing, and pointerType admission may remain explicit collaborators. Their repository-wide defaults are not prerequisites for recognizer composability.
+
+ADR-0020 sticky contamination and fresh-down restart remain intact under the composed pipeline. A second admitted pointer invalidates the single-pointer candidate until participating membership returns to zero; an already-down remainder is not promoted into a fresh sequence.
+
+For the conditional ADR-0018 policy class:
+
+- `rejected` may leave the active sequence uncommitted and permit later policy-defined retry/reversal;
+- `accepted` may commit/consume the sequence and suppress later proposals.
+
+Those are not universal WIF gesture rules.
+
+`pointercancel` and application cleanup/abort remain host reset boundaries and do not require fabricated Runtime requests or core state.
+
+Still deferred:
+
+- production recognizer source representation;
+- public constructor/factory/configuration API;
+- collaborator function signatures;
+- projector/axis and coordinate defaults;
+- threshold/comparator/unit defaults;
+- sign-mapping defaults;
+- move-time/pointerup-time default;
+- reversal/direction-locking default;
+- universal retry/cardinality policy;
+- pointerType allowlist/default;
+- writing-mode / RTL/LTR behavior;
+- velocity/acceleration;
+- native-control / native-scroll policy;
+- default `touch-action`;
+- pointer capture;
+- Shadow DOM/composed-path ownership;
+- accessibility/focus behavior;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
