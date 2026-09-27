@@ -2619,6 +2619,132 @@ PRC01-PRC12 do not establish:
 - core/Wasm changes.
 
 
+
+## First production accepted-pointer recognizer properties
+
+Production recognizer evidence is governed by [ADR-0026](adr/0026-first-production-accepted-pointer-recognizer.md).
+
+These properties qualify the first internal DOM production recognizer only. They do not establish package/public API or repository-wide gesture defaults.
+
+### APR01 — all deferred host choices remain explicit collaborators
+
+Construction requires explicit functions for admission, scalar projection, qualification, intent mapping, and proposal timing.
+
+Qualification must fail when a required collaborator is absent or not callable.
+
+This property does not freeze stable consumer-facing error text or classes.
+
+### APR02 — production listener remains unchanged and recognizer-agnostic
+
+Qualification must compose the production recognizer through production `bindPointerNavigation()`.
+
+The listener receives only `null | next | previous` from policy and must not interpret recognizer state.
+
+### APR03 — Runtime receives normalized requests only
+
+Recognized proposals must reach Runtime as ordinary zero-host-metadata `next()` or `previous()` requests.
+
+Recognizer qualification must not require Runtime snapshots.
+
+### APR04 — projection remains replaceable
+
+At least independent X-like and Y-like scalar projectors must reuse the same production recognizer source.
+
+This does not select an axis, coordinate property, frame, or orientation.
+
+### APR05 — qualification remains replaceable
+
+Different qualification collaborators must be able to classify the same finite displacement differently without changing recognizer/listener/Runtime ownership.
+
+This does not select a threshold, comparator, or unit.
+
+### APR06 — mapping remains replaceable
+
+Different mapping collaborators must reuse the same recognizer source and may map the same eligible displacement to different normalized intents.
+
+Invalid non-normalized mapper output remains a generic-listener validation failure.
+
+### APR07 — proposal timing remains replaceable
+
+Move-time and pointerup-time collaborators must reuse the same recognizer source while preserving ADR-0024 timing distinctions.
+
+This does not select a timing default.
+
+### APR08 — rejected disposition does not necessarily commit
+
+For the conditional ADR-0018 policy class, a rejected proposal must be able to leave the active valid sequence uncommitted so a later policy-defined proposal, including opposite intent, remains possible.
+
+### APR09 — accepted disposition may consume the active sequence
+
+For the same conditional policy class, accepted feedback may commit the still-active sequence and suppress later proposal opportunities.
+
+This remains conditional policy authority, not universal gesture cardinality.
+
+### APR10 — contamination remains sticky through pointer removal and cancellation
+
+A second admitted pointer contaminates the candidate.
+
+Removing or cancelling that non-tracked participant while the original pointer remains down must not revive recognition.
+
+Fresh recognition requires participating membership to return to zero followed by a later fresh admitted `pointerdown`.
+
+### APR11 — cancellation and abort do not fabricate semantic requests
+
+Participating `pointercancel` and listener cleanup/recognizer `abort()` reset the appropriate host state without issuing a Runtime request.
+
+Reusing an aborted recognizer requires a fresh admitted `pointerdown`.
+
+### APR12 — finite measurement validity remains separate from sequence validity
+
+Non-finite initial projection, current projection, or computed displacement must not become a directional proposal.
+
+Measurement invalidity must not be reclassified as Runtime rejection or multi-pointer contamination.
+
+### APR13 — pointer admission remains caller-owned
+
+Non-admitted pointer input must not become participating recognizer state.
+
+Different admission policies may reuse the same production recognizer source.
+
+### APR14 — current package artifact excludes the recognizer
+
+Package qualification must mechanically assert that the production recognizer source is absent from the first package artifact.
+
+No package export is inferred from repository source existence.
+
+### APR15 — CI explicitly executes production recognizer qualification
+
+The repository workflow must execute `tests/dom/accepted_pointer_recognizer.test.mjs` on the qualifying head.
+
+A green run that omits that file is insufficient evidence for ADR-0026.
+
+The qualified baseline is PR #191 final head `49515274646f0e2d1b3c82979d0c8f0559b5c07b` under CI #324, not the earlier green run that omitted the new test.
+
+### First production recognizer evidence boundaries
+
+APR01-APR15 do not establish:
+
+- package/public recognizer export;
+- stable public factory/configuration API;
+- stable collaborator signatures;
+- TypeScript declarations;
+- default axis/projector/coordinate frame;
+- default threshold/comparator/unit;
+- default sign mapping;
+- proposal-timing default;
+- pointerType default;
+- universal reversal/direction-locking behavior;
+- universal retry/cardinality policy outside ADR-0018;
+- velocity/acceleration;
+- physical-device or cross-browser ergonomic equivalence;
+- native scrolling / `touch-action` coexistence;
+- pointer capture;
+- Shadow DOM/composed-path ownership;
+- accessibility suitability;
+- React/R3F integration;
+- core/Wasm changes.
+
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
