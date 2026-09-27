@@ -46,3 +46,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0020 — Reusable single-pointer sequence lifecycle uses sticky contamination and fresh-down restart](0020-pointer-single-sequence-lifecycle.md)
 - [ADR-0021 — Reusable pointer displacement is finite start-relative scalar displacement under stable projection](0021-pointer-start-relative-displacement.md)
 - [ADR-0022 — Pointer threshold qualification is projected-unit host policy before Runtime request](0022-pointer-threshold-policy-boundary.md)
+- [ADR-0023 — Pointer intent mapping is orientation-relative replaceable host policy](0023-pointer-intent-mapping-boundary.md)
