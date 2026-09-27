@@ -1188,7 +1188,7 @@ at the same time.
 
 This prevents `isPrimary` from becoming a false single-pointer theorem.
 
-A research recognizer may invalidate multi-pointer sequences to prove lifecycle reset, but that invalidation rule is not production authority.
+Earlier research recognizers used multi-pointer invalidation only as evidence infrastructure. ADR-0020 now promotes one narrow reusable single-pointer theorem: a second admitted participant creates sticky contamination until participating membership returns to zero. Broader/default multi-pointer product policy remains unselected.
 
 ### DM07 — capture owner and listener observer remain distinct
 
@@ -1269,7 +1269,7 @@ DM01-DM11 do not establish:
 - reversal policy;
 - pointerdown/move/up commit policy;
 - pointerType allowlist;
-- multi-pointer policy;
+- general/default multi-pointer product policy beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - explicit capture policy;
 - native-control classifier;
 - listener target/lifecycle API;
@@ -1417,7 +1417,7 @@ PL01-PL10 do not establish:
 - threshold/axis/velocity/reversal defaults;
 - commit-point policy;
 - pointerType allowlist;
-- multi-pointer policy;
+- general/default multi-pointer product policy beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - explicit capture API;
 - native-control/ignore policy;
 - default `touch-action`;
@@ -1563,7 +1563,7 @@ PG01-PG08 do not establish:
 - threshold/axis/velocity/duration defaults;
 - a universal reversal algorithm;
 - pointerType allowlist;
-- multi-pointer policy;
+- general/default multi-pointer product policy beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - native-control/ignore classification;
 - explicit capture API;
 - default `touch-action`;
@@ -1693,7 +1693,7 @@ PS01-PS09 do not establish:
 - final feedback-failure exception API;
 - production gesture recognizer;
 - threshold/axis/velocity/duration/reversal defaults;
-- pointerType/multi-pointer policy;
+- pointerType admission and multi-pointer behavior beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - native-control/ignore classification;
 - explicit capture API;
 - default `touch-action`;
