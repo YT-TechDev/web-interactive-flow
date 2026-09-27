@@ -2638,7 +2638,7 @@ This property does not freeze stable consumer-facing error text or classes.
 
 Qualification must compose the production recognizer through production `bindPointerNavigation()`.
 
-The listener receives only `null | next | previous` from policy and must not interpret recognizer state.
+The listener treats `null | undefined` as no proposal, validates other policy results as `next | previous`, and must not interpret recognizer state.
 
 ### APR03 — Runtime receives normalized requests only
 
@@ -2662,7 +2662,7 @@ This does not select a threshold, comparator, or unit.
 
 Different mapping collaborators must reuse the same recognizer source and may map the same eligible displacement to different normalized intents.
 
-Invalid non-normalized mapper output remains a generic-listener validation failure.
+`undefined` is treated as no proposal. Other non-normalized mapper output remains a generic-listener validation failure.
 
 ### APR07 — proposal timing remains replaceable
 
