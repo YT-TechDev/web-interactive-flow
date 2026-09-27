@@ -238,7 +238,7 @@ test("PTH-H2: coherently scaling displacement and threshold preserves one candid
   }
 });
 
-test("PTH-H3: stable host normalization can represent a relative threshold without Runtime ownership", () => {
+test("PTH-H3: stable host normalization can represent relative thresholds away from equality while exact boundary may diverge numerically", () => {
   const stableExtent = 400;
   const rawThreshold = 60;
   const normalizedThreshold =
@@ -247,9 +247,27 @@ test("PTH-H3: stable host normalization can represent a relative threshold witho
   for (const {
     rawStart,
     rawCurrent,
+    expectedRaw,
+    expectedNormalized,
   } of [
-    { rawStart: 400, rawCurrent: 320 },
-    { rawStart: 400, rawCurrent: 360 },
+    {
+      rawStart: 400,
+      rawCurrent: 320,
+      expectedRaw: true,
+      expectedNormalized: true,
+    },
+    {
+      rawStart: 400,
+      rawCurrent: 360,
+      expectedRaw: false,
+      expectedNormalized: false,
+    },
+    {
+      rawStart: 400,
+      rawCurrent: 340,
+      expectedRaw: false,
+      expectedNormalized: true,
+    },
   ]) {
     const rawDelta =
       rawStart - rawCurrent;
@@ -262,10 +280,14 @@ test("PTH-H3: stable host normalization can represent a relative threshold witho
         rawDelta,
         rawThreshold,
       ),
+      expectedRaw,
+    );
+    assert.equal(
       strictMagnitudeCrossed(
         normalizedDelta,
         normalizedThreshold,
       ),
+      expectedNormalized,
     );
   }
 });
@@ -425,7 +447,7 @@ test("PTH-H9: threshold miss produces no normalized request and no Runtime rejec
   }
 });
 
-test("PTH-H10: threshold crossing can still receive Runtime rejected and does not commit by itself", () => {
+test("PTH-H10: threshold crossings forward the recording Runtime's rejected disposition", () => {
   const policy =
     createThresholdProbePolicy({
       threshold: 40,
