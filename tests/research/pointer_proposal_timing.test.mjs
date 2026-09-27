@@ -736,54 +736,117 @@ test("PTM-H9: terminal reversal separates proposal timing from reversal commitme
 });
 
 test("PTM-H10: accepted-only move-time policy can consume an accepted sequence without requiring pointerup-only timing", () => {
-  const policy =
-    createAcceptedMoveTimePolicy();
-  const { runtime, calls } =
-    createRecordingRuntime("accepted");
-  const { target, cleanup } =
-    bind(policy, runtime);
+  const events = [
+    pointerEvent(
+      "pointerdown",
+      { clientY: 200 },
+    ),
+    pointerEvent(
+      "pointermove",
+      { clientY: 140 },
+    ),
+    pointerEvent(
+      "pointermove",
+      { clientY: 100 },
+    ),
+    pointerEvent(
+      "pointermove",
+      { clientY: 280 },
+    ),
+  ];
 
-  try {
-    dispatchSequence(target, [
-      pointerEvent(
-        "pointerdown",
-        { clientY: 200 },
-      ),
-      pointerEvent(
-        "pointermove",
-        { clientY: 140 },
-      ),
-      pointerEvent(
-        "pointermove",
-        { clientY: 100 },
-      ),
-      pointerEvent(
-        "pointermove",
-        { clientY: 280 },
-      ),
-    ]);
+  {
+    const policy =
+      createAcceptedMoveTimePolicy();
+    const { runtime, calls } =
+      createRecordingRuntime("accepted");
+    const { target, cleanup } =
+      bind(policy, runtime);
 
-    assert.deepEqual(calls, [
-      {
-        intent: "next",
-        args: [],
-        disposition: "accepted",
-      },
-    ]);
-    assert.deepEqual(
-      policy.dispositions,
-      [
+    try {
+      dispatchSequence(target, events);
+
+      assert.deepEqual(calls, [
         {
           intent: "next",
+          args: [],
           disposition: "accepted",
         },
-      ],
-    );
-    assert.equal(
-      policy.snapshot().committed,
-      true,
-    );
-  } finally {
-    cleanup();
+      ]);
+      assert.deepEqual(
+        policy.dispositions,
+        [
+          {
+            intent: "next",
+            disposition: "accepted",
+          },
+        ],
+      );
+      assert.equal(
+        policy.snapshot().committed,
+        true,
+      );
+    } finally {
+      cleanup();
+    }
+  }
+
+  {
+    const policy =
+      createAcceptedMoveTimePolicy();
+    const { runtime, calls } =
+      createRecordingRuntime("rejected");
+    const { target, cleanup } =
+      bind(policy, runtime);
+
+    try {
+      dispatchSequence(target, events);
+
+      assert.deepEqual(
+        calls.map(
+          ({ intent, disposition }) => ({
+            intent,
+            disposition,
+          }),
+        ),
+        [
+          {
+            intent: "next",
+            disposition: "rejected",
+          },
+          {
+            intent: "next",
+            disposition: "rejected",
+          },
+          {
+            intent: "previous",
+            disposition: "rejected",
+          },
+        ],
+      );
+      assert.deepEqual(
+        policy.dispositions,
+        [
+          {
+            intent: "next",
+            disposition: "rejected",
+          },
+          {
+            intent: "next",
+            disposition: "rejected",
+          },
+          {
+            intent: "previous",
+            disposition: "rejected",
+          },
+        ],
+      );
+      assert.equal(
+        policy.snapshot().committed,
+        false,
+      );
+    } finally {
+      cleanup();
+    }
   }
 });
