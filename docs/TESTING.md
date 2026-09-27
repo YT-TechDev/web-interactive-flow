@@ -1710,13 +1710,13 @@ These properties qualify a narrow host-policy state machine layered on ADR-0016 
 
 They do not define a complete gesture recognizer.
 
-### PG01 — isPrimary is not single-pointer proof
+### GS01 — isPrimary is not single-pointer proof
 
 Qualification must preserve a counterexample where a primary pointer remains active while a non-primary admitted pointer also participates.
 
 A policy that observes only primary events must not be treated as sufficient evidence that the sequence was single-pointer.
 
-### PG02 — first-pointer-only ignoring exposes stale commit
+### GS02 — first-pointer-only ignoring exposes stale commit
 
 Qualification must preserve the counterexample:
 
@@ -1731,19 +1731,19 @@ pointer 1 up
 
 For a policy claiming single-pointer semantics, later admitted participating pointers cannot simply be ignored.
 
-### PG03 — second admitted pointer creates sticky contamination
+### GS03 — second admitted pointer creates sticky contamination
 
 When a second admitted participating pointer becomes active before the current set reaches zero, the candidate sequence becomes invalid.
 
 That invalidation remains sticky while any admitted participant from the contaminated set remains active.
 
-### PG04 — two active to one active does not revive the sequence
+### GS04 — two active to one active does not revive the sequence
 
 After contamination, reducing participating membership from two to one must not restore eligibility.
 
 The remaining already-down pointer does not become a fresh sequence.
 
-### PG05 — fresh restart requires zero membership plus fresh pointerdown
+### GS05 — fresh restart requires zero membership plus fresh pointerdown
 
 A contaminated sequence may reset after admitted participating membership reaches zero.
 
@@ -1751,13 +1751,13 @@ The next eligible sequence begins from a later fresh admitted pointerdown.
 
 No already-down remainder is promoted.
 
-### PG06 — cancellation does not promote a remaining pointer
+### GS06 — cancellation does not promote a remaining pointer
 
 If a tracked participant is canceled while another admitted participant remains active, the remainder does not become a new eligible tracked pointer.
 
 The contaminated sequence remains invalid until admitted participating membership reaches zero.
 
-### PG07 — pointerId reuse after reset inherits no state
+### GS07 — pointerId reuse after reset inherits no state
 
 A fresh sequence may reuse a numeric pointerId previously observed in a completed sequence.
 
@@ -1765,25 +1765,25 @@ Qualification must show that prior tracked, candidate, contaminated, or commitme
 
 No global/permanent pointerId theorem is required.
 
-### PG08 — non-tracked participating terminal events update membership
+### GS08 — non-tracked participating terminal events update membership
 
 If reset depends on active participating membership, `pointerup` and `pointercancel` from admitted non-tracked participants must be accounted for.
 
 This bookkeeping must not produce semantic requests by itself.
 
-### PG09 — pointer admission remains independent policy
+### GS09 — pointer admission remains independent policy
 
 Qualification may inject a participation predicate and show that the sequence theorem works without standardizing pointerType.
 
 This property does not select touch, mouse, pen, or isPrimary product behavior.
 
-### PG10 — explicit pointer capture is not required for sequence identity
+### GS10 — explicit pointer capture is not required for sequence identity
 
 The sequence theorem must not require `setPointerCapture()` or `releasePointerCapture()` merely to maintain host pointer membership.
 
 Capture remains host routing state under ADR-0016.
 
-### PG11 — semantic commitment and host membership remain separate
+### GS11 — semantic commitment and host membership remain separate
 
 Accepted case:
 
@@ -1806,13 +1806,13 @@ later policy-defined proposal remains possible
 
 Runtime disposition must not rewrite active-pointer membership.
 
-### PG12 — application abort clears reusable sequence state
+### GS12 — application abort clears reusable sequence state
 
 Binding cleanup/abort must clear accumulated reusable gesture state before that policy can participate in a later binding.
 
 At minimum this includes active membership, tracked-pointer identity, contamination, and candidate state.
 
-### PG13 — malformed pre-sequence events do not invent a valid sequence
+### GS13 — malformed pre-sequence events do not invent a valid sequence
 
 Bounded deterministic qualification may inject:
 
@@ -1828,7 +1828,7 @@ Duplicate down for an already-active admitted pointer may conservatively invalid
 
 This property is defensive state-machine evidence, not physical-browser delivery authority.
 
-### PG14 — Runtime remains free of pointer sequence state
+### GS14 — Runtime remains free of pointer sequence state
 
 Qualification must use the production listener while keeping Runtime requests free of:
 
@@ -1843,7 +1843,7 @@ No Runtime snapshot read is required for sequence identity.
 
 ### Pointer single-sequence lifecycle evidence boundaries
 
-PG01-PG14 do not establish:
+GS01-GS14 do not establish:
 
 - swipe threshold;
 - x/y axis;
