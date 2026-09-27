@@ -213,7 +213,7 @@ function createTimingProbePolicy({
 
 function createAcceptedMoveTimePolicy({
   threshold = 40,
-}) {
+} = {}) {
   let trackedPointerId = null;
   let startY = null;
   let committed = false;
