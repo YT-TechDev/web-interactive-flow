@@ -240,7 +240,9 @@ This does not establish:
 
 ### Runtime and generic pointer listener remain free of mapping state
 
-The generic pointer listener receives only:
+The generic pointer listener passes each pointer event to host policy.
+
+Host policy returns only:
 
 ```text
 next
@@ -248,9 +250,9 @@ previous
 no proposal
 ```
 
-from host policy.
+The listener forwards `next` and `previous` to Runtime and makes no Runtime request for `no proposal`.
 
-It does not receive or interpret:
+The listener does not receive from policy or interpret:
 
 - displacement sign;
 - displacement value;
@@ -284,7 +286,7 @@ Issue #178 / PR #179 established:
 - changing mapping inside one active sequence can change a later proposal while coordinate and displacement remain unchanged;
 - reversal changes current mapping without creating mapping-level commitment;
 - the same mapped intent can be routed without Runtime snapshot prediction;
-- production listener receives only normalized intent;
+- production listener forwards only normalized intent to Runtime;
 - Runtime requests carry no sign/displacement/mapping/axis/threshold metadata;
 - partial mappers falsify universal total/symmetric mapping;
 - one mapper can consume equivalent X-like/Y-like scalar deltas without axis identity.
