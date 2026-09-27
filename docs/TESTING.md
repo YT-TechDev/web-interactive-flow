@@ -2394,6 +2394,127 @@ IM01-IM12 do not establish:
 - package export;
 - core/Wasm changes.
 
+
+## Pointer proposal-timing properties
+
+Pointer proposal-timing evidence is governed by [ADR-0024](adr/0024-pointer-proposal-timing-boundary.md).
+
+These properties qualify only the host timing boundary layered around otherwise eligible normalized pointer proposals.
+
+They do not select a move-time/pointerup-time default, reversal commitment, request-cardinality policy, or production recognizer.
+
+### PTM01 — move-time and pointerup-time are observably distinct
+
+Qualification must preserve at least one sequence that crosses the tested eligibility boundary before pointerup.
+
+Under otherwise equivalent measurement/qualification/mapping:
+
+- move-time may issue a normalized request on the qualifying move;
+- pointerup-time issues no request until the terminal pointerup opportunity.
+
+This property does not prefer either class.
+
+### PTM02 — timing does not redefine displacement, qualification, or mapping
+
+Qualification must be able to reuse the same start-relative displacement algebra, threshold qualifier, and sign mapper under both timing classes.
+
+Equivalent eligible displacement may produce the same normalized intent despite different proposal event boundaries.
+
+### PTM03 — proposal event does not establish Runtime acceptance
+
+Qualification must keep proposal timing independent from Runtime disposition.
+
+A recording Runtime may return `accepted` or `rejected` for the same routed normalized request without changing timing policy.
+
+Recording stubs establish separation/routing only; actual Runtime eligibility remains existing semantic authority.
+
+### PTM04 — move-time proposal does not itself commit the gesture
+
+Qualification must preserve an uncommitted move-time case where a rejected proposal can be followed by later qualifying movement, including a later opposite mapped direction.
+
+Accepted-only commitment remains a separate policy governed by ADR-0018/ADR-0019.
+
+### PTM05 — cancellation can distinguish timing classes
+
+Qualification must preserve a threshold-crossing sequence cancelled before pointerup where:
+
+- move-time may already have emitted a proposal;
+- pointerup-time does not manufacture a terminal pointerup proposal from `pointercancel`.
+
+This does not define a universal cancellation UX beyond host lifecycle authority.
+
+### PTM06 — changing only timing can change request schedule/cardinality
+
+For identical delivered pointer samples and unchanged measurement/qualification/mapping, qualification must preserve at least one case where move-time and pointerup-time produce different Runtime request schedules or counts.
+
+This property does not define the final cardinality contract.
+
+### PTM07 — generic pointer listener remains timing-agnostic
+
+Using production `bindPointerNavigation()`, qualification must keep the listener unaware of:
+
+- move-time versus pointerup-time;
+- displacement;
+- threshold;
+- mapping;
+- reversal;
+- semantic commitment.
+
+The listener forwards only normalized intent returned for the currently delivered event.
+
+### PTM08 — Runtime receives no timing or PointerEvent metadata
+
+Runtime requests must carry no proposal-timing class, PointerEvent object, event type, or pointer coordinate.
+
+No Runtime snapshot is required to choose proposal timing.
+
+### PTM09 — terminal reversal remains distinct from timing
+
+Qualification must preserve a sequence where an earlier eligible move direction differs from the terminal eligible direction.
+
+Move-time may expose the earlier direction while pointerup-time may expose the terminal direction.
+
+This evidence must not be generalized into reversal commitment or direction-locking authority.
+
+### PTM10 — accepted-only move-time composition does not require pointerup-only timing
+
+Qualification must include both accepted and rejected disposition controls for the same move-time policy class.
+
+After `accepted` feedback, an accepted-only research policy may commit and suppress later proposals.
+
+Under otherwise equivalent `rejected` feedback, it must remain uncommitted and may continue to surface later eligible proposals.
+
+This proves only that one-request/one-accepted-navigation behavior can be composed from timing plus commitment policy; it does not select that composition as the production recognizer.
+
+### Pointer proposal-timing evidence boundaries
+
+PTM01-PTM10 do not establish:
+
+- move-time default;
+- pointerup-time default;
+- another default proposal event;
+- universal request cardinality;
+- reversal commitment;
+- direction locking;
+- retry policy;
+- velocity/acceleration;
+- threshold default/comparator;
+- projector orientation;
+- X/Y or diagonal policy;
+- sign-to-intent default;
+- pointerType policy;
+- writing-mode behavior;
+- RTL/LTR mapping;
+- physical-device equivalence;
+- accessibility suitability;
+- native-scroll / `touch-action` policy;
+- pointer capture policy;
+- production recognizer API;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
