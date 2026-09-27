@@ -1431,6 +1431,151 @@ PL01-PL10 do not establish:
 
 Those remain later host-policy, adapter-API, accessibility, compatibility, or distribution frontiers.
 
+## Pointer gesture disposition-feedback properties
+
+Pointer gesture disposition-feedback evidence is host-policy/Runtime composition evidence governed by [ADR-0018](adr/0018-pointer-gesture-disposition-feedback.md).
+
+It is layered on ADR-0016 substrate evidence and ADR-0017 listener/lifecycle evidence.
+
+These properties describe the conditional accepted-only policy class. They do not define one WIF-wide gesture recognizer.
+
+### PG01 — proposal emission is not accepted-only gesture commitment
+
+Qualification must preserve a semantic rejection counterexample.
+
+A proposal-time-commit policy must be distinguishable from semantic acceptance:
+
+```text
+Runtime C
+next proposal
+-> rejected
+policy already committed
+reverse
+-> valid previous proposal is suppressed
+Runtime remains C
+```
+
+A policy that promises retry/reversal after rejection must not commit merely because it emitted an intent.
+
+### PG02 — no feedback permits duplicate accepted navigation in move-time policy
+
+With immediate Runtime eligibility, qualification must preserve:
+
+```text
+Runtime A
+same active pointer sequence
+move -> next -> accepted -> B
+move -> next -> accepted -> C
+```
+
+This does not violate ADR-0017's one-request-per-delivered-event theorem.
+
+It demonstrates that one-accepted-navigation-per-sequence is a separate gesture-policy property.
+
+### PG03 — rejected disposition may preserve retry/reversal
+
+For the accepted-only candidate:
+
+```text
+Runtime C
+next -> rejected
+policy remains uncommitted
+reverse
+previous -> accepted
+C -> B
+```
+
+The policy may commit after the accepted reversal.
+
+The exact reversal algorithm is not standardized by this property.
+
+### PG04 — accepted disposition may consume the active sequence
+
+For the accepted-only candidate:
+
+```text
+Runtime A
+next -> accepted -> B
+policy commits
+later same-sequence movement/reversal
+-> no second semantic request
+```
+
+This property is conditional on selecting the one-accepted-navigation-per-sequence policy contract.
+
+### PG05 — disposition feedback is narrow
+
+Qualification must be able to implement accepted-only commitment without reading Runtime snapshots.
+
+The host-policy path may observe the authoritative:
+
+```text
+accepted | rejected
+```
+
+result.
+
+It must not require policy-side mirrors of:
+
+- selected phase;
+- transition state;
+- cooldown;
+- lock state;
+- `runtime.getSnapshot()`.
+
+### PG06 — semantic and host ownership remain separated
+
+The Runtime does not receive PointerEvent objects or gesture-policy state and does not directly mutate gesture policy.
+
+Listener mechanics do not acquire:
+
+- threshold;
+- axis;
+- reversal;
+- gesture identity;
+- commit-point semantics.
+
+Disposition observation is host composition around the existing Runtime result, not a second semantic owner.
+
+### PG07 — termination and failure remain distinct
+
+`pointercancel` and application-driven binding cleanup reset active accepted-only gesture state under ADR-0017.
+
+A Runtime failure/validation path that produces no disposition must remain distinct from normal `rejected` feedback.
+
+Qualification must not silently convert failure-before-disposition into semantic rejection.
+
+### PG08 — alternative recognizers remain policy choices
+
+A pointerup-only policy may naturally emit at most one request because it waits until pointerup.
+
+That is valid comparative evidence, not proof that pointerup-only recognition is a universal WIF default.
+
+Move-time, pointerup-only, and other recognizers remain replaceable host policy unless separately standardized by evidence.
+
+### Pointer gesture disposition-feedback evidence boundaries
+
+PG01-PG08 do not establish:
+
+- a final public feedback callback/method;
+- a transaction/result API;
+- a production reusable gesture recognizer;
+- threshold/axis/velocity/duration defaults;
+- a universal reversal algorithm;
+- pointerType allowlist;
+- multi-pointer policy;
+- native-control/ignore classification;
+- explicit capture API;
+- default `touch-action`;
+- Shadow DOM/composed-path ownership;
+- accessibility/focus policy;
+- React pointer integration;
+- package export;
+- physical-device equivalence;
+- broad browser/device compatibility.
+
+The actual Runtime/Wasm browser composition used synthetic/untrusted PointerEvents in Chrome 153 / ChromeDriver 153. It proves the semantic feedback composition only, not trusted physical-input or browser-default-action behavior.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.

@@ -407,6 +407,72 @@ Still deferred:
 - package export;
 - broad browser/device compatibility.
 
+### Pointer gesture semantic-disposition feedback boundary
+
+The conditional accepted-only pointer gesture boundary is governed by [ADR-0018](adr/0018-pointer-gesture-disposition-feedback.md).
+
+ADR-0017 remains the lower-level listener contract: one delivered PointerEvent is forwarded once to replaceable stateful gesture policy, which may produce zero or one normalized intent and therefore zero or one Runtime request for that event.
+
+ADR-0018 adds a separate conditional theorem for reusable stateful policy that promises:
+
+- at most one **accepted semantic navigation** per active pointer sequence;
+- semantic rejection does not consume that sequence;
+- later policy-defined retry/reversal remains possible after rejection.
+
+For that policy class, proposal emission is not gesture commitment.
+
+The host boundary is:
+
+```text
+PointerEvent sequence
+      |
+      v
+stateful gesture policy
+      |
+      +--> next | previous
+                 |
+                 v
+              Runtime
+          accepted | rejected
+                 |
+                 v
+        narrow host feedback
+                 |
+                 +--> accepted -> commit/consume
+                 |
+                 +--> rejected -> remain uncommitted
+```
+
+Runtime remains the sole semantic eligibility owner.
+
+Gesture policy does not inspect selected phase, transition, cooldown, lock, or Runtime snapshots. A narrow `accepted | rejected` disposition is sufficient for the researched accepted-only policy.
+
+Runtime does not know or mutate PointerEvent gesture state. Listener mechanics do not acquire threshold, axis, reversal, pointer identity, or commit-point ownership.
+
+The current production Pointer Events listener is not invalidated. Its contract is per delivered event, not per gesture. A stronger accepted-only reusable gesture policy requires separately composed disposition observation.
+
+Browser `pointercancel` and application cleanup remain independent termination/reset paths under ADR-0017.
+
+Failure before any Runtime disposition is produced remains distinct from normal semantic `rejected`.
+
+Pointerup-only recognition remains a valid alternative host policy, not a selected WIF-wide default.
+
+Still deferred:
+
+- public disposition-feedback API/signature;
+- production reusable gesture recognizer;
+- threshold/axis/velocity/reversal rules;
+- pointerType/multi-pointer policy;
+- native-control/ignore policy;
+- explicit pointer capture API;
+- default `touch-action`;
+- Shadow DOM/composed-path ownership;
+- accessibility/focus behavior;
+- React integration;
+- package export;
+- broad browser/device compatibility.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
