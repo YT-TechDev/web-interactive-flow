@@ -325,6 +325,62 @@ test("PIM-H4: threshold miss bypasses mapping while qualified displacement can m
   assert.equal(mapCalls, 2);
 });
 
+test("PIM-H4 boundary: below-threshold movement reaches neither mapper nor Runtime", () => {
+  const mappedDeltas = [];
+  const policy = createMappingProbePolicy({
+    project: projectY,
+    qualifies: (delta) =>
+      strictMagnitudeQualifier(delta, 40),
+    mapDirection: createSignMapper({
+      positiveIntent: "next",
+      negativeIntent: "previous",
+    }),
+    onMap(delta) {
+      mappedDeltas.push(delta);
+    },
+  });
+  const { runtime, calls } =
+    createRecordingRuntime("rejected");
+  const { target, cleanup } =
+    bindPolicy(policy, runtime);
+
+  try {
+    target.dispatch(
+      "pointerdown",
+      pointerEvent("pointerdown", {
+        pointerId: 4,
+        clientY: 200,
+      }),
+    );
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", {
+        pointerId: 4,
+        clientY: 180,
+      }),
+    );
+
+    assert.deepEqual(mappedDeltas, []);
+    assert.deepEqual(calls, []);
+
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", {
+        pointerId: 4,
+        clientY: 140,
+      }),
+    );
+
+    assert.deepEqual(mappedDeltas, [60]);
+    assert.deepEqual(
+      calls.map(({ intent }) => intent),
+      ["next"],
+    );
+  } finally {
+    cleanup();
+  }
+});
+
 test("PIM-H5: zero is explicit and never falls through to one sign branch", () => {
   const normalMapper = createSignMapper({
     positiveIntent: "next",
