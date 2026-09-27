@@ -188,6 +188,17 @@ test("K01-K10: local packed artifact preserves host isolation and provenance", a
       "qualification must not create a root package manifest",
     );
 
+    assert.equal(
+      await exists(
+        path.join(
+          stageRoot,
+          "adapters/dom/accepted_pointer_recognizer.mjs",
+        ),
+      ),
+      false,
+      "accepted pointer recognizer must remain outside the first package artifact",
+    );
+
     for (const relativePath of EXPECTED_PRODUCTION_PATHS) {
       assert.deepEqual(
         await readFile(path.join(stageRoot, relativePath)),

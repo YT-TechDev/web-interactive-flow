@@ -85,8 +85,10 @@ jobs:
           node tools/browser/qualify_dom_wheel_listener_browser.mjs
           node --test tests/browser/dom_listener_qualification_contract.test.mjs
 
-      - name: Qualify production Pointer Events listener
-        run: node --test tests/dom/pointer_listener.test.mjs
+      - name: Qualify production Pointer Events listener and recognizer
+        run: |
+          node --test tests/dom/pointer_listener.test.mjs
+          node --test tests/dom/accepted_pointer_recognizer.test.mjs
 
       - name: Qualify production Pointer Events listener in real Chrome
         run: node tools/browser/qualify_pointer_listener_browser.mjs
