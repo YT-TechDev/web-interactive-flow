@@ -113,7 +113,15 @@ rawThreshold = 60
 raw delta = 60
 60 > 60
 -> false
+
+stableExtent = 400
+normalized comparison:
+(400 / 400 - 340 / 400) > (60 / 400)
+0.15000000000000002 > 0.15
+-> true
 ```
+
+See PTH-H3 in `tests/research/pointer_threshold_semantics.test.mjs`.
 
 Separately normalized values produce a representational difference such that the normalized strict comparison becomes true.
 
