@@ -44,3 +44,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0018 — Accepted-only pointer gesture commit observes Runtime disposition at the host boundary](0018-pointer-gesture-disposition-feedback.md)
 - [ADR-0019 — Pointer listener synchronously routes Runtime disposition to the originating policy](0019-pointer-listener-synchronous-disposition-feedback.md)
 - [ADR-0020 — Reusable single-pointer sequence lifecycle uses sticky contamination and fresh-down restart](0020-pointer-single-sequence-lifecycle.md)
+- [ADR-0021 — Reusable pointer displacement is finite start-relative scalar displacement under stable projection](0021-pointer-start-relative-displacement.md)
