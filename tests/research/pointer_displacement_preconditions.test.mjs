@@ -210,12 +210,14 @@ function createAdr20ComposedMeasuredPolicy({
   const measurement = createFiniteStartRelativeMeasurement(project);
   let trackedPointerId = null;
   let contaminated = false;
+  let measurementValid = false;
   let aborts = 0;
 
   function reset() {
     activeIds.clear();
     trackedPointerId = null;
     contaminated = false;
+    measurementValid = false;
     measurement.reset();
   }
 
@@ -224,6 +226,7 @@ function createAdr20ComposedMeasuredPolicy({
       if (event.type === "pointerdown") {
         if (activeIds.has(event.pointerId)) {
           contaminated = true;
+          measurementValid = false;
           measurement.reset();
           return null;
         }
@@ -233,9 +236,11 @@ function createAdr20ComposedMeasuredPolicy({
 
         if (startsFreshSequence) {
           trackedPointerId = event.pointerId;
-          contaminated = !measurement.begin(event);
+          contaminated = false;
+          measurementValid = measurement.begin(event);
         } else {
           contaminated = true;
+          measurementValid = false;
           measurement.reset();
         }
 
@@ -245,6 +250,7 @@ function createAdr20ComposedMeasuredPolicy({
       if (event.type === "pointermove") {
         if (
           contaminated ||
+          !measurementValid ||
           event.pointerId !== trackedPointerId ||
           !activeIds.has(event.pointerId)
         ) {
@@ -266,11 +272,13 @@ function createAdr20ComposedMeasuredPolicy({
 
         if (event.type === "pointercancel") {
           contaminated = true;
+          measurementValid = false;
           measurement.reset();
         }
 
         if (event.pointerId === trackedPointerId) {
           trackedPointerId = null;
+          measurementValid = false;
           measurement.reset();
 
           if (activeIds.size > 0) {
@@ -298,6 +306,7 @@ function createAdr20ComposedMeasuredPolicy({
         activeIds: [...activeIds],
         trackedPointerId,
         contaminated,
+        measurementValid,
         aborts,
         ...measurement.snapshot(),
       };
@@ -376,6 +385,7 @@ test("PDP-H1: ADR-0020 composition suppresses contaminated measurement until zer
     );
 
     assert.equal(policy.snapshot().contaminated, true);
+    assert.equal(policy.snapshot().measurementValid, false);
     assert.equal(policy.snapshot().startProjected, null);
 
     target.dispatch(
@@ -468,6 +478,39 @@ test("PDP-H4: NaN and infinite baseline projections do not establish finite meas
       measurement.sample(pointerEvent("pointermove", { clientY: 100 })),
       null,
     );
+  }
+});
+
+test("PDP-H4 boundary: non-finite baseline makes measurement unavailable without inventing ADR-0020 contamination", () => {
+  const policy = createAdr20ComposedMeasuredPolicy({
+    project: () => Infinity,
+  });
+  const { runtime, calls } = createRecordingRuntime();
+  const { target, cleanup } = bindPolicy(policy, runtime);
+
+  try {
+    target.dispatch(
+      "pointerdown",
+      pointerEvent("pointerdown", { pointerId: 6, clientY: 200 }),
+    );
+
+    assert.deepEqual(policy.snapshot(), {
+      activeIds: [6],
+      trackedPointerId: 6,
+      contaminated: false,
+      measurementValid: false,
+      aborts: 0,
+      startProjected: null,
+    });
+
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", { pointerId: 6, clientY: 100 }),
+    );
+
+    assert.deepEqual(calls, []);
+  } finally {
+    cleanup();
   }
 });
 
@@ -660,6 +703,7 @@ test("PDP-H10: pointercancel clears stored projection baseline", () => {
       activeIds: [],
       trackedPointerId: null,
       contaminated: false,
+      measurementValid: false,
       aborts: 0,
       startProjected: null,
     });
@@ -698,6 +742,7 @@ test("PDP-H10: application abort clears baseline and a fresh binding may establi
     activeIds: [],
     trackedPointerId: null,
     contaminated: false,
+    measurementValid: false,
     aborts: 1,
     startProjected: null,
   });
