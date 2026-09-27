@@ -2226,6 +2226,172 @@ PT01-PT12 do not establish:
 - package export;
 - core/Wasm changes.
 
+## Pointer intent-mapping properties
+
+Pointer sign-to-intent mapping evidence is governed by [ADR-0023](adr/0023-pointer-intent-mapping-boundary.md).
+
+These properties qualify only the host mapping boundary layered after ADR-0021 displacement and ADR-0022 threshold qualification.
+
+They do not define a projector orientation, axis default, semantic sign default, total mapper, proposal timing, or production recognizer.
+
+### IM01 — one sign does not have projector-independent semantic meaning
+
+Qualification must preserve the same physical movement under opposite stable projectors yielding opposite displacement signs.
+
+With one unchanged mapper, normalized proposal must therefore be able to reverse.
+
+This property prevents `positive -> next` from becoming universal authority.
+
+### IM02 — jointly inverted projector and mapper may preserve normalized intent
+
+Qualification must preserve tested movements where:
+
+```text
+P + mapper A
+```
+
+and:
+
+```text
+-P + inverted mapper B
+```
+
+produce the same normalized intent.
+
+This is orientation/mapping covariance evidence only.
+
+It does not define one physical-direction UX rule.
+
+### IM03 — one measured displacement can feed independent mappers
+
+Qualification must preserve one unchanged signed displacement consumed by at least two independent mapping conventions that produce different normalized intents.
+
+Measurement must not be rewritten merely because semantic mapping differs.
+
+### IM04 — threshold miss reaches neither mapper nor Runtime
+
+Using production `bindPointerNavigation()`, below-threshold movement must be able to produce:
+
+```text
+no mapper invocation
+no normalized intent
+no Runtime request
+```
+
+This preserves threshold qualification and sign mapping as distinct host-policy responsibilities.
+
+### IM05 — zero does not silently fall through to one sign branch
+
+Qualification must explicitly distinguish zero from positive and negative directional displacement.
+
+A binary fallback that maps every non-positive value to one semantic direction is insufficient evidence.
+
+The final public zero/no-mapping representation remains deferred.
+
+### IM06 — changing only mapping changes proposal
+
+Qualification must preserve an unchanged eligible displacement interpreted by two different mappers with different normalized results.
+
+It must also preserve the stronger active-sequence witness:
+
+- same pointer;
+- same baseline;
+- same current coordinate;
+- same displacement;
+- mapper changes between observations;
+- later normalized proposal changes.
+
+For a policy class claiming one stable mapping during an active measurement, stability must therefore be explicit.
+
+Adaptive/dynamic mapping remains outside this property.
+
+### IM07 — current mapping is not semantic commitment
+
+Qualification must preserve reversal such as:
+
+```text
++60 -> next
+-70 -> previous
++60 -> next
+```
+
+without mapping-level commitment state.
+
+For accepted-only policy classes, semantic commitment remains governed by ADR-0018.
+
+### IM08 — mapping does not predict Runtime disposition
+
+Qualification may use recording Runtime responses to prove that one mapped normalized request is routed without Runtime snapshot prediction.
+
+Recording stubs must not be described as independent proof of real Runtime semantic rejection.
+
+Actual semantic disposition authority remains ADR-0018/ADR-0019 and the Runtime.
+
+### IM09 — generic pointer listener receives normalized intent only
+
+Using production `bindPointerNavigation()`, qualification must keep the listener unaware of:
+
+- displacement sign;
+- displacement value;
+- projector orientation;
+- mapper;
+- axis;
+- threshold.
+
+The listener routes only normalized `next | previous` produced by policy.
+
+### IM10 — Runtime receives no mapping metadata
+
+Runtime requests must contain no:
+
+- sign;
+- displacement;
+- projector orientation;
+- mapping convention;
+- axis;
+- threshold.
+
+No Runtime snapshot is required for sign mapping.
+
+### IM11 — total or symmetric mapping is not universal
+
+Qualification must preserve partial mapper counterexamples such as positive-only and negative-only mappings.
+
+This property does not select partial mapping as default.
+
+### IM12 — axis identity remains upstream
+
+Equivalent scalar deltas produced by independent X-like and Y-like projectors may be consumed by the same mapper without axis identity.
+
+This property does not establish equal UX or physical semantics across axes.
+
+### Pointer intent-mapping evidence boundaries
+
+IM01-IM12 do not establish:
+
+- projector orientation;
+- `clientX` / `clientY`;
+- X/Y default;
+- diagonal policy;
+- positive -> next;
+- negative -> previous;
+- total/symmetric/bijective mapper;
+- partial/one-sided mapper default;
+- fixed/adaptive mapping default;
+- threshold default/comparator;
+- zero-threshold semantics;
+- reversal commitment;
+- proposal timing;
+- writing-mode behavior;
+- RTL/LTR mapping;
+- pointerType policy;
+- accessibility suitability;
+- device ergonomic preference;
+- production recognizer API;
+- React integration;
+- package export;
+- core/Wasm changes.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
