@@ -902,7 +902,7 @@ It composes through unchanged `bindPointerNavigation()`:
 ```text
 PointerEvent
   -> internal recognizer policy
-  -> null | next | previous
+  -> null | undefined (no proposal), or next | previous (normalized intent)
   -> generic pointer listener
   -> Runtime request
   <- accepted | rejected
