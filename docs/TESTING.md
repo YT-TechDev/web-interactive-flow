@@ -2062,6 +2062,170 @@ PD01-PD15 do not establish:
 - package export;
 - core/Wasm changes.
 
+## Pointer threshold policy properties
+
+Pointer threshold qualification evidence is governed by [ADR-0022](adr/0022-pointer-threshold-policy-boundary.md).
+
+These properties qualify only threshold ownership/unit behavior layered after ADR-0021 displacement.
+
+They do not define a numeric default, comparator, validation API, symmetry rule, sign mapping, proposal timing, or production recognizer.
+
+### PT01 — one numeric threshold is not projection-scale invariant
+
+Qualification must preserve a case where the same numeric threshold classifies the same movement relation differently after a stable projection scale change.
+
+Example:
+
+```text
+delta = 30
+threshold = 40
+-> miss
+
+scaled delta = 60
+same threshold = 40
+-> cross
+```
+
+No universal projected unit is inferred.
+
+### PT02 — coherent scaling is bounded candidate evidence
+
+For a tested candidate, scaling both displacement and threshold by the same positive factor may preserve the crossing relation away from exact numeric-boundary representation effects.
+
+This property must not be generalized into universal symmetric-threshold authority.
+
+### PT03 — host normalization does not require Runtime ownership
+
+Qualification may express relative threshold policy through stable host normalization.
+
+Runtime must not receive normalization extent, projected unit metadata, or threshold values.
+
+This property does not select viewport/layout normalization.
+
+### PT04 — exact normalized boundary classification may diverge numerically
+
+Qualification must preserve the floating-point boundary witness:
+
+```text
+rawStart = 400
+rawCurrent = 340
+rawThreshold = 60
+
+raw strict comparison:
+60 > 60
+-> false
+
+stableExtent = 400
+normalized comparison:
+(400 / 400 - 340 / 400) > (60 / 400)
+0.15000000000000002 > 0.15
+-> true
+```
+
+See PTH-H3 in `tests/research/pointer_threshold_semantics.test.mjs`.
+
+This property prevents claims that arbitrary normalization preserves exact threshold equality semantics.
+
+### PT05 — changing only threshold can change qualification
+
+With displacement unchanged, qualification must distinguish different threshold values.
+
+For a policy class claiming one fixed threshold during an active measurement, threshold sampling/stability must therefore be explicit.
+
+Adaptive/dynamic threshold remains outside this property.
+
+### PT06 — strict and inclusive comparators diverge at equality
+
+Qualification must preserve:
+
+```text
+delta = threshold
+
+abs(delta) > threshold
+-> miss
+
+abs(delta) >= threshold
+-> cross
+```
+
+No comparator is selected as repository-wide default.
+
+### PT07 — zero semantics depend on comparator
+
+Qualification must preserve the `delta = 0`, `threshold = 0` distinction between strict and inclusive comparison.
+
+Threshold-domain semantics must not be frozen independently of equality/comparator policy.
+
+### PT08 — negative/non-finite threshold values are degenerate for the tested magnitude candidate
+
+Qualification must preserve explicit observations for NaN, +Infinity, -Infinity, and negative finite threshold values.
+
+These observations must not be rewritten into one WIF-wide public validation contract.
+
+### PT09 — symmetric threshold is not universal
+
+Qualification must preserve an asymmetric directional-bound counterexample where one sign crosses and the opposite sign of equal magnitude misses.
+
+This property does not select asymmetric thresholds as default.
+
+### PT10 — threshold miss produces no Runtime request
+
+Using production `bindPointerNavigation()`, a below-threshold host policy result must produce no normalized intent and no Runtime call.
+
+A threshold miss is not semantic `rejected`.
+
+### PT11 — threshold crossing is not semantic acceptance authority
+
+Threshold-crossing host policy may produce a normalized intent, but semantic acceptance/rejection and accepted-only commitment remain governed by ADR-0018/ADR-0019.
+
+A recording Runtime stub may prove disposition forwarding only; it must not be described as independent proof of real Runtime semantic rejection.
+
+### PT12 — Runtime and generic listener remain free of threshold state
+
+Qualification must keep threshold evaluation inside replaceable host policy.
+
+Runtime requests must contain no:
+
+- threshold;
+- displacement;
+- comparator;
+- directional bound;
+- projected unit;
+- normalization extent.
+
+No Runtime snapshot is required.
+
+The generic pointer listener must not acquire threshold comparison semantics.
+
+### Pointer threshold evidence boundaries
+
+PT01-PT12 do not establish:
+
+- numeric threshold default;
+- legacy `50`;
+- strict or inclusive comparator;
+- exact equality default;
+- zero default semantics;
+- public finite/non-negative validation;
+- NaN/Infinity sentinel API;
+- symmetric/asymmetric default;
+- fixed/adaptive threshold default;
+- coordinate property/frame/unit;
+- X/Y default;
+- diagonal policy;
+- sign-to-intent mapping;
+- reversal commitment;
+- proposal timing;
+- velocity/acceleration;
+- pointerType policy;
+- physical-device ergonomics;
+- accessibility suitability;
+- cross-browser gesture-feel equivalence;
+- production recognizer API;
+- React integration;
+- package export;
+- core/Wasm changes.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.

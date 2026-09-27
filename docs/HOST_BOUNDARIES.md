@@ -655,6 +655,59 @@ Still deferred:
 - core/Wasm changes.
 
 
+### Pointer threshold qualification boundary
+
+The reusable threshold ownership/unit boundary is governed by [ADR-0022](adr/0022-pointer-threshold-policy-boundary.md).
+
+Threshold policy is layered after ADR-0021 finite projected displacement:
+
+```text
+ADR-0020-valid sequence
+  -> ADR-0021 finite projected displacement
+  -> host threshold policy
+  -> miss: no normalized intent
+  -> cross: proposal eligibility only
+  -> later host mapping / proposal policy
+  -> pointer listener
+  -> Runtime disposition
+```
+
+A numeric threshold has meaning only relative to the projected units used by the host policy, or through explicit host normalization/conversion.
+
+The repository does not select one physical/CSS/viewport/normalized unit.
+
+Stable normalization may remain host-owned, but exact floating-point boundary classification is not guaranteed to survive arbitrary unit conversion. Exact equality and numeric representation remain explicit policy concerns.
+
+A threshold miss is pre-request host behavior. It produces no normalized intent and no Runtime request.
+
+A threshold crossing is only proposal eligibility. Runtime remains semantic disposition owner under ADR-0018/ADR-0019.
+
+For a policy class that claims one fixed movement boundary during an active measurement, threshold sampling/stability must be explicit. Adaptive/dynamic threshold policy remains a separate unresolved class.
+
+The generic pointer listener does not own threshold comparison. Runtime receives no threshold, displacement, comparator, directional bound, projected unit, or normalization extent.
+
+Still deferred:
+
+- numeric threshold default;
+- strict vs inclusive comparator;
+- exact equality semantics;
+- zero semantics;
+- public validation domain;
+- symmetric vs asymmetric bounds;
+- fixed vs adaptive threshold globally;
+- coordinate frame/unit;
+- X/Y or diagonal policy;
+- sign-to-intent mapping;
+- reversal commitment;
+- proposal timing;
+- velocity/acceleration;
+- pointerType policy;
+- production recognizer;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
