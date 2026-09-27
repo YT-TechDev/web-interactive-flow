@@ -306,14 +306,14 @@ test("PDM-H6: threshold crossing does not commit measurement direction", () => {
   );
   const reversed = measurement.sample(
     pointerEvent("pointermove", {
-      clientY: 130,
+      clientY: 170,
     }),
   );
 
   assert.equal(forward, 60);
   assert.equal(strictGate(forward, 50), "next");
-  assert.equal(reversed, -30);
-  assert.equal(strictGate(reversed, 20), "previous");
+  assert.equal(reversed, -70);
+  assert.equal(strictGate(reversed, 50), "previous");
 });
 
 test("PDM-H7: move-time and pointerup-only policies can consume the same measurement definition", () => {
