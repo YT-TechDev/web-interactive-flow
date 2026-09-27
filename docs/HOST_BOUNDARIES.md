@@ -877,6 +877,73 @@ Still deferred:
 - core/Wasm changes.
 
 
+### First production accepted-only pointer recognizer
+
+The first production recognizer boundary is governed by [ADR-0026](adr/0026-first-production-accepted-pointer-recognizer.md).
+
+The qualified source is currently `adapters/dom/accepted_pointer_recognizer.mjs`.
+
+It is an internal DOM host-policy module, not a package/public API.
+
+The source-level factory currently requires explicit caller-owned collaborators for:
+
+- pointer admission;
+- scalar projection;
+- qualification;
+- displacement-to-intent mapping;
+- proposal timing.
+
+No repository-wide default is selected for those roles.
+
+The recognizer owns only the accepted host-side sequence/measurement/conditional-commitment state already authorized by ADR-0018 through ADR-0025.
+
+It composes through unchanged `bindPointerNavigation()`:
+
+```text
+PointerEvent
+  -> internal recognizer policy
+  -> null | undefined (no proposal), or next | previous (normalized intent)
+  -> generic pointer listener
+  -> Runtime request
+  <- accepted | rejected
+  -> synchronous recognizer feedback
+```
+
+Runtime/core remain unaware of pointer identity, pointerType, coordinates, displacement, qualification, mapping, timing, contamination, and gesture commitment.
+
+The generic pointer listener remains unaware of recognizer internals.
+
+The production recognizer preserves ADR-0020 sticky contamination and fresh-down restart. In particular, cancelling a non-tracked participant after contamination does not revive an already-down remaining pointer.
+
+Finite measurement readiness is independent from multi-pointer contamination. A non-finite baseline/current sample/displacement produces no directional proposal and does not become Runtime rejection.
+
+For the conditional ADR-0018 policy class, `rejected` may leave the active candidate uncommitted and `accepted` may consume the remaining active sequence.
+
+The first package artifact still excludes this recognizer module. No DOM package subpath, root export, public factory API, default policy set, or semver guarantee is established here.
+
+CI qualification must explicitly execute the production recognizer tests. A green repository run that omits those tests is not evidence for this production boundary.
+
+Still deferred:
+
+- package/public export;
+- stable public recognizer name/API;
+- collaborator signatures as consumer API;
+- projector/axis/coordinate defaults;
+- threshold/comparator/unit defaults;
+- sign-mapping defaults;
+- proposal-timing default;
+- pointerType default;
+- universal reversal/direction-locking or retry/cardinality policy;
+- velocity/acceleration;
+- native-control/native-scroll/`touch-action` policy;
+- pointer capture;
+- Shadow DOM/composed-path ownership;
+- writing-mode / RTL/LTR behavior;
+- accessibility/focus behavior;
+- React/R3F integration;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
