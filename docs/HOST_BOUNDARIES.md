@@ -708,6 +708,58 @@ Still deferred:
 - core/Wasm changes.
 
 
+### Pointer intent-mapping boundary
+
+The reusable sign-to-intent ownership boundary is governed by [ADR-0023](adr/0023-pointer-intent-mapping-boundary.md).
+
+Mapping is layered after qualified signed displacement:
+
+```text
+ADR-0020 valid sequence
+  -> ADR-0021 finite signed displacement
+  -> ADR-0022 threshold qualification
+  -> host sign-to-intent mapping
+  -> next | previous | no proposal
+  -> pointer listener
+  -> Runtime disposition
+```
+
+Displacement sign is relative to projector orientation. WIF does not define positive as `next` or negative as `previous`.
+
+Projector orientation and mapping are paired host conventions. Tested projector+mapper inversion preserved normalized intent for the same physical movements, but this is not a universal physical-direction or layout theorem.
+
+Measurement, threshold qualification, sign mapping, proposal timing, and semantic commitment remain distinct responsibilities.
+
+Zero must not silently fall through into one positive/negative semantic direction. Exact public zero/no-mapping representation remains deferred.
+
+Mapping reports current eligible direction and does not commit gesture semantics. ADR-0018 remains accepted-only commitment authority.
+
+For a policy class claiming one stable mapping during an active measurement, mapping sampling/stability must be explicit. Adaptive/dynamic mapping remains a separate unresolved class.
+
+Mapping need not be total or symmetric by current authority. Axis identity remains upstream and need not be passed to the mapper.
+
+The generic pointer listener does not interpret sign or orientation. Runtime receives no displacement, orientation, mapping, axis, or threshold metadata and needs no snapshot read for mapping.
+
+Still deferred:
+
+- projector orientation;
+- coordinate property;
+- X/Y or diagonal policy;
+- positive/negative semantic defaults;
+- total/symmetric/partial mapping default;
+- fixed vs adaptive mapping globally;
+- threshold defaults/comparator;
+- zero-threshold semantics;
+- reversal commitment;
+- proposal timing;
+- writing-mode / RTL/LTR behavior;
+- pointerType policy;
+- production recognizer;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
