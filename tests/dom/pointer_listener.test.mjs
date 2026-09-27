@@ -75,8 +75,9 @@ function makeRuntime({
 function makePolicy({
   handle = () => null,
   abort = () => {},
+  ...capabilities
 } = {}) {
-  return { handle, abort };
+  return { handle, abort, ...capabilities };
 }
 
 test("P01/P02: validates target and stateful policy before listener installation", () => {
@@ -114,6 +115,35 @@ test("P01/P02: validates target and stateful policy before listener installation
   }
 
   assert.equal(target.addCalls.length, 0);
+});
+
+test("PFD11: rejects a malformed disposition-feedback opt-in before listener installation", () => {
+  const { runtime } = makeRuntime();
+
+  for (const onDisposition of [undefined, null, false, "observe", {}]) {
+    const target = new RecordingTarget();
+
+    assert.throws(
+      () =>
+        bindPointerNavigation({
+          target,
+          runtime,
+          policy: makePolicy({ onDisposition }),
+        }),
+      /invalid pointer gesture policy disposition feedback/,
+    );
+    assert.equal(target.addCalls.length, 0);
+  }
+
+  const legacyTarget = new RecordingTarget();
+  const cleanup = bindPointerNavigation({
+    target: legacyTarget,
+    runtime,
+    policy: makePolicy(),
+  });
+
+  assert.equal(legacyTarget.addCalls.length, POINTER_TYPES.length);
+  cleanup();
 });
 
 test("P03: installs exactly the bounded PointerEvent listener set", () => {
@@ -268,6 +298,172 @@ test("P07/P08: next and previous delegate exactly once without semantic predicti
   }
 });
 
+test("PFD02/PFD03/PFD12: accepted and rejected dispositions synchronously return to their originating policy", () => {
+  const cases = [
+    { intent: "next", disposition: "accepted" },
+    { intent: "previous", disposition: "rejected" },
+  ];
+
+  for (const { intent, disposition } of cases) {
+    const target = new RecordingTarget();
+    const order = [];
+    const runtime = {
+      next() {
+        order.push("runtime:next");
+        return disposition;
+      },
+      previous() {
+        order.push("runtime:previous");
+        return disposition;
+      },
+      getSnapshot() {
+        throw new Error("production listener must not inspect Runtime snapshots");
+      },
+    };
+    let policy;
+    policy = makePolicy({
+      handle: () => intent,
+      onDisposition(observedIntent, observedDisposition) {
+        assert.equal(this, policy);
+        order.push(`feedback:${observedIntent}:${observedDisposition}`);
+      },
+    });
+    const cleanup = bindPointerNavigation({ target, runtime, policy });
+
+    try {
+      target.dispatch("pointermove", { type: "pointermove" });
+      assert.deepEqual(order, [
+        `runtime:${intent}`,
+        `feedback:${intent}:${disposition}`,
+      ]);
+    } finally {
+      cleanup();
+    }
+  }
+});
+
+test("PFD04: Runtime failure propagates unchanged without feedback or retry", () => {
+  const target = new RecordingTarget();
+  const failure = new Error("runtime failure");
+  let requests = 0;
+  let feedback = 0;
+  const runtime = {
+    next() {
+      requests += 1;
+      throw failure;
+    },
+  };
+  const cleanup = bindPointerNavigation({
+    target,
+    runtime,
+    policy: makePolicy({
+      handle: () => "next",
+      onDisposition() {
+        feedback += 1;
+      },
+    }),
+  });
+
+  try {
+    assert.throws(
+      () => target.dispatch("pointermove", { type: "pointermove" }),
+      (error) => error === failure,
+    );
+    assert.equal(requests, 1);
+    assert.equal(feedback, 0);
+  } finally {
+    cleanup();
+  }
+});
+
+test("PFD05: feedback failure propagates after one Runtime request without retry or rewritten disposition", () => {
+  for (const disposition of ["accepted", "rejected"]) {
+    const target = new RecordingTarget();
+    const failure = new Error(`feedback failure after ${disposition}`);
+    const observations = [];
+    let requests = 0;
+    const runtime = {
+      previous() {
+        requests += 1;
+        return disposition;
+      },
+    };
+    const cleanup = bindPointerNavigation({
+      target,
+      runtime,
+      policy: makePolicy({
+        handle: () => "previous",
+        onDisposition(intent, observedDisposition) {
+          observations.push({ intent, disposition: observedDisposition });
+          throw failure;
+        },
+      }),
+    });
+
+    try {
+      assert.throws(
+        () => target.dispatch("pointerup", { type: "pointerup" }),
+        (error) => error === failure,
+      );
+      assert.equal(requests, 1);
+      assert.deepEqual(observations, [
+        { intent: "previous", disposition },
+      ]);
+    } finally {
+      cleanup();
+    }
+  }
+});
+
+test("PFD06: direct use of the same Runtime does not produce pointer feedback", () => {
+  const target = new RecordingTarget();
+  const { runtime } = makeRuntime();
+  const observations = [];
+  const cleanup = bindPointerNavigation({
+    target,
+    runtime,
+    policy: makePolicy({
+      handle: () => null,
+      onDisposition(intent, disposition) {
+        observations.push({ intent, disposition });
+      },
+    }),
+  });
+
+  try {
+    assert.equal(runtime.next(), "accepted");
+    assert.deepEqual(observations, []);
+  } finally {
+    cleanup();
+  }
+});
+
+test("PFD10: invalid intent produces neither a Runtime request nor disposition feedback", () => {
+  const target = new RecordingTarget();
+  const { runtime, calls } = makeRuntime();
+  let feedback = 0;
+  const cleanup = bindPointerNavigation({
+    target,
+    runtime,
+    policy: makePolicy({
+      handle: () => "forward",
+      onDisposition() {
+        feedback += 1;
+      },
+    }),
+  });
+
+  try {
+    assert.throws(() =>
+      target.dispatch("pointerup", { type: "pointerup" }),
+    );
+    assert.deepEqual(calls, []);
+    assert.equal(feedback, 0);
+  } finally {
+    cleanup();
+  }
+});
+
 test("P09/P10: cleanup removes only owned listeners, is repeat-safe, and aborts once", () => {
   const target = new RecordingTarget();
   const { runtime, calls } = makeRuntime();
@@ -402,6 +598,11 @@ test("P12: production source contains no deferred gesture or semantic ownership"
     /\bdocument\b/,
     /WeakMap/,
     /WeakSet/,
+    /\bPromise\b/,
+    /queueMicrotask/,
+    /setTimeout/,
+    /setInterval/,
+    /\basync\b/,
   ];
 
   for (const pattern of forbiddenPatterns) {
