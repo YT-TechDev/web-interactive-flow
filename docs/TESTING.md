@@ -2115,9 +2115,14 @@ raw strict comparison:
 60 > 60
 -> false
 
-separately normalized strict comparison
+stableExtent = 400
+normalized comparison:
+(400 / 400 - 340 / 400) > (60 / 400)
+0.15000000000000002 > 0.15
 -> true
 ```
+
+See PTH-H3 in `tests/research/pointer_threshold_semantics.test.mjs`.
 
 This property prevents claims that arbitrary normalization preserves exact threshold equality semantics.
 
