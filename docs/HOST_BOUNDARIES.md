@@ -760,6 +760,57 @@ Still deferred:
 - core/Wasm changes.
 
 
+### Pointer proposal-timing boundary
+
+The reusable proposal-timing ownership boundary is governed by [ADR-0024](adr/0024-pointer-proposal-timing-boundary.md).
+
+Proposal timing is layered after an otherwise eligible normalized direction:
+
+```text
+ADR-0020 valid sequence
+  -> ADR-0021 finite signed displacement
+  -> ADR-0022 threshold qualification
+  -> ADR-0023 sign-to-intent mapping
+  -> host proposal timing
+  -> next | previous | no proposal
+  -> pointer listener
+  -> Runtime disposition
+  -> later policy-defined semantic commitment
+```
+
+Move-time and pointerup-time are observably distinct host-policy classes. Current authority does not select either as the WIF-wide default.
+
+Timing determines which delivered pointer-event boundaries may expose an otherwise eligible proposal. It does not redefine displacement, threshold qualification, or sign mapping.
+
+Proposal timing does not predict Runtime acceptance and does not itself commit gesture direction. Runtime disposition remains semantic authority; accepted-only commitment remains governed by ADR-0018/ADR-0019.
+
+Cancellation and terminal reversal can expose different observable proposals under different timing classes. Those observations do not select reversal, direction-locking, first-direction, terminal-direction, or retry semantics.
+
+Changing only timing can change request schedule/cardinality. One-request or one-accepted-navigation behavior belongs to a composed timing + commitment/cardinality policy, not to timing alone.
+
+Production `bindPointerNavigation()` remains timing-agnostic. The listener routes only normalized intent returned for the current delivered event and does not select move-time or pointerup-time behavior.
+
+Runtime receives no proposal-timing metadata, PointerEvent object, event type, or pointer coordinate. No Runtime snapshot is required to decide timing, and no new core/Wasm state or ABI is authorized.
+
+Still deferred:
+
+- move-time or pointerup-time default;
+- other default proposal event;
+- reversal commitment;
+- direction locking;
+- retry/cardinality policy;
+- velocity/acceleration;
+- threshold/projector/mapping defaults;
+- pointerType policy;
+- writing-mode / RTL/LTR behavior;
+- native-scroll / `touch-action` policy;
+- pointer capture policy;
+- production recognizer representation;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
