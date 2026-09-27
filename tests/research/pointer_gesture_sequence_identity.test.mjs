@@ -774,6 +774,46 @@ test("PGI-H10: semantic accepted commitment and host pointer membership remain s
   }
 });
 
+test("PGI-H10b: rejected disposition does not commit and permits a later proposal", () => {
+  const { runtime, calls } = createRecordingRuntime({
+    disposition: "rejected",
+  });
+  const policy = createAcceptedCommitSequencePolicy();
+  const { target, cleanup } = bind({ policy, runtime });
+
+  try {
+    target.dispatch("pointerdown", pointerEvent("pointerdown", { pointerId: 1 }));
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", { pointerId: 1, clientY: 100 }),
+    );
+
+    assert.equal(calls.length, 1);
+    assert.equal(policy.snapshot().committed, false);
+    assert.equal(policy.snapshot().proposed, false);
+    assert.deepEqual(policy.dispositions, [
+      { intent: "next", disposition: "rejected" },
+    ]);
+    assert.deepEqual(policy.snapshot().activeIds, [1]);
+
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", { pointerId: 1, clientY: 50 }),
+    );
+
+    assert.equal(calls.length, 2);
+    assert.equal(policy.snapshot().committed, false);
+    assert.equal(policy.snapshot().proposed, false);
+    assert.deepEqual(policy.dispositions, [
+      { intent: "next", disposition: "rejected" },
+      { intent: "next", disposition: "rejected" },
+    ]);
+    assert.deepEqual(policy.snapshot().activeIds, [1]);
+  } finally {
+    cleanup();
+  }
+});
+
 test("PGI-H11: application abort clears all reusable sequence state", () => {
   const { runtime } = createRecordingRuntime();
   const policy = createStickySequencePolicy();
