@@ -737,6 +737,24 @@ test("PDP-H10: pointercancel clears stored projection baseline", () => {
     );
 
     assert.deepEqual(calls, []);
+
+    target.dispatch(
+      "pointerdown",
+      pointerEvent("pointerdown", { pointerId: 21, clientY: 200 }),
+    );
+
+    assert.equal(policy.snapshot().startProjected, 200);
+    assert.equal(policy.snapshot().measurementValid, true);
+
+    target.dispatch(
+      "pointermove",
+      pointerEvent("pointermove", { pointerId: 21, clientY: 120 }),
+    );
+
+    assert.deepEqual(
+      calls.map(({ intent }) => intent),
+      ["next"],
+    );
   } finally {
     cleanup();
   }
