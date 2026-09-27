@@ -552,6 +552,57 @@ test("second admitted pointer causes sticky contamination until zero membership 
   }
 });
 
+test("cancelling a non-tracked participant does not revive the remaining tracked pointer", () => {
+  const policy = createPolicy();
+  const { runtime, calls } = createRuntime();
+  const { target, cleanup } =
+    bind(policy, runtime);
+
+  try {
+    dispatch(target, [
+      pointerEvent(
+        "pointerdown",
+        {
+          pointerId: 1,
+          clientY: 200,
+        },
+      ),
+      pointerEvent(
+        "pointerdown",
+        {
+          pointerId: 2,
+          clientY: 200,
+        },
+      ),
+      pointerEvent(
+        "pointercancel",
+        {
+          pointerId: 2,
+          clientY: 200,
+        },
+      ),
+      pointerEvent(
+        "pointermove",
+        {
+          pointerId: 1,
+          clientY: 100,
+        },
+      ),
+      pointerEvent(
+        "pointerup",
+        {
+          pointerId: 1,
+          clientY: 100,
+        },
+      ),
+    ]);
+
+    assert.deepEqual(calls, []);
+  } finally {
+    cleanup();
+  }
+});
+
 test("duplicate down contaminates rather than creating a second valid sequence", () => {
   const policy = createPolicy();
   const { runtime, calls } = createRuntime();
