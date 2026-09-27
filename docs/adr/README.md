@@ -40,3 +40,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0014 — First DOM keyboard listener uses explicit target and replaceable raw policy](0014-dom-keyboard-listener-explicit-target.md)
 - [ADR-0015 — Overlapping DOM bindings have no implicit WIF arbitration](0015-no-implicit-dom-binding-arbitration.md)
 - [ADR-0016 — Pointer Events are the first DOM direct-manipulation substrate](0016-pointer-events-direct-manipulation-substrate.md)
+- [ADR-0017 — First Pointer Events listener owns explicit lifecycle and gesture-state abort](0017-pointer-events-listener-lifecycle.md)

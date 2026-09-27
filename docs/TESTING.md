@@ -1286,6 +1286,151 @@ DM01-DM11 do not establish:
 
 Those remain later host-policy, compatibility, accessibility, adapter-API, or distribution frontiers.
 
+
+## Pointer Events listener/lifecycle properties
+
+Pointer listener/lifecycle evidence is host adapter evidence governed by [ADR-0017](adr/0017-pointer-events-listener-lifecycle.md).
+
+It is layered on the DM01-DM12 Pointer Events substrate evidence and does not define a production swipe recognizer.
+
+### PL01 — listener target is explicit
+
+The binding consumes an explicitly supplied/owned `EventTarget`.
+
+It must not silently select `window`, `document`, another global target, or an inferred direct-manipulation root.
+
+Trusted browser evidence should preserve that a pointer stream inside the explicit target is observed while a comparable outside stream is not.
+
+### PL02 — installed event set is bounded
+
+The first binding installs only:
+
+- `pointerdown`;
+- `pointermove`;
+- `pointerup`;
+- `pointercancel`.
+
+The listener layer does not simultaneously install legacy TouchEvent navigation bindings.
+
+### PL03 — listener mechanics forward raw PointerEvents once
+
+For one delivered event, the listener invokes replaceable gesture policy once.
+
+Listener mechanics do not interpret threshold, axis, velocity, pointerType, multi-pointer count, or commit policy.
+
+A valid policy result produces at most one normalized semantic request for that listener invocation.
+
+### PL04 — binding cleanup terminates active gesture-policy state
+
+Removing DOM listeners alone is insufficient when policy accumulates cross-event state.
+
+Qualification must preserve the stale-state counterexample:
+
+```text
+target A pointerdown
+remove listeners only
+reuse policy on target B
+matching pointerup on B
+-> stale old gesture can emit a request
+```
+
+The qualified binding lifecycle must terminate active policy state during teardown.
+
+### PL05 — pointercancel and application cleanup are independent reset paths
+
+Qualification must separately exercise:
+
+- browser `pointercancel`;
+- explicit application cleanup.
+
+Both terminate accumulated host gesture state.
+
+Application cleanup must not depend on a later browser pointercancel.
+
+### PL06 — target replacement cannot carry stale gesture state
+
+Trusted browser qualification should preserve:
+
+```text
+target A:
+  pointerdown
+  pointermove
+
+cleanup A + reset policy
+bind B
+complete old browser sequence
+Runtime unchanged
+semantic decisions = 0
+
+fresh B sequence
+-> valid normalized intent
+-> Runtime request
+```
+
+The old active sequence must not complete through replacement target B.
+
+### PL07 — DOM detachment is not cleanup
+
+A direct listener may remain attached to a detached EventTarget.
+
+Synthetic direct dispatch may prove this lifecycle property if it is explicitly labeled untrusted.
+
+Qualification must not reinterpret DOM connectivity as binding disposal.
+
+### PL08 — cleanup is isolated and repeat-safe
+
+Cleanup removes only listeners installed by that binding.
+
+Repeated cleanup is safe.
+
+Unrelated host listeners and independent WIF bindings remain intact.
+
+### PL09 — listener lifecycle preserves author CSS and host routing policy
+
+Installing, rebinding, and cleaning up the listener must not silently mutate author `touch-action`.
+
+The first listener/lifecycle theorem does not require an explicit `setPointerCapture()` call.
+
+Pointer capture remains host routing state under ADR-0016.
+
+### PL10 — semantic ownership remains Runtime-owned
+
+The listener does not inspect Runtime snapshots to predict semantic eligibility.
+
+Mechanical evidence may guard against listener-side use of:
+
+- selected phase;
+- transition state;
+- cooldown;
+- lock state;
+- `runtime.getSnapshot()`.
+
+Once gesture policy produces `next` or `previous`, the Runtime disposition remains authoritative.
+
+### Pointer listener/lifecycle evidence boundaries
+
+PL01-PL10 do not establish:
+
+- a final public listener/controller API;
+- public reset/abort method naming;
+- a production swipe algorithm;
+- threshold/axis/velocity/reversal defaults;
+- commit-point policy;
+- pointerType allowlist;
+- multi-pointer policy;
+- explicit capture API;
+- native-control/ignore policy;
+- default `touch-action`;
+- overscroll policy;
+- Shadow DOM/composed-path ownership;
+- overlap arbitration beyond ADR-0015;
+- accessibility/focus policy;
+- React pointer integration;
+- package export;
+- broad browser/device compatibility.
+
+Those remain later host-policy, adapter-API, accessibility, compatibility, or distribution frontiers.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
