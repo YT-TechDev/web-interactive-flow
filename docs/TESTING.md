@@ -1866,6 +1866,202 @@ GS01-GS14 do not establish:
 - package export;
 - core/Wasm changes.
 
+## Pointer displacement measurement properties
+
+Reusable pointer displacement evidence is governed by [ADR-0021](adr/0021-pointer-start-relative-displacement.md).
+
+These properties qualify only the host-policy measurement theorem layered after ADR-0020 sequence validity.
+
+They do not define a threshold, direction mapping, proposal timing, or complete recognizer.
+
+### PD01 — start-relative displacement differs from per-event step displacement
+
+Qualification must preserve a trace where no individual movement step crosses a research threshold but total start-relative displacement does.
+
+Example:
+
+```text
+200 -> 185 -> 170 -> 155 -> 140
+
+per-step = 15
+final start-relative delta = +60
+```
+
+The research threshold value is evidence infrastructure only, not a default.
+
+### PD02 — path length is not directional displacement
+
+Qualification must preserve an out-and-back trace:
+
+```text
+200 -> 120 -> 200
+
+absolute path = 160
+final start-relative delta = 0
+```
+
+A large traveled path must not be confused with final signed start displacement.
+
+### PD03 — deterministic endpoint displacement is independent of intermediate sample count
+
+Sparse and dense deterministic traces with identical projected baseline/current values must yield identical final start-relative displacement.
+
+This property must not be generalized into browser coalescing, physical sampling, timing, or performance equivalence.
+
+### PD04 — displacement is downstream of ADR-0020 sequence validity
+
+Qualification must preserve both:
+
+1. a naive measurement-only policy that can emit a stale proposal after an ignored second-pointer interval;
+2. an ADR-0020-composed policy that suppresses measurement-derived intent after contamination until participating membership reaches zero and a fresh admitted pointerdown begins.
+
+Measurement validity must not replace sequence contamination semantics.
+
+### PD05 — projection convention is stable across compared samples
+
+Qualification must show that changing projection origin, scale, or orientation between baseline and current sample can manufacture or distort displacement.
+
+Authority is limited to samples compared under one stable scalar projection convention.
+
+This property does not select a DOM coordinate frame.
+
+### PD06 — stable translation cancels
+
+A stable constant translation applied to both baseline and current sample must preserve displacement:
+
+```text
+(start + c) - (current + c)
+= start - current
+```
+
+This does not authorize mid-sequence translation drift.
+
+### PD07 — stable scale/orientation remain deterministic in projected units
+
+Qualification may show that stable scale/orientation produces deterministic signed displacement.
+
+It must keep explicit that:
+
+- scale changes magnitude/units;
+- orientation may invert sign;
+- one threshold or sign mapping cannot be generalized across projectors from this evidence.
+
+### PD08 — baseline, current sample, and computed difference are finite
+
+A valid measurement must require all of:
+
+```text
+finite startProjected
+finite currentProjected
+finite (startProjected - currentProjected)
+```
+
+Qualification must preserve evidence for:
+
+- NaN baseline rejection;
+- ±Infinity baseline rejection;
+- non-finite current sample rejection;
+- finite endpoints whose subtraction overflows to a non-finite result.
+
+Exact validation/error representation remains outside this property.
+
+### PD09 — sequence validity and measurement validity remain distinct
+
+A non-finite baseline may make displacement measurement unavailable without inventing ADR-0020 multi-pointer contamination.
+
+Qualification must not collapse measurement invalidity into Runtime semantic rejection either.
+
+### PD10 — sign-to-intent mapping remains separate host policy
+
+Qualification must preserve that the same physical movement under stable opposite projector orientations yields opposite displacement signs.
+
+Therefore this theorem does not define:
+
+```text
+positive -> next
+negative -> previous
+```
+
+or the reverse.
+
+### PD11 — measurement does not commit direction
+
+A later sample may reverse current signed start-relative displacement.
+
+Qualification must distinguish displacement observation from semantic gesture commitment.
+
+For accepted-only policy classes, semantic commitment remains governed separately by ADR-0018.
+
+### PD12 — move-time and pointerup-only policies may share one measurement definition
+
+Qualification must preserve that both timing classes can evaluate:
+
+```text
+delta = startProjected - currentProjected
+```
+
+The measurement theorem does not select when an intent is proposed.
+
+### PD13 — Runtime and generic listener remain free of coordinate/displacement state
+
+Qualification must use the production pointer listener while ensuring Runtime requests receive no:
+
+- PointerEvent;
+- pointer coordinates;
+- projector;
+- coordinate-frame metadata;
+- projected values;
+- displacement object;
+- finite-validation state.
+
+No Runtime snapshot read is required.
+
+The generic listener must not acquire coordinate projection, finite validation, threshold, mapping, or proposal-timing semantics.
+
+### PD14 — cancellation clears baseline and permits fresh restart
+
+After `pointercancel`:
+
+- old projected baseline is cleared;
+- stale old-pointer movement cannot produce a request;
+- a fresh eligible pointerdown on the same binding may establish a new baseline;
+- later valid movement may produce normalized intent.
+
+### PD15 — application abort clears baseline and permits a later projection convention
+
+Binding cleanup/application abort terminates accumulated measurement state.
+
+A later fully fresh sequence may establish a different projection convention before capturing its new baseline.
+
+The new convention must remain stable across samples compared inside that active measurement.
+
+### Pointer displacement evidence boundaries
+
+PD01-PD15 do not establish:
+
+- `clientX` / `clientY` authority;
+- viewport/document/local coordinate equivalence;
+- coordinate units;
+- X/Y default;
+- diagonal interpretation;
+- threshold numeric default;
+- exact threshold comparator;
+- sign-to-intent mapping;
+- direction locking;
+- reversal commitment;
+- move-time vs pointerup proposal/commit default;
+- velocity/duration;
+- pointerType allowlist;
+- physical-device sampling behavior;
+- browser coalescing behavior;
+- CSS/layout-transform invariance;
+- devicePixelRatio/zoom independence;
+- cross-browser coordinate precision;
+- production recognizer API;
+- React integration;
+- package export;
+- core/Wasm changes.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.
