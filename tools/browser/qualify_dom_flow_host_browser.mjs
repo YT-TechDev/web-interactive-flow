@@ -7,6 +7,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(fileURLToPath(new URL("../../", import.meta.url)));
+const CHROME_TIMEOUT_MS = 30_000;
+
 const routes = new Map([
   ["/", "tests/browser/dom-flow-host-qualification/index.html"],
   ["/fixture/main.mjs", "tests/browser/dom-flow-host-qualification/main.mjs"],
@@ -74,7 +76,25 @@ try {
   let stderr = "";
   child.stdout.on("data", (chunk) => { stdout += chunk; });
   child.stderr.on("data", (chunk) => { stderr += chunk; });
-  const code = await new Promise((resolve) => child.on("close", resolve));
+  const code = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      reject(
+        new Error(
+          `Chrome qualification timed out after ${CHROME_TIMEOUT_MS} ms`,
+        ),
+      );
+    }, CHROME_TIMEOUT_MS);
+
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (value) => {
+      clearTimeout(timer);
+      resolve(value);
+    });
+  });
   assert.equal(code, 0, stderr);
   const match = stdout.match(/<pre id="result">([^<]+)<\/pre>/);
   assert.ok(match, stdout);
