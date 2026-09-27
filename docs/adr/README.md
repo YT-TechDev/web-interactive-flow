@@ -42,3 +42,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0016 — Pointer Events are the first DOM direct-manipulation substrate](0016-pointer-events-direct-manipulation-substrate.md)
 - [ADR-0017 — First Pointer Events listener owns explicit lifecycle and gesture-state abort](0017-pointer-events-listener-lifecycle.md)
 - [ADR-0018 — Accepted-only pointer gesture commit observes Runtime disposition at the host boundary](0018-pointer-gesture-disposition-feedback.md)
+- [ADR-0019 — Pointer listener synchronously routes Runtime disposition to the originating policy](0019-pointer-listener-synchronous-disposition-feedback.md)

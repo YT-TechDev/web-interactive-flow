@@ -1576,6 +1576,132 @@ PG01-PG08 do not establish:
 
 The actual Runtime/Wasm browser composition used synthetic/untrusted PointerEvents in Chrome 153 / ChromeDriver 153. It proves the semantic feedback composition only, not trusted physical-input or browser-default-action behavior.
 
+## Pointer disposition-feedback placement properties
+
+Pointer disposition-feedback placement evidence is governed by [ADR-0019](adr/0019-pointer-listener-synchronous-disposition-feedback.md).
+
+It is layered on ADR-0017 listener/lifecycle authority and ADR-0018 accepted-only gesture feedback semantics.
+
+These properties qualify transaction placement and ordering. They do not define a production gesture recognizer or final public feedback method.
+
+### PS01 — feedback is request-origin scoped
+
+Only a Runtime request issued because the current pointer policy produced a normalized intent may feed disposition back to that policy.
+
+Qualification must preserve the shared-decoration counterexample:
+
+```text
+shared decorated Runtime
+unrelated programmatic next
+-> accepted
+-> pointer policy notified
+```
+
+That behavior is invalid for pointer-origin feedback.
+
+A direct request through the original Runtime outside the pointer binding must not notify pointer policy.
+
+### PS02 — feedback is synchronous
+
+For the first production placement, disposition feedback occurs in the same listener/request call stack after Runtime returns.
+
+Qualification must preserve the deferred-feedback counterexample:
+
+```text
+gesture A accepted
+feedback queued
+pointercancel/reset
+gesture B begins
+old feedback delivered
+-> B becomes committed
+```
+
+A future asynchronous seam requires separate identity/lifetime evidence.
+
+### PS03 — intent plus disposition are sufficient
+
+The feedback path must be able to preserve the accepted-only reversal trace with only:
+
+```text
+next | previous
++
+accepted | rejected
+```
+
+It must not require the original PointerEvent.
+
+### PS04 — Runtime snapshots remain unnecessary
+
+Qualification must not require policy feedback to inspect or mirror:
+
+- selected phase;
+- transition;
+- cooldown;
+- lock;
+- `runtime.getSnapshot()`.
+
+Runtime remains the sole semantic eligibility owner.
+
+### PS05 — listener routing does not own gesture interpretation
+
+A listener-mediated candidate may route intent/disposition while policy alone owns:
+
+- threshold;
+- coordinates;
+- pointer identity;
+- reversal;
+- accepted-only commit state.
+
+Routing the transaction result must not introduce those semantics into generic listener mechanics.
+
+### PS06 — Runtime failure before disposition produces no feedback
+
+If a Runtime request fails before returning `accepted` or `rejected`, no semantic disposition feedback is delivered.
+
+The failure must not be fabricated as `rejected`.
+
+### PS07 — feedback failure does not rewrite semantic disposition
+
+Qualification must preserve ordering:
+
+```text
+Runtime accepted
+semantic state changed
+feedback invoked
+feedback throws
+```
+
+The later host-layer failure must remain distinguishable from semantic rejection.
+
+### PS08 — proposal identity is not required for synchronous routing
+
+A proposal/transaction object may be compared as research evidence, but the selected synchronous one-event/one-request placement must not require widening `policy.handle(event)` solely to attach identity unless new evidence demands it.
+
+### PS09 — shared Runtime decoration is not the selected production seam
+
+A strictly binding-local Runtime facade may prove composability, but qualification must distinguish it from a reusable/shared decorated Runtime.
+
+The production placement should structurally preserve origin scope rather than rely on a general Runtime wrapper never escaping.
+
+### Pointer disposition-feedback placement boundaries
+
+PS01-PS09 do not establish:
+
+- final feedback callback/method name;
+- optional capability representation;
+- exact error strings;
+- final feedback-failure exception API;
+- production gesture recognizer;
+- threshold/axis/velocity/duration/reversal defaults;
+- pointerType/multi-pointer policy;
+- native-control/ignore classification;
+- explicit capture API;
+- default `touch-action`;
+- React pointer integration;
+- package export;
+- asynchronous feedback or transaction identity;
+- core/Wasm changes.
+
 ## R3F frame-consumer properties
 
 R3F frame-consumer evidence is host evidence, separate from the O/P core corpus, T clock-normalization properties, F browser frame-scheduler properties, L Wasm acquisition, Q real-browser composition, D real-DOM consumer qualification, and W DOM wheel ownership.

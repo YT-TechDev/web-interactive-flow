@@ -473,6 +473,55 @@ Still deferred:
 - broad browser/device compatibility.
 
 
+### Synchronous pointer disposition-feedback placement
+
+The first production disposition-feedback placement is governed by [ADR-0019](adr/0019-pointer-listener-synchronous-disposition-feedback.md).
+
+For one pointer-listener request transaction:
+
+```text
+PointerEvent
+  -> originating stateful policy
+  -> next | previous
+  -> pointer listener
+  -> Runtime
+  <- accepted | rejected
+  -> synchronous intent + disposition feedback
+  -> same originating policy
+```
+
+Feedback is scoped only to Runtime requests originated by that pointer listener invocation.
+
+A shared or global decorated Runtime is not the production placement. Research showed that an unrelated programmatic Runtime request can otherwise be misattributed to pointer gesture policy.
+
+The first feedback route is synchronous in the same request call stack. Deferred feedback without proposal/gesture identity can arrive after `pointercancel`, cleanup, or a new gesture and mutate stale/new policy state. Explicit transaction identity is not required for the selected synchronous contract.
+
+Only normalized intent plus Runtime disposition are required. The feedback path does not require the original PointerEvent or a Runtime snapshot.
+
+Runtime remains the sole semantic eligibility owner. The listener transports disposition; it does not predict acceptance or acquire threshold, axis, reversal, pointer identity, pointerType, multi-pointer, or commit semantics.
+
+If Runtime fails before producing a disposition, there is no semantic feedback to route.
+
+If policy feedback fails after Runtime has returned a disposition, that later host-layer failure must not rewrite the already-established semantic disposition. Exact public feedback-failure handling remains deferred.
+
+A strictly binding-local Runtime facade remains valid evidence that the existing listener architecture was composable, but it is not the selected production placement.
+
+Still deferred:
+
+- feedback method/callback name and capability representation;
+- exact validation/error surface;
+- production gesture recognizer;
+- threshold/axis/velocity/reversal rules;
+- pointerType/multi-pointer policy;
+- native-control/ignore policy;
+- explicit pointer capture API;
+- default `touch-action`;
+- React integration;
+- package export;
+- asynchronous feedback/transaction identity;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
