@@ -337,7 +337,7 @@ The following remain host/application policy rather than ADR-0016 authority:
 - velocity/duration;
 - reversal and commit-point policy;
 - pointerType allowlist;
-- multi-pointer policy;
+- general/default multi-pointer product policy beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - `isPrimary` filtering;
 - explicit pointer capture;
 - native-control/ignore policy;
@@ -397,7 +397,7 @@ Still deferred:
 - public reset/abort method name;
 - gesture threshold/axis/velocity/reversal/commit rules;
 - pointerType allowlist;
-- multi-pointer policy;
+- general/default multi-pointer product policy beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - explicit capture API;
 - native-control/ignore policy;
 - default `touch-action`;
@@ -462,7 +462,7 @@ Still deferred:
 - public disposition-feedback API/signature;
 - production reusable gesture recognizer;
 - threshold/axis/velocity/reversal rules;
-- pointerType/multi-pointer policy;
+- pointerType admission and multi-pointer behavior beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - native-control/ignore policy;
 - explicit pointer capture API;
 - default `touch-action`;
@@ -512,7 +512,7 @@ Still deferred:
 - exact validation/error surface;
 - production gesture recognizer;
 - threshold/axis/velocity/reversal rules;
-- pointerType/multi-pointer policy;
+- pointerType admission and multi-pointer behavior beyond ADR-0020's narrow single-pointer sequence lifecycle;
 - native-control/ignore policy;
 - explicit pointer capture API;
 - default `touch-action`;
