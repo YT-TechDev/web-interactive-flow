@@ -548,6 +548,29 @@ test("PDP-H4/H5 counterexample: naive arithmetic may silently decline NaN and tr
   assert.equal(researchGate(-Infinity, 40), "previous");
 });
 
+test("PDP-H5 boundary: finite endpoints may still overflow to a non-finite displacement", () => {
+  let projected = Number.MAX_VALUE;
+  const measurement = createFiniteStartRelativeMeasurement(
+    () => projected,
+  );
+
+  assert.equal(
+    measurement.begin(pointerEvent("pointerdown", { clientY: 0 })),
+    true,
+  );
+
+  projected = -Number.MAX_VALUE;
+
+  assert.equal(
+    Number.isFinite(Number.MAX_VALUE - -Number.MAX_VALUE),
+    false,
+  );
+  assert.equal(
+    measurement.sample(pointerEvent("pointermove", { clientY: 0 })),
+    null,
+  );
+});
+
 test("PDP-H6: displacement sign does not universally define next/previous independent of projector orientation", () => {
   const start = pointerEvent("pointerdown", { clientY: 200 });
   const current = pointerEvent("pointermove", { clientY: 120 });
