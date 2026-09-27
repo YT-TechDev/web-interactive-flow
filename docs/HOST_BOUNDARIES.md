@@ -351,6 +351,62 @@ The following remain host/application policy rather than ADR-0016 authority:
 
 Once such caller-owned policy produces a normalized `next` or `previous`, the semantic Runtime remains the sole eligibility owner.
 
+
+### First Pointer Events listener/lifecycle boundary
+
+The first Pointer Events listener/lifecycle boundary is governed by [ADR-0017](adr/0017-pointer-events-listener-lifecycle.md).
+
+The listener requires an explicit caller-owned `EventTarget` and installs only:
+
+- `pointerdown`;
+- `pointermove`;
+- `pointerup`;
+- `pointercancel`.
+
+Listener mechanics forward the delivered `PointerEvent` to replaceable stateful host gesture policy. They do not own a WIF-wide threshold, axis, pointerType rule, multi-pointer rule, or commit point.
+
+Because direct-manipulation gesture policy can accumulate state across multiple events, application-driven binding teardown is also a gesture-state lifecycle boundary.
+
+Cleanup must:
+
+- remove only the listeners owned by that binding;
+- be repeat-safe;
+- terminate active gesture-policy state before that policy can participate in a later binding.
+
+Browser `pointercancel` and application cleanup are separate termination paths. A binding must not depend on the browser emitting `pointercancel` when the application removes, disables, or replaces the binding.
+
+DOM detachment is not cleanup. A detached `EventTarget` can retain direct listeners until explicit removal.
+
+Target replacement must terminate old gesture-policy state before the replacement binding becomes active. Old cross-event state must not complete through the new target.
+
+For one delivered event, one binding may produce at most one normalized `next` / `previous` intent and at most one corresponding Runtime request.
+
+The listener does not:
+
+- inspect Runtime snapshots to predict eligibility;
+- mutate author `touch-action`;
+- require explicit `setPointerCapture()`;
+- impose pointerType or multi-pointer policy;
+- globally arbitrate overlapping bindings.
+
+ADR-0015 remains authoritative for overlap composition. ADR-0016 remains authoritative for Pointer Events substrate selection, `touch-action`, pointer cancellation, pointer identity, and capture semantics.
+
+Still deferred:
+
+- final production listener/controller API;
+- public reset/abort method name;
+- gesture threshold/axis/velocity/reversal/commit rules;
+- pointerType allowlist;
+- multi-pointer policy;
+- explicit capture API;
+- native-control/ignore policy;
+- default `touch-action`;
+- Shadow DOM/composed-path ownership;
+- accessibility/focus behavior;
+- React integration;
+- package export;
+- broad browser/device compatibility.
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
