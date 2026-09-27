@@ -28,6 +28,20 @@ export function bindPointerNavigation({
     throw new Error("invalid pointer gesture policy");
   }
 
+  const hasDispositionFeedback = "onDisposition" in policy;
+  const onDisposition = hasDispositionFeedback
+    ? policy.onDisposition
+    : null;
+
+  if (
+    hasDispositionFeedback &&
+    typeof onDisposition !== "function"
+  ) {
+    throw new Error(
+      "invalid pointer gesture policy disposition feedback",
+    );
+  }
+
   const listeners = new Map();
 
   for (const type of POINTER_EVENT_TYPES) {
@@ -43,7 +57,11 @@ export function bindPointerNavigation({
       }
 
       const request = intent === "next" ? runtime.next : runtime.previous;
-      request.call(runtime);
+      const disposition = request.call(runtime);
+
+      if (hasDispositionFeedback) {
+        onDisposition.call(policy, intent, disposition);
+      }
     };
 
     listeners.set(type, listener);
