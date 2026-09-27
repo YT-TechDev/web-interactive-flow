@@ -70,6 +70,11 @@ jobs:
       - name: Qualify production DOM wheel listener
         run: node --test tests/dom/wheel_listener.test.mjs
 
+      - name: Qualify production DOM flow host
+        run: |
+          node --test tests/dom/flow_host.test.mjs
+          node tools/browser/qualify_dom_flow_host_browser.mjs
+
       - name: Qualify production DOM wheel listener in real Chrome
         shell: bash
         run: |

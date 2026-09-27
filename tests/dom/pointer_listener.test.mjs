@@ -613,3 +613,24 @@ test("P12: production source contains no deferred gesture or semantic ownership"
     );
   }
 });
+
+test("setup failure removes already-installed listeners and aborts policy", () => {
+  const target = new RecordingTarget();
+  const originalAdd = target.addEventListener.bind(target);
+  target.addEventListener = (type, listener, options) => {
+    if (type === "pointerup") throw new Error("setup failure");
+    originalAdd(type, listener, options);
+  };
+  let aborts = 0;
+  const { runtime } = makeRuntime();
+  assert.throws(
+    () => bindPointerNavigation({
+      target,
+      runtime,
+      policy: makePolicy({ abort: () => { aborts += 1; } }),
+    }),
+    /setup failure/,
+  );
+  assert.equal(aborts, 1);
+  for (const type of POINTER_TYPES) assert.equal(target.count(type), 0);
+});
