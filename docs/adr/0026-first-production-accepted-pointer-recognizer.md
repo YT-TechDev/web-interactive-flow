@@ -150,7 +150,7 @@ For a pointerup-time proposal, host participation may already be complete before
 It continues to:
 
 1. deliver the current PointerEvent to policy;
-2. receive `null | next | previous`;
+2. receive `null | undefined` as no proposal, or `next | previous` as normalized intent;
 3. issue the corresponding Runtime request;
 4. synchronously return Runtime disposition to the originating policy when supported.
 
@@ -166,7 +166,7 @@ The listener does not own or interpret:
 - contamination;
 - commitment.
 
-Invalid non-normalized mapper output remains rejected at the generic listener's normalized-intent validation boundary rather than duplicating that validation inside the recognizer.
+`undefined` is treated as no proposal. Other non-normalized mapper outputs remain rejected at the generic listener's normalized-intent validation boundary rather than duplicating that validation inside the recognizer.
 
 ### Abort remains host reset
 
