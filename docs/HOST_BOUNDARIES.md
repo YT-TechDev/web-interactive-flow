@@ -592,6 +592,69 @@ Still deferred:
 - core/Wasm changes.
 
 
+### Reusable pointer displacement measurement
+
+The narrow reusable pointer displacement theorem is governed by [ADR-0021](adr/0021-pointer-start-relative-displacement.md).
+
+It is layered after ADR-0020 sequence validity:
+
+```text
+admitted PointerEvent sequence
+  -> ADR-0020 valid single-pointer lifecycle
+  -> stable host-owned scalar projection
+  -> finite projected baseline/current
+  -> finite delta = startProjected - currentProjected
+  -> later host gate / direction mapping / proposal timing
+  -> next | previous
+  -> pointer listener
+  -> Runtime
+```
+
+The measurement is **orientation-relative start displacement in projected units**.
+
+The projection convention is host policy. WIF does not select `clientX`, `clientY`, viewport/document/local coordinates, X/Y default, or one universal unit.
+
+Compared samples must use one stable scalar projection convention. Changing origin, orientation, or scale while comparing one active baseline to later samples can manufacture or distort displacement.
+
+A stable constant translation cancels from the difference. Stable scale/orientation remains deterministic in projected units, but scale changes magnitude/units and orientation may invert sign.
+
+A valid measurement requires:
+
+- finite projected baseline;
+- finite projected current sample;
+- finite computed difference.
+
+Finite endpoints alone are not sufficient because subtraction can overflow.
+
+Measurement-invalid state remains distinct from ADR-0020 sequence contamination and from Runtime semantic rejection.
+
+The sign of displacement does not define a universal `next | previous` mapping. A host projector with opposite orientation produces the opposite sign for the same physical motion.
+
+The generic pointer listener does not own projection, coordinates, finite validation, threshold, direction mapping, or proposal timing. Runtime receives no pointer coordinates or displacement object and requires no snapshot read for measurement.
+
+`pointercancel` and application cleanup/abort clear measurement baseline state. A fresh eligible sequence may establish a new projection convention before capturing its new baseline.
+
+Still deferred:
+
+- coordinate property/frame/API;
+- coordinate units;
+- X/Y or diagonal policy;
+- threshold value;
+- threshold equality comparator;
+- sign-to-intent mapping;
+- reversal commitment;
+- move-time vs pointerup proposal timing;
+- velocity/duration;
+- pointerType allowlist;
+- native-control/ignore policy;
+- preventDefault / default `touch-action`;
+- explicit pointer capture;
+- production recognizer representation;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
