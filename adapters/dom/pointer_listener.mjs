@@ -44,28 +44,45 @@ export function bindPointerNavigation({
 
   const listeners = new Map();
 
-  for (const type of POINTER_EVENT_TYPES) {
-    const listener = (event) => {
-      const intent = policy.handle(event);
+  try {
+    for (const type of POINTER_EVENT_TYPES) {
+      const listener = (event) => {
+        const intent = policy.handle(event);
 
-      if (intent === null || intent === undefined) {
-        return;
+        if (intent === null || intent === undefined) {
+          return;
+        }
+
+        if (intent !== "next" && intent !== "previous") {
+          throw new Error("invalid pointer navigation intent");
+        }
+
+        const request = intent === "next" ? runtime.next : runtime.previous;
+        const disposition = request.call(runtime);
+
+        if (hasDispositionFeedback) {
+          onDisposition.call(policy, intent, disposition);
+        }
+      };
+
+      listeners.set(type, listener);
+      target.addEventListener(type, listener);
+    }
+  } catch (error) {
+    for (const [type, listener] of listeners) {
+      try {
+        target.removeEventListener(type, listener);
+      } catch {
+        // Continue releasing every listener while preserving setup failure.
       }
+    }
 
-      if (intent !== "next" && intent !== "previous") {
-        throw new Error("invalid pointer navigation intent");
-      }
-
-      const request = intent === "next" ? runtime.next : runtime.previous;
-      const disposition = request.call(runtime);
-
-      if (hasDispositionFeedback) {
-        onDisposition.call(policy, intent, disposition);
-      }
-    };
-
-    listeners.set(type, listener);
-    target.addEventListener(type, listener);
+    try {
+      policy.abort();
+    } catch {
+      // Preserve the setup failure.
+    }
+    throw error;
   }
 
   let active = true;
