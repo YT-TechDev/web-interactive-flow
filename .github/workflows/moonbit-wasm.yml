@@ -107,6 +107,7 @@ jobs:
           node tools/browser/research_direct_manipulation_pointer_touch.mjs
           node tools/browser/research_pointer_runtime_ownership.mjs
           node tools/browser/research_pointer_listener_lifecycle.mjs
+          node tools/browser/research_pointer_gesture_disposition_feedback.mjs
 
       - name: Install isolated R3F qualification fixture
         run: npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
