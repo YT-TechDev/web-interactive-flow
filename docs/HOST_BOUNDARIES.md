@@ -522,6 +522,76 @@ Still deferred:
 - core/Wasm changes.
 
 
+### Reusable single-pointer sequence lifecycle
+
+The narrow reusable single-pointer sequence lifecycle is governed by [ADR-0020](adr/0020-pointer-single-sequence-lifecycle.md).
+
+This theorem applies only to host gesture policy that intends to recognize one **admitted participating pointer** at a time.
+
+```text
+fresh admitted pointerdown
+  -> candidate sequence
+
+second admitted pointerdown before membership returns to zero
+  -> contaminated / invalid
+
+two active -> one active
+  -> still invalid
+
+last participating pointer ends
+  -> full host-sequence reset
+
+later fresh admitted pointerdown
+  -> new eligible sequence
+```
+
+An already-down pointer is not silently promoted into a fresh gesture after contamination or cancellation. Fresh eligibility requires the previous participating set to end and a new admitted pointerdown to begin.
+
+`isPrimary` is not single-pointer proof. Pointer admission remains host policy; ADR-0020 does not standardize touch, mouse, pen, pointerType filtering, or isPrimary filtering.
+
+`pointerId` is browser-owned active-stream identity, not a permanent WIF gesture id. Numeric reuse after complete reset does not inherit old gesture state.
+
+When contaminated-sequence reset depends on active participating membership, terminal events for admitted non-tracked participants still update that membership. They do not become semantic navigation owners.
+
+Host sequence lifecycle remains separate from semantic commitment:
+
+```text
+host:
+  active pointer membership
+  tracked pointer
+  valid / contaminated
+
+semantic policy:
+  uncommitted
+  committed after accepted Runtime disposition
+```
+
+An accepted disposition may commit an accepted-only policy while the host pointer remains active. A rejected disposition may leave the sequence uncommitted and allow later policy-defined retry. Neither disposition rewrites host pointer membership.
+
+Runtime receives no pointer identity or gesture-state object. Generic pointer listener mechanics do not acquire multi-pointer policy.
+
+Application cleanup/abort remains an immediate gesture-state reset boundary under ADR-0017.
+
+Still deferred:
+
+- threshold;
+- axis/diagonal interpretation;
+- reversal;
+- velocity/duration;
+- pointerType allowlist;
+- mouse/pen behavior;
+- native-control/ignore classification;
+- preventDefault policy;
+- default `touch-action`;
+- explicit pointer capture API;
+- Shadow DOM/composed-path ownership;
+- accessibility/focus behavior;
+- production recognizer representation;
+- React integration;
+- package export;
+- core/Wasm changes.
+
+
 ## React adapter
 
 A React adapter may own lifecycle and subscription ergonomics, but not the flow state machine.
