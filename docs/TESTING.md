@@ -2327,7 +2327,9 @@ Recording stubs must not be described as independent proof of real Runtime seman
 
 Actual semantic disposition authority remains ADR-0018/ADR-0019 and the Runtime.
 
-### IM09 — generic pointer listener receives normalized intent only
+### IM09 — generic pointer listener forwards normalized intent to Runtime
+
+The listener receives pointer events and passes them to `policy.handle(event)`.
 
 Using production `bindPointerNavigation()`, qualification must keep the listener unaware of:
 
@@ -2338,7 +2340,7 @@ Using production `bindPointerNavigation()`, qualification must keep the listener
 - axis;
 - threshold.
 
-The listener routes only normalized `next | previous` produced by policy.
+The listener forwards only normalized `next | previous` produced by policy to Runtime.
 
 ### IM10 — Runtime receives no mapping metadata
 
