@@ -43,3 +43,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0017 — First Pointer Events listener owns explicit lifecycle and gesture-state abort](0017-pointer-events-listener-lifecycle.md)
 - [ADR-0018 — Accepted-only pointer gesture commit observes Runtime disposition at the host boundary](0018-pointer-gesture-disposition-feedback.md)
 - [ADR-0019 — Pointer listener synchronously routes Runtime disposition to the originating policy](0019-pointer-listener-synchronous-disposition-feedback.md)
+- [ADR-0020 — Reusable single-pointer sequence lifecycle uses sticky contamination and fresh-down restart](0020-pointer-single-sequence-lifecycle.md)
