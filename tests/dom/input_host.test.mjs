@@ -227,6 +227,61 @@ test("cleanup and rebind abort stale pointer state while preserving fresh input"
   cleanupB();
 });
 
+test("stopping an independent scheduler leaves the input binding active", () => {
+  const entry = fixture();
+  const frames = new Map();
+  const cancellations = [];
+  let id = 0;
+  const runtime = {
+    ...entry.runtime,
+    tick() {},
+    getSnapshot() { return {}; },
+  };
+  entry.runtime = runtime;
+
+  const scheduler = createFrameScheduler({
+    runtime,
+    requestFrame(callback) {
+      const nextId = ++id;
+      frames.set(nextId, callback);
+      return nextId;
+    },
+    cancelFrame(requestId) {
+      cancellations.push(requestId);
+      frames.delete(requestId);
+    },
+    onFrame() {},
+  });
+
+  scheduler.start();
+  const cleanupInputs = bind(entry);
+  scheduler.stop();
+
+  assert.equal(
+    entry.wheelTarget.count()
+      + entry.pointerTarget.count()
+      + entry.keyboardTarget.count(),
+    6,
+  );
+
+  entry.wheelTarget.dispatch("wheel", {
+    intent: "next",
+    cancelable: false,
+    preventDefault() {},
+  });
+  assert.deepEqual(entry.requests, ["next"]);
+  assert.deepEqual(cancellations, [1]);
+
+  cleanupInputs();
+  assert.equal(
+    entry.wheelTarget.count()
+      + entry.pointerTarget.count()
+      + entry.keyboardTarget.count(),
+    0,
+  );
+  assert.equal(entry.disposeCount, 0);
+});
+
 test("input cleanup and rebind do not stop or rebase an independent scheduler epoch", () => {
   const entry = fixture();
   const ticks = [];
