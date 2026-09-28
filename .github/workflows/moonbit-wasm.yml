@@ -70,6 +70,12 @@ jobs:
       - name: Qualify production DOM wheel listener
         run: node --test tests/dom/wheel_listener.test.mjs
 
+      - name: Qualify production DOM keyboard navigation
+        run: |
+          node --test tests/bridge/keyboard_ownership.test.mjs
+          node --test tests/dom/keyboard_listener.test.mjs
+          node tools/browser/qualify_keyboard_listener_browser.mjs
+
       - name: Qualify production DOM flow host
         run: |
           node --test tests/dom/flow_host.test.mjs

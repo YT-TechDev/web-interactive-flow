@@ -38,16 +38,22 @@ try {
     runtime, target,
     resolveWheelIntent: (event) => event.deltaY > 0 ? "next" : "previous",
     pointerPolicy,
-    requestFrame: requestAnimationFrame,
-    cancelFrame: cancelAnimationFrame,
+    requestFrame(callback) {
+      return setTimeout(() => callback(performance.now()), 0);
+    },
+    cancelFrame: clearTimeout,
     onFrame() {
       frames += 1;
       cleanup();
       const before = decisions.length;
       target.dispatchEvent(new WheelEvent("wheel", { deltaY: -1, cancelable: true }));
-      requestAnimationFrame(() => {
-        const pass = frames === 1 && decisions.length === before && !disposed;
-        output.textContent = JSON.stringify({ state: pass ? "pass" : "fail", frames, decisions, feedback, disposed });
+      const pass = frames === 1 && decisions.length === before && !disposed;
+      output.textContent = JSON.stringify({
+        state: pass ? "pass" : "fail",
+        frames,
+        decisions,
+        feedback,
+        disposed,
       });
     },
   });
