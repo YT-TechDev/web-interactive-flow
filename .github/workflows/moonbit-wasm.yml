@@ -62,7 +62,9 @@ jobs:
         run: node --test tests/bridge/clock.test.mjs
 
       - name: Test browser frame scheduler
-        run: node --test tests/bridge/frame_scheduler.test.mjs
+        run: |
+          node --test tests/bridge/frame_scheduler.test.mjs
+          node --test tests/bridge/browser_frame_scheduler.test.mjs
 
       - name: Test DOM wheel ownership
         run: node --test tests/bridge/wheel_ownership.test.mjs

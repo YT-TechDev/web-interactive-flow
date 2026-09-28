@@ -13,6 +13,7 @@ const routes = new Map([
   ["/", "tests/browser/dom-flow-host-qualification/index.html"],
   ["/fixture/main.mjs", "tests/browser/dom-flow-host-qualification/main.mjs"],
   ["/adapters/dom/flow_host.mjs", "adapters/dom/flow_host.mjs"],
+  ["/bridge/browser_frame_scheduler.mjs", "bridge/browser_frame_scheduler.mjs"],
   ["/adapters/dom/input_host.mjs", "adapters/dom/input_host.mjs"],
   ["/adapters/dom/keyboard_listener.mjs", "adapters/dom/keyboard_listener.mjs"],
   ["/adapters/dom/wheel_listener.mjs", "adapters/dom/wheel_listener.mjs"],

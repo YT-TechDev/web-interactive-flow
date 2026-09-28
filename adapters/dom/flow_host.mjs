@@ -1,4 +1,4 @@
-import { createFrameScheduler } from "../../bridge/frame_scheduler.mjs";
+import { createBrowserFrameScheduler } from "../../bridge/browser_frame_scheduler.mjs";
 import { bindDomFlowInputs } from "./input_host.mjs";
 
 // Internal production composition boundary. Runtime, Wasm acquisition, input
@@ -13,8 +13,7 @@ export function bindDomFlowHost({
   resolveKeyboardIntent,
   preventKeyboardDefault = true,
   pointerPolicy,
-  requestFrame,
-  cancelFrame,
+  frameSource,
   onFrame,
 }) {
   let cleanupInputs = null;
@@ -62,10 +61,9 @@ export function bindDomFlowHost({
       preventWheelDefault,
       preventKeyboardDefault,
     });
-    scheduler = createFrameScheduler({
+    scheduler = createBrowserFrameScheduler({
       runtime,
-      requestFrame,
-      cancelFrame,
+      frameSource,
       onFrame,
     });
     scheduler.start();

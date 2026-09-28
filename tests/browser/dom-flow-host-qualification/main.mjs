@@ -44,25 +44,24 @@ try {
       ? "next"
       : event.key === "ArrowUp" ? "previous" : null,
     pointerPolicy,
-    requestFrame(callback) {
-      return setTimeout(() => callback(performance.now()), 0);
-    },
-    cancelFrame: clearTimeout,
+    frameSource: window,
     onFrame() {
       frames += 1;
-      cleanup();
-      const before = decisions.length;
-      wheelTarget.dispatchEvent(new WheelEvent("wheel", { deltaY: -1, cancelable: true }));
-      pointerTarget.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 8, clientY: 100 }));
-      pointerTarget.dispatchEvent(new PointerEvent("pointermove", { pointerId: 8, clientY: 80 }));
-      keyboardTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
-      const pass = frames === 1 && decisions.length === before && !disposed;
-      output.textContent = JSON.stringify({
-        state: pass ? "pass" : "fail",
-        frames,
-        decisions,
-        feedback,
-        disposed,
+      queueMicrotask(() => {
+        cleanup();
+        const before = decisions.length;
+        wheelTarget.dispatchEvent(new WheelEvent("wheel", { deltaY: -1, cancelable: true }));
+        pointerTarget.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 8, clientY: 100 }));
+        pointerTarget.dispatchEvent(new PointerEvent("pointermove", { pointerId: 8, clientY: 80 }));
+        keyboardTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+        const pass = frames === 1 && decisions.length === before && !disposed;
+        output.textContent = JSON.stringify({
+          state: pass ? "pass" : "fail",
+          frames,
+          decisions,
+          feedback,
+          disposed,
+        });
       });
     },
   });
