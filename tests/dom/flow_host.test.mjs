@@ -35,7 +35,8 @@ class Target {
 }
 
 function fixture({ dispositions = [], failRequest = false } = {}) {
-  const target = new Target();
+  const wheelTarget = new Target();
+  const pointerTarget = new Target();
   const keyboardTarget = new Target();
   const requests = [];
   const ticks = [];
@@ -72,7 +73,7 @@ function fixture({ dispositions = [], failRequest = false } = {}) {
   const cancelFrame = (id) => { cancellations.push(id); frames.delete(id); };
 
   return {
-    target, keyboardTarget, runtime, pointerPolicy, requests, feedback, frames, cancellations,
+    wheelTarget, pointerTarget, keyboardTarget, runtime, pointerPolicy, requests, feedback, frames, cancellations,
     requestFrame, cancelFrame,
     get disposeCount() { return disposeCount; },
   };
@@ -81,7 +82,8 @@ function fixture({ dispositions = [], failRequest = false } = {}) {
 function bind(entry, overrides = {}) {
   return bindDomFlowHost({
     runtime: entry.runtime,
-    target: entry.target,
+    wheelTarget: entry.wheelTarget,
+    pointerTarget: entry.pointerTarget,
     resolveWheelIntent: (event) => event.intent,
     keyboardTarget: entry.keyboardTarget,
     resolveKeyboardIntent: (event) => event.intent,
@@ -97,27 +99,55 @@ test("composition starts one scheduler and owns wheel, pointer, and explicit key
   const entry = fixture();
   const cleanup = bind(entry);
   assert.equal(entry.frames.size, 1);
-  assert.equal(entry.target.count(), 5);
+  assert.equal(entry.wheelTarget.count(), 1);
+  assert.equal(entry.pointerTarget.count(), 4);
   assert.equal(entry.keyboardTarget.count(), 1);
   cleanup();
   assert.equal(entry.frames.size, 0);
-  assert.equal(entry.target.count(), 0);
+  assert.equal(entry.wheelTarget.count() + entry.pointerTarget.count(), 0);
   assert.equal(entry.keyboardTarget.count(), 0);
   assert.deepEqual(entry.cancellations, [1]);
   assert.equal(entry.disposeCount, 0);
+});
+
+test("wheel, pointer, and keyboard dispatch only on their explicit targets", () => {
+  const entry = fixture();
+  const wheelEvents = [];
+  const keyboardEvents = [];
+  const cleanup = bind(entry, {
+    resolveWheelIntent(event) { wheelEvents.push(event); return null; },
+    resolveKeyboardIntent(event) { keyboardEvents.push(event); return null; },
+  });
+  const wheel = { type: "wheel" };
+  entry.pointerTarget.dispatch("wheel", wheel);
+  entry.wheelTarget.dispatch("wheel", wheel);
+  entry.wheelTarget.dispatch("pointerdown", { type: "pointerdown", pointerId: 1, clientY: 100 });
+  entry.wheelTarget.dispatch("pointermove", { type: "pointermove", pointerId: 1, clientY: 80 });
+  entry.pointerTarget.dispatch("pointerdown", { type: "pointerdown", pointerId: 2, clientY: 100 });
+  entry.pointerTarget.dispatch("pointermove", { type: "pointermove", pointerId: 2, clientY: 80 });
+  const key = { type: "keydown" };
+  entry.wheelTarget.dispatch("keydown", key);
+  entry.pointerTarget.dispatch("keydown", key);
+  entry.keyboardTarget.dispatch("keydown", key);
+  assert.deepEqual(wheelEvents, [wheel]);
+  assert.deepEqual(keyboardEvents, [key]);
+  assert.deepEqual(entry.requests, ["next"]);
+  cleanup();
 });
 
 test("cleanup is idempotent, attempts every release, and never disposes Runtime", () => {
   const entry = fixture();
   const cleanup = bind(entry);
   cleanup();
-  const removalCount = entry.target.removes.length;
+  const removalCount = entry.wheelTarget.removes.length + entry.pointerTarget.removes.length;
   const keyboardRemovalCount = entry.keyboardTarget.removes.length;
   cleanup();
-  assert.equal(entry.target.removes.length, removalCount);
+  assert.equal(entry.wheelTarget.removes.length + entry.pointerTarget.removes.length, removalCount);
   assert.equal(entry.keyboardTarget.removes.length, keyboardRemovalCount);
   assert.deepEqual(entry.cancellations, [1]);
   assert.equal(entry.disposeCount, 0);
+  assert.equal(entry.runtime.next(), "accepted");
+  assert.deepEqual(entry.requests, ["next"]);
 });
 
 test("keyboard uses its distinct explicit target and preserves resolver and Runtime dispositions", () => {
@@ -132,7 +162,7 @@ test("keyboard uses its distinct explicit target and preserves resolver and Runt
   let prevented = 0;
   const accepted = { intent: "next", cancelable: true, preventDefault() { prevented += 1; } };
   const rejected = { intent: "previous", cancelable: true, preventDefault() { prevented += 1; } };
-  entry.target.dispatch("keydown", { intent: "previous" });
+  entry.wheelTarget.dispatch("keydown", { intent: "previous" });
   entry.keyboardTarget.dispatch("keydown", accepted);
   entry.keyboardTarget.dispatch("keydown", rejected);
   assert.deepEqual(seen, [accepted, rejected]);
@@ -156,8 +186,8 @@ test("wheel preserves Runtime disposition as accepted-only prevention authority"
   const cleanup = bind(entry);
   let prevented = 0;
   const event = { intent: "next", cancelable: true, preventDefault() { prevented += 1; } };
-  entry.target.dispatch("wheel", event);
-  entry.target.dispatch("wheel", event);
+  entry.wheelTarget.dispatch("wheel", event);
+  entry.wheelTarget.dispatch("wheel", event);
   assert.deepEqual(entry.requests, ["next", "next"]);
   assert.equal(prevented, 1);
   cleanup();
@@ -166,10 +196,10 @@ test("wheel preserves Runtime disposition as accepted-only prevention authority"
 test("pointer recognizer feedback survives composition and rejection does not commit", () => {
   const entry = fixture({ dispositions: ["rejected", "accepted"] });
   const cleanup = bind(entry);
-  entry.target.dispatch("pointerdown", { type: "pointerdown", pointerId: 1, clientY: 100 });
-  entry.target.dispatch("pointermove", { type: "pointermove", pointerId: 1, clientY: 80 });
-  entry.target.dispatch("pointermove", { type: "pointermove", pointerId: 1, clientY: 120 });
-  entry.target.dispatch("pointermove", { type: "pointermove", pointerId: 1, clientY: 70 });
+  entry.pointerTarget.dispatch("pointerdown", { type: "pointerdown", pointerId: 1, clientY: 100 });
+  entry.pointerTarget.dispatch("pointermove", { type: "pointermove", pointerId: 1, clientY: 80 });
+  entry.pointerTarget.dispatch("pointermove", { type: "pointermove", pointerId: 1, clientY: 120 });
+  entry.pointerTarget.dispatch("pointermove", { type: "pointermove", pointerId: 1, clientY: 70 });
   assert.deepEqual(entry.requests, ["next", "previous"]);
   assert.deepEqual(entry.feedback, [["next", "rejected"], ["previous", "accepted"]]);
   cleanup();
@@ -179,7 +209,7 @@ test("scheduler startup failure rolls back every installed listener", () => {
   const entry = fixture({ failRequest: true });
   assert.throws(() => bind(entry), /cannot schedule/);
   assert.equal(entry.frames.size, 0);
-  assert.equal(entry.target.count(), 0);
+  assert.equal(entry.wheelTarget.count() + entry.pointerTarget.count(), 0);
   assert.equal(entry.keyboardTarget.count(), 0);
   assert.equal(entry.disposeCount, 0);
 });
@@ -188,7 +218,7 @@ test("keyboard setup failure rolls back wheel and pointer listeners", () => {
   const entry = fixture();
   entry.keyboardTarget.failOnAdd = "keydown";
   assert.throws(() => bind(entry), /cannot add keydown/);
-  assert.equal(entry.target.count(), 0);
+  assert.equal(entry.wheelTarget.count() + entry.pointerTarget.count(), 0);
   assert.equal(entry.keyboardTarget.count(), 0);
   assert.equal(entry.frames.size, 0);
   assert.equal(entry.disposeCount, 0);
@@ -200,16 +230,27 @@ test("one cleanup failure does not prevent later resources from being released",
   entry.keyboardTarget.failOnRemove = "keydown";
   assert.throws(() => cleanup(), /cannot remove keydown/);
   assert.equal(entry.keyboardTarget.count(), 0);
-  assert.equal(entry.target.count(), 0);
+  assert.equal(entry.wheelTarget.count() + entry.pointerTarget.count(), 0);
   assert.equal(entry.frames.size, 0);
   assert.equal(entry.disposeCount, 0);
 });
 
 test("pointer setup failure rolls back its partial listeners and the wheel listener", () => {
   const entry = fixture();
-  entry.target.failOnAdd = "pointerup";
+  entry.pointerTarget.failOnAdd = "pointerup";
   assert.throws(() => bind(entry), /cannot add pointerup/);
-  assert.equal(entry.target.count(), 0);
+  assert.equal(entry.wheelTarget.count() + entry.pointerTarget.count(), 0);
   assert.equal(entry.frames.size, 0);
   assert.equal(entry.disposeCount, 0);
+});
+
+test("a missing input target is rejected instead of aliasing another target", () => {
+  for (const missing of ["wheelTarget", "pointerTarget", "keyboardTarget"]) {
+    const entry = fixture();
+    assert.throws(() => bind(entry, { [missing]: undefined }), /invalid .* listener target/);
+    assert.equal(entry.wheelTarget.count(), 0);
+    assert.equal(entry.pointerTarget.count(), 0);
+    assert.equal(entry.keyboardTarget.count(), 0);
+    assert.equal(entry.frames.size, 0);
+  }
 });
