@@ -29,6 +29,7 @@ function fixture({ failRequest = false, failCancel = false } = {}) {
   const keyboardTarget = new Target();
   const frames = new Map();
   const cancellations = [];
+  const receivers = [];
   let disposeCount = 0;
   let nextId = 0;
   const runtime = {
@@ -45,17 +46,22 @@ function fixture({ failRequest = false, failCancel = false } = {}) {
     runtime,
     frames,
     cancellations,
-    requestFrame(callback) {
-      if (failRequest) throw new Error("cannot schedule");
-      const id = ++nextId;
-      frames.set(id, callback);
-      return id;
+    frameSource: {
+      requestAnimationFrame(callback) {
+        receivers.push(this);
+        if (failRequest) throw new Error("cannot schedule");
+        const id = ++nextId;
+        frames.set(id, callback);
+        return id;
+      },
+      cancelAnimationFrame(id) {
+        receivers.push(this);
+        cancellations.push(id);
+        frames.delete(id);
+        if (failCancel) throw new Error("cannot cancel");
+      },
     },
-    cancelFrame(id) {
-      cancellations.push(id);
-      frames.delete(id);
-      if (failCancel) throw new Error("cannot cancel");
-    },
+    receivers,
     pointerPolicy: { handle() { return null; }, abort() {} },
     get disposeCount() { return disposeCount; },
   };
@@ -70,8 +76,7 @@ function bind(entry, overrides = {}) {
     resolveWheelIntent: () => null,
     resolveKeyboardIntent: () => null,
     pointerPolicy: entry.pointerPolicy,
-    requestFrame: entry.requestFrame,
-    cancelFrame: entry.cancelFrame,
+    frameSource: entry.frameSource,
     onFrame: () => {},
     ...overrides,
   });
@@ -90,7 +95,33 @@ test("host composes one input binding with one started scheduler", () => {
   assert.equal(listenerCount(entry), 0);
   assert.equal(entry.frames.size, 0);
   assert.deepEqual(entry.cancellations, [1]);
+  assert.deepEqual(entry.receivers, [entry.frameSource, entry.frameSource]);
   assert.equal(entry.disposeCount, 0);
+});
+
+test("host requires an explicit valid frame source without consulting globals", () => {
+  const originalWindow = globalThis.window;
+  let globalRequests = 0;
+  globalThis.window = {
+    requestAnimationFrame() { globalRequests += 1; },
+    cancelAnimationFrame() {},
+  };
+  try {
+    for (const frameSource of [undefined, null, {}, {
+      requestAnimationFrame() {},
+    }, {
+      cancelAnimationFrame() {},
+    }]) {
+      const entry = fixture();
+      assert.throws(() => bind(entry, { frameSource }), /frameSource/);
+      assert.equal(listenerCount(entry), 0);
+      assert.equal(entry.disposeCount, 0);
+    }
+    assert.equal(globalRequests, 0);
+  } finally {
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+  }
 });
 
 test("host cleanup is repeat-safe and leaves Runtime undisposed", () => {
