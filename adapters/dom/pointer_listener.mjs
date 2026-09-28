@@ -93,11 +93,24 @@ export function bindPointerNavigation({
     }
 
     active = false;
+    let firstFailure = null;
 
     for (const [type, listener] of listeners) {
-      target.removeEventListener(type, listener);
+      try {
+        target.removeEventListener(type, listener);
+      } catch (error) {
+        firstFailure ??= error;
+      }
     }
 
-    policy.abort();
+    try {
+      policy.abort();
+    } catch (error) {
+      firstFailure ??= error;
+    }
+
+    if (firstFailure !== null) {
+      throw firstFailure;
+    }
   };
 }

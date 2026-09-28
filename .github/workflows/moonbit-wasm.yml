@@ -78,6 +78,7 @@ jobs:
 
       - name: Qualify production DOM flow host
         run: |
+          node --test tests/dom/input_host.test.mjs
           node --test tests/dom/flow_host.test.mjs
           node tools/browser/qualify_dom_flow_host_browser.mjs
 
