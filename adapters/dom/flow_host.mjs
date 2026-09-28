@@ -1,7 +1,5 @@
 import { createFrameScheduler } from "../../bridge/frame_scheduler.mjs";
-import { bindKeyboardNavigation } from "./keyboard_listener.mjs";
-import { bindPointerNavigation } from "./pointer_listener.mjs";
-import { bindWheelNavigation } from "./wheel_listener.mjs";
+import { bindDomFlowInputs } from "./input_host.mjs";
 
 // Internal production composition boundary. Runtime, Wasm acquisition, input
 // policies, and presentation effects remain caller-owned.
@@ -19,16 +17,8 @@ export function bindDomFlowHost({
   cancelFrame,
   onFrame,
 }) {
-  const scheduler = createFrameScheduler({
-    runtime,
-    requestFrame,
-    cancelFrame,
-    onFrame,
-  });
-
-  let cleanupWheel = null;
-  let cleanupPointer = null;
-  let cleanupKeyboard = null;
+  let cleanupInputs = null;
+  let scheduler = null;
   let active = true;
 
   function cleanup() {
@@ -39,11 +29,10 @@ export function bindDomFlowHost({
     active = false;
     let firstFailure = null;
 
+    // Release in reverse construction order.
     for (const release of [
-      () => scheduler.stop(),
-      cleanupKeyboard,
-      cleanupPointer,
-      cleanupWheel,
+      scheduler === null ? null : () => scheduler.stop(),
+      cleanupInputs,
     ]) {
       if (release === null) {
         continue;
@@ -62,22 +51,22 @@ export function bindDomFlowHost({
   }
 
   try {
-    cleanupWheel = bindWheelNavigation({
-      target: wheelTarget,
+    cleanupInputs = bindDomFlowInputs({
       runtime,
-      resolveIntent: resolveWheelIntent,
-      preventDefault: preventWheelDefault,
+      wheelTarget,
+      pointerTarget,
+      keyboardTarget,
+      resolveWheelIntent,
+      resolveKeyboardIntent,
+      pointerPolicy,
+      preventWheelDefault,
+      preventKeyboardDefault,
     });
-    cleanupPointer = bindPointerNavigation({
-      target: pointerTarget,
+    scheduler = createFrameScheduler({
       runtime,
-      policy: pointerPolicy,
-    });
-    cleanupKeyboard = bindKeyboardNavigation({
-      target: keyboardTarget,
-      runtime,
-      resolveIntent: resolveKeyboardIntent,
-      preventDefault: preventKeyboardDefault,
+      requestFrame,
+      cancelFrame,
+      onFrame,
     });
     scheduler.start();
   } catch (error) {
