@@ -72,14 +72,16 @@ try {
   keyboardTarget.dispatchEvent(rejectedKeyboard);
   const acceptedWheel = new WheelEvent("wheel", { deltaY: -1, cancelable: true });
   target.dispatchEvent(acceptedWheel);
+  const rejectedWheel = new WheelEvent("wheel", { deltaY: -1, cancelable: true });
+  target.dispatchEvent(rejectedWheel);
   target.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, clientY: 100 }));
   target.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 80 }));
 
   if (!acceptedKeyboard.defaultPrevented || rejectedKeyboard.defaultPrevented) {
     throw new Error("accepted-only keyboard prevention changed");
   }
-  if (!acceptedWheel.defaultPrevented) {
-    throw new Error("accepted wheel prevention changed");
+  if (!acceptedWheel.defaultPrevented || rejectedWheel.defaultPrevented) {
+    throw new Error("accepted-only wheel prevention changed");
   }
 } catch (error) {
   output.textContent = JSON.stringify({ state: "fail", error: String(error?.stack ?? error) });
