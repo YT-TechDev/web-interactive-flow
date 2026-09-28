@@ -32,11 +32,15 @@ try {
     observeDisposition.call(this, intent, disposition);
   };
   const target = document.getElementById("target");
+  const keyboardTarget = document.getElementById("keyboard-target");
   let frames = 0;
   let cleanup;
   cleanup = bindDomFlowHost({
-    runtime, target,
+    runtime, target, keyboardTarget,
     resolveWheelIntent: (event) => event.deltaY > 0 ? "next" : "previous",
+    resolveKeyboardIntent: (event) => event.key === "ArrowDown"
+      ? "next"
+      : event.key === "ArrowUp" ? "previous" : null,
     pointerPolicy,
     requestFrame(callback) {
       return setTimeout(() => callback(performance.now()), 0);
@@ -58,13 +62,24 @@ try {
     },
   });
 
-  const acceptedWheel = new WheelEvent("wheel", { deltaY: 1, cancelable: true });
+  const acceptedKeyboard = new KeyboardEvent("keydown", {
+    key: "ArrowDown", cancelable: true, bubbles: true,
+  });
+  keyboardTarget.dispatchEvent(acceptedKeyboard);
+  const rejectedKeyboard = new KeyboardEvent("keydown", {
+    key: "ArrowDown", cancelable: true, bubbles: true,
+  });
+  keyboardTarget.dispatchEvent(rejectedKeyboard);
+  const acceptedWheel = new WheelEvent("wheel", { deltaY: -1, cancelable: true });
   target.dispatchEvent(acceptedWheel);
-  const rejectedWheel = new WheelEvent("wheel", { deltaY: 1, cancelable: true });
+  const rejectedWheel = new WheelEvent("wheel", { deltaY: -1, cancelable: true });
   target.dispatchEvent(rejectedWheel);
   target.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, clientY: 100 }));
-  target.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 120 }));
+  target.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 80 }));
 
+  if (!acceptedKeyboard.defaultPrevented || rejectedKeyboard.defaultPrevented) {
+    throw new Error("accepted-only keyboard prevention changed");
+  }
   if (!acceptedWheel.defaultPrevented || rejectedWheel.defaultPrevented) {
     throw new Error("accepted-only wheel prevention changed");
   }
