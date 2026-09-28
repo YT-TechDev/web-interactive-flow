@@ -15,7 +15,7 @@ function requireElement(id) {
 function publish(state, details) {
   const value = { state, details };
   window[STATUS_KEY] = value;
-  const output = document.getElementById("research-output");
+  const output = document.getElementById("qualification-output");
   if (output !== null) output.textContent = JSON.stringify(value);
 }
 
