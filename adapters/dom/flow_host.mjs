@@ -1,4 +1,5 @@
 import { createFrameScheduler } from "../../bridge/frame_scheduler.mjs";
+import { bindKeyboardNavigation } from "./keyboard_listener.mjs";
 import { bindPointerNavigation } from "./pointer_listener.mjs";
 import { bindWheelNavigation } from "./wheel_listener.mjs";
 
@@ -9,6 +10,9 @@ export function bindDomFlowHost({
   target,
   resolveWheelIntent,
   preventWheelDefault = true,
+  keyboardTarget,
+  resolveKeyboardIntent,
+  preventKeyboardDefault = true,
   pointerPolicy,
   requestFrame,
   cancelFrame,
@@ -23,6 +27,7 @@ export function bindDomFlowHost({
 
   let cleanupWheel = null;
   let cleanupPointer = null;
+  let cleanupKeyboard = null;
   let active = true;
 
   function cleanup() {
@@ -35,6 +40,7 @@ export function bindDomFlowHost({
 
     for (const release of [
       () => scheduler.stop(),
+      cleanupKeyboard,
       cleanupPointer,
       cleanupWheel,
     ]) {
@@ -65,6 +71,12 @@ export function bindDomFlowHost({
       target,
       runtime,
       policy: pointerPolicy,
+    });
+    cleanupKeyboard = bindKeyboardNavigation({
+      target: keyboardTarget,
+      runtime,
+      resolveIntent: resolveKeyboardIntent,
+      preventDefault: preventKeyboardDefault,
     });
     scheduler.start();
   } catch (error) {

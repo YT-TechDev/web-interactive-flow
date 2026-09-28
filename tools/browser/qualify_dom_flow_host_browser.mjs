@@ -13,6 +13,7 @@ const routes = new Map([
   ["/", "tests/browser/dom-flow-host-qualification/index.html"],
   ["/fixture/main.mjs", "tests/browser/dom-flow-host-qualification/main.mjs"],
   ["/adapters/dom/flow_host.mjs", "adapters/dom/flow_host.mjs"],
+  ["/adapters/dom/keyboard_listener.mjs", "adapters/dom/keyboard_listener.mjs"],
   ["/adapters/dom/wheel_listener.mjs", "adapters/dom/wheel_listener.mjs"],
   ["/adapters/dom/pointer_listener.mjs", "adapters/dom/pointer_listener.mjs"],
   [
@@ -22,6 +23,7 @@ const routes = new Map([
   ["/bridge/frame_scheduler.mjs", "bridge/frame_scheduler.mjs"],
   ["/bridge/clock.mjs", "bridge/clock.mjs"],
   ["/bridge/wheel_ownership.mjs", "bridge/wheel_ownership.mjs"],
+  ["/bridge/keyboard_ownership.mjs", "bridge/keyboard_ownership.mjs"],
   ["/bridge/module_compiler.mjs", "bridge/module_compiler.mjs"],
   ["/bridge/runtime.mjs", "bridge/runtime.mjs"],
   ["/bridge/internal.mjs", "bridge/internal.mjs"],
@@ -107,8 +109,9 @@ try {
     ["next", "accepted"],
     ["next", "rejected"],
     ["previous", "accepted"],
+    ["next", "accepted"],
   ]);
-  assert.deepEqual(result.feedback, [["previous", "accepted"]]);
+  assert.deepEqual(result.feedback, [["next", "accepted"]]);
   console.log("Production DOM flow host real-browser qualification PASS", result);
 } finally {
   await new Promise((resolve) => server.close(resolve));
