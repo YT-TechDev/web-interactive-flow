@@ -31,12 +31,14 @@ try {
     feedback.push([intent, disposition]);
     observeDisposition.call(this, intent, disposition);
   };
-  const target = document.getElementById("target");
+  const wheelTarget = document.getElementById("wheel-target");
+  const pointerTarget = document.getElementById("pointer-target");
   const keyboardTarget = document.getElementById("keyboard-target");
+  const outsideTarget = document.getElementById("outside-target");
   let frames = 0;
   let cleanup;
   cleanup = bindDomFlowHost({
-    runtime, target, keyboardTarget,
+    runtime, wheelTarget, pointerTarget, keyboardTarget,
     resolveWheelIntent: (event) => event.deltaY > 0 ? "next" : "previous",
     resolveKeyboardIntent: (event) => event.key === "ArrowDown"
       ? "next"
@@ -50,7 +52,10 @@ try {
       frames += 1;
       cleanup();
       const before = decisions.length;
-      target.dispatchEvent(new WheelEvent("wheel", { deltaY: -1, cancelable: true }));
+      wheelTarget.dispatchEvent(new WheelEvent("wheel", { deltaY: -1, cancelable: true }));
+      pointerTarget.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 8, clientY: 100 }));
+      pointerTarget.dispatchEvent(new PointerEvent("pointermove", { pointerId: 8, clientY: 80 }));
+      keyboardTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
       const pass = frames === 1 && decisions.length === before && !disposed;
       output.textContent = JSON.stringify({
         state: pass ? "pass" : "fail",
@@ -62,6 +67,17 @@ try {
     },
   });
 
+  const beforeIsolation = decisions.length;
+  pointerTarget.dispatchEvent(new WheelEvent("wheel", { deltaY: 1, cancelable: true }));
+  wheelTarget.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 6, clientY: 100 }));
+  wheelTarget.dispatchEvent(new PointerEvent("pointermove", { pointerId: 6, clientY: 80 }));
+  wheelTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+  pointerTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+  outsideTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+  if (decisions.length !== beforeIsolation) {
+    throw new Error("distinct input target isolation changed");
+  }
+
   const acceptedKeyboard = new KeyboardEvent("keydown", {
     key: "ArrowDown", cancelable: true, bubbles: true,
   });
@@ -71,11 +87,11 @@ try {
   });
   keyboardTarget.dispatchEvent(rejectedKeyboard);
   const acceptedWheel = new WheelEvent("wheel", { deltaY: -1, cancelable: true });
-  target.dispatchEvent(acceptedWheel);
+  wheelTarget.dispatchEvent(acceptedWheel);
   const rejectedWheel = new WheelEvent("wheel", { deltaY: -1, cancelable: true });
-  target.dispatchEvent(rejectedWheel);
-  target.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, clientY: 100 }));
-  target.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 80 }));
+  wheelTarget.dispatchEvent(rejectedWheel);
+  pointerTarget.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, clientY: 100 }));
+  pointerTarget.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 80 }));
 
   if (!acceptedKeyboard.defaultPrevented || rejectedKeyboard.defaultPrevented) {
     throw new Error("accepted-only keyboard prevention changed");

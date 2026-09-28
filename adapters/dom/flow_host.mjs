@@ -7,7 +7,8 @@ import { bindWheelNavigation } from "./wheel_listener.mjs";
 // policies, and presentation effects remain caller-owned.
 export function bindDomFlowHost({
   runtime,
-  target,
+  wheelTarget,
+  pointerTarget,
   resolveWheelIntent,
   preventWheelDefault = true,
   keyboardTarget,
@@ -62,13 +63,13 @@ export function bindDomFlowHost({
 
   try {
     cleanupWheel = bindWheelNavigation({
-      target,
+      target: wheelTarget,
       runtime,
       resolveIntent: resolveWheelIntent,
       preventDefault: preventWheelDefault,
     });
     cleanupPointer = bindPointerNavigation({
-      target,
+      target: pointerTarget,
       runtime,
       policy: pointerPolicy,
     });
