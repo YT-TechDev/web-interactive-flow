@@ -531,6 +531,37 @@ test("P11: listeners are removed before policy abort runs", () => {
   assert.deepEqual(calls, []);
 });
 
+test("cleanup attempts every pointer release and abort after a removal failure", () => {
+  const target = new RecordingTarget();
+  const originalRemove = target.removeEventListener.bind(target);
+  target.removeEventListener = (type, listener, options) => {
+    originalRemove(type, listener, options);
+    if (type === "pointerdown") {
+      throw new Error("remove pointerdown failure");
+    }
+  };
+
+  const { runtime } = makeRuntime();
+  let aborts = 0;
+  const cleanup = bindPointerNavigation({
+    target,
+    runtime,
+    policy: makePolicy({
+      abort() {
+        aborts += 1;
+      },
+    }),
+  });
+
+  assert.throws(() => cleanup(), /remove pointerdown failure/);
+  assert.equal(target.removeCalls.length, POINTER_TYPES.length);
+  assert.equal(aborts, 1);
+  for (const type of POINTER_TYPES) {
+    assert.equal(target.count(type), 0);
+  }
+  assert.doesNotThrow(() => cleanup());
+});
+
 test("cleanup propagates policy abort failure after removing owned listeners", () => {
   const target = new RecordingTarget();
   const { runtime } = makeRuntime();
