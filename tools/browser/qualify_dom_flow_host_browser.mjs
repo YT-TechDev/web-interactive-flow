@@ -109,6 +109,7 @@ try {
     ["next", "accepted"],
     ["next", "rejected"],
     ["previous", "accepted"],
+    ["previous", "rejected"],
     ["next", "accepted"],
   ]);
   assert.deepEqual(result.feedback, [["next", "accepted"]]);
