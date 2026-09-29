@@ -14,6 +14,75 @@ npm install web-interactive-flow
 
 Registry publication is authoritative only for versions that actually exist on npm; repository tags or source metadata alone do not prove registry availability.
 
+## Quick start
+
+The application owns Wasm URL resolution and fetching. The directly qualified browser package path uses Vite-style asset URL resolution:
+
+```js
+import wasmUrl from "web-interactive-flow/core.wasm?url";
+import {
+  compileFlowModule,
+  createFlowRuntime,
+  createFrameScheduler,
+} from "web-interactive-flow";
+
+const module = await compileFlowModule(fetch(wasmUrl));
+
+const runtime = createFlowRuntime(module, {
+  phases: ["home", "about", "contact"],
+  initial: "home",
+  transitionDuration: 900_000,
+  cooldown: 350_000,
+});
+
+const scheduler = createFrameScheduler({
+  runtime,
+  requestFrame: window.requestAnimationFrame.bind(window),
+  cancelFrame: window.cancelAnimationFrame.bind(window),
+  onFrame(snapshot) {
+    console.log(snapshot);
+  },
+});
+
+scheduler.start();
+
+const disposition = runtime.next();
+console.log(disposition, runtime.getSnapshot());
+
+// Cleanup:
+// scheduler.stop();
+// runtime.dispose();
+```
+
+With the first browser scheduler, browser time is normalized to integer microsecond quanta before `runtime.tick(dt)`. The `?url` Wasm import above is directly qualified with the repository's exact Vite fixture; it is not a universal bundler guarantee.
+
+For requests, snapshots, scheduler ownership, wheel integration, R3F usage, and cleanup, see the [v0.1.0 usage guide](https://github.com/YT-TechDev/web-interactive-flow/blob/main/docs/USAGE.md).
+
+## Public API in v0.1.0
+
+Package root:
+
+- `compileFlowModule(source)`
+- `createFlowRuntime(module, config)`
+- `createFrameScheduler(options)`
+- `applyWheelNavigationIntent(options)`
+
+A created Runtime exposes `next()`, `previous()`, `goTo(phase)`, `lock()`, `unlock()`, `tick(dt)`, `getSnapshot()`, and `dispose()`.
+
+Optional R3F subpath:
+
+```js
+import { useFlowFrame } from "web-interactive-flow/r3f";
+```
+
+Public Wasm asset:
+
+```js
+import wasmUrl from "web-interactive-flow/core.wasm?url";
+```
+
+Repository-internal DOM adapters and deep `bridge/*` paths are not public package entry points in v0.1.0.
+
 ## What this project is
 
 Web Interactive Flow separates interaction-flow semantics from the hosts that deliver input and render effects.
@@ -72,11 +141,11 @@ The current repository evidence establishes the following bounded capabilities:
 - **Package boundary** — one logical package topology has been qualified with a framework-neutral root, an explicit `./r3f` host subpath, and a public `./core.wasm` asset boundary.
 - **Packed-artifact qualification** — copy-only staging, local `npm pack`, exact locked consumer installation, production Vite build, emitted-Wasm byte provenance, build-output-only loopback serving, and real-Chrome execution have been exercised as one bounded qualification path.
 
-These are evidence-backed properties of the current pre-v0.1 repository. They are not universal compatibility or production-readiness claims.
+These are evidence-backed properties of the current v0.1.0 release boundary. They are not universal compatibility or production-readiness claims.
 
 ## Qualified package topology
 
-The first distribution boundary currently qualifies this conceptual public surface:
+The v0.1.0 distribution boundary qualifies this public surface:
 
 ```text
 package root
