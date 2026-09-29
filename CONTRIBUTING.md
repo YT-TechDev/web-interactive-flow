@@ -1,6 +1,6 @@
 # Contributing
 
-Web Interactive Flow is preparing its first public `v0.1.0` npm release while remaining an evidence-driven research runtime. The first package surface is intentionally narrow and is not a stable-semver guarantee for future releases.
+Web Interactive Flow has established its first `v0.1.0` release boundary while remaining an evidence-driven research runtime. Registry publication is evidenced separately from repository source. The first package surface is intentionally narrow and is not a stable-semver guarantee for future releases.
 
 ## Workflow
 
