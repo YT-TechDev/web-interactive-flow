@@ -41,7 +41,11 @@ test("npm release workflow preserves the qualified publication boundary", async 
   );
   assert.match(source, /\^v\[0-9\]\+\\\.\[0-9\]\+\\\.\[0-9\]\+\$/);
   assert.match(source, /grep -Fx "version = \\"\$version\\""/);
-  assert.match(source, /git merge-base --is-ancestor HEAD origin\/main/);
+  assert.match(source, /tag_commit="\$\(git rev-parse HEAD\)"/);
+  assert.match(source, /main_commit="\$\(git rev-parse origin\/main\)"/);
+  assert.match(source, /\[\[ "\$tag_commit" != "\$main_commit" \]\]/);
+  assert.match(source, /release tag must point at the current main commit/);
+  assert.doesNotMatch(source, /git merge-base --is-ancestor HEAD origin\/main/);
 
   assert.match(source, /stagePackageArtifact\(\{/);
   assert.match(source, /name: "web-interactive-flow"/);
