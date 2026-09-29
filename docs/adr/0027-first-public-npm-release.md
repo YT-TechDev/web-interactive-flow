@@ -96,7 +96,7 @@ The release workflow must:
 
 1. check out the release tag;
 2. verify tag/version agreement with `moon.mod`;
-3. verify the tagged commit is contained in `main`;
+3. verify the tagged commit is exactly the current `main` commit at publication time;
 4. rebuild and re-test the Wasm target;
 5. verify the Wasm ABI;
 6. run package artifact qualification;
