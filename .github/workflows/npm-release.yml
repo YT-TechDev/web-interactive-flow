@@ -5,8 +5,15 @@ on:
     types:
       - published
 
+permissions: {}
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
 jobs:
   publish:
+    name: Publish npm release
     if: github.event.release.prerelease == false
     runs-on: ubuntu-24.04
     permissions:
@@ -23,9 +30,11 @@ jobs:
 
       - name: Verify release identity
         shell: bash
+        env:
+          INPUT_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
-          tag="${{ github.event.release.tag_name }}"
+          tag="$INPUT_TAG"
           if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "release tag must be exact vMAJOR.MINOR.PATCH" >&2
             exit 1
@@ -57,6 +66,8 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 22.14.0
+          # Bootstrap-only token setup. When Trusted Publishing is enabled,
+          # remove registry-url together with the NODE_AUTH_TOKEN publish env.
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
@@ -134,7 +145,11 @@ jobs:
           mkdir -p .release-pack
           (
             cd .release-stage
-            npm pack               --json               --ignore-scripts               --pack-destination "$GITHUB_WORKSPACE/.release-pack"               > "$GITHUB_WORKSPACE/.release-pack/pack.json"
+            npm pack \
+              --json \
+              --ignore-scripts \
+              --pack-destination "$GITHUB_WORKSPACE/.release-pack" \
+              > "$GITHUB_WORKSPACE/.release-pack/pack.json"
           )
 
           tarball=".release-pack/web-interactive-flow-$RELEASE_VERSION.tgz"
@@ -148,16 +163,35 @@ jobs:
         run: |
           set -euo pipefail
           expected_repo='"git+https://github.com/YT-TechDev/web-interactive-flow.git"'
-          existing_repo="$(npm view web-interactive-flow repository.url --json 2>/dev/null || true)"
+          repo_stdout="$(mktemp)"
+          repo_stderr="$(mktemp)"
+          version_stdout="$(mktemp)"
+          version_stderr="$(mktemp)"
+          trap 'rm -f "$repo_stdout" "$repo_stderr" "$version_stdout" "$version_stderr"' EXIT
 
-          if [[ -n "$existing_repo" && "$existing_repo" != "$expected_repo" ]]; then
-            echo "existing npm package repository identity does not match WIF" >&2
-            printf 'observed repository.url: %s\n' "$existing_repo" >&2
+          if npm view web-interactive-flow repository.url --json >"$repo_stdout" 2>"$repo_stderr"; then
+            existing_repo="$(cat "$repo_stdout")"
+            if [[ "$existing_repo" != "$expected_repo" ]]; then
+              echo "existing npm package repository identity does not match WIF" >&2
+              printf 'observed repository.url: %s\n' "$existing_repo" >&2
+              exit 1
+            fi
+          elif grep -Eq 'E404|404 Not Found' "$repo_stderr"; then
+            printf '%s\n' "web-interactive-flow is not yet present on npm"
+          else
+            cat "$repo_stderr" >&2
+            echo "npm registry identity lookup failed" >&2
             exit 1
           fi
 
-          if npm view "web-interactive-flow@$RELEASE_VERSION" version --json >/dev/null 2>&1; then
+          if npm view "web-interactive-flow@$RELEASE_VERSION" version --json >"$version_stdout" 2>"$version_stderr"; then
             echo "web-interactive-flow@$RELEASE_VERSION already exists" >&2
+            exit 1
+          elif grep -Eq 'E404|404 Not Found' "$version_stderr"; then
+            printf '%s\n' "web-interactive-flow@$RELEASE_VERSION is available"
+          else
+            cat "$version_stderr" >&2
+            echo "npm registry version lookup failed" >&2
             exit 1
           fi
 
