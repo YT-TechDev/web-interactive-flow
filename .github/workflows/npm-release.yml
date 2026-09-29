@@ -1,0 +1,154 @@
+name: npm-release
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Check out exact release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.release.tag_name }}"
+          case "$tag" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *)
+              echo "release tag must be vMAJOR.MINOR.PATCH" >&2
+              exit 1
+              ;;
+          esac
+
+          version="${tag#v}"
+          grep -Fx "version = \"$version\"" moon.mod
+
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor HEAD origin/main
+
+          printf 'RELEASE_VERSION=%s\n' "$version" >> "$GITHUB_ENV"
+          printf 'RELEASE_TAG=%s\n' "$tag" >> "$GITHUB_ENV"
+
+      - name: Install and verify qualified MoonBit toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s latest
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          versions="$(moon version --all)"
+          printf '%s\n' "$versions"
+          grep -F "moon 0.1.20260920 (914d7da" <<< "$versions"
+          grep -F "moonc v0.10.14+7d59c7ec9" <<< "$versions"
+          grep -F "moonrun 0.1.20260920 (914d7da" <<< "$versions"
+
+      - name: Set up Node for npm publication
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.14.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Pin npm CLI
+        shell: bash
+        run: |
+          npm install --global npm@11.5.1
+          npm --version | grep -Fx '11.5.1'
+
+      - name: Qualify MoonBit/Wasm release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          moon fmt --check
+          moon check --target wasm --deny-warn --frozen
+          moon test --target wasm --deny-warn --frozen
+          moon build --target wasm --deny-warn --frozen
+          test -f _build/wasm/debug/build/core/core.wasm
+          node tools/abi/verify.mjs _build/wasm/debug/build/core/core.wasm
+
+      - name: Install isolated R3F qualification fixture
+        run: npm --prefix tests/r3f/fixture ci --ignore-scripts --no-audit --no-fund
+
+      - name: Re-qualify release package boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/package/package_artifact.test.mjs
+          node tools/browser/qualify_package_browser.mjs
+          node --test tests/browser/qualification_contract.test.mjs
+
+      - name: Stage exact release artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { stagePackageArtifact } from "./tools/package/stage_package.mjs";
+
+          await stagePackageArtifact({
+            destination: "./.release-stage",
+            name: "web-interactive-flow",
+            version: process.env.RELEASE_VERSION,
+            r3fPeerVersion: "9.8.0",
+          });
+          NODE
+
+          node --input-type=module <<'NODE'
+          import assert from "node:assert/strict";
+          import { readFile } from "node:fs/promises";
+
+          const manifest = JSON.parse(
+            await readFile(".release-stage/package.json", "utf8"),
+          );
+
+          assert.equal(manifest.name, "web-interactive-flow");
+          assert.equal(manifest.version, process.env.RELEASE_VERSION);
+          assert.equal(
+            manifest.repository?.url,
+            "https://github.com/YT-TechDev/web-interactive-flow.git",
+          );
+          assert.equal(manifest.publishConfig?.access, "public");
+          assert.deepEqual(manifest.exports, {
+            ".": "./index.mjs",
+            "./r3f": "./r3f.mjs",
+            "./core.wasm": "./core.wasm",
+          });
+          NODE
+
+          cmp .release-stage/core.wasm _build/wasm/debug/build/core/core.wasm
+
+      - name: Pack and inspect exact release tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .release-pack
+          (
+            cd .release-stage
+            npm pack               --json               --ignore-scripts               --pack-destination "$GITHUB_WORKSPACE/.release-pack"               > "$GITHUB_WORKSPACE/.release-pack/pack.json"
+          )
+
+          tarball=".release-pack/web-interactive-flow-$RELEASE_VERSION.tgz"
+          test -f "$tarball"
+          printf 'release tarball: %s\n' "$tarball"
+          sha256sum "$tarball" .release-stage/core.wasm
+          printf 'RELEASE_TARBALL=%s\n' "$tarball" >> "$GITHUB_ENV"
+
+      - name: Publish exact qualified tarball
+        run: npm publish "$RELEASE_TARBALL" --access public --provenance
+        env:
+          # For the first publication only, this may contain a temporary
+          # granular npm publish token. Once Trusted Publishing is configured,
+          # remove/revoke that bootstrap token; npm will use GitHub OIDC.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
