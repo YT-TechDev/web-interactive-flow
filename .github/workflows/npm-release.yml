@@ -117,7 +117,7 @@ jobs:
           assert.equal(manifest.version, process.env.RELEASE_VERSION);
           assert.equal(
             manifest.repository?.url,
-            "https://github.com/YT-TechDev/web-interactive-flow.git",
+            "git+https://github.com/YT-TechDev/web-interactive-flow.git",
           );
           assert.equal(manifest.publishConfig?.access, "public");
           assert.deepEqual(manifest.exports, {
