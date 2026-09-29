@@ -2,7 +2,86 @@
 
 A deterministic, host-independent interaction-flow runtime for the Web, powered by MoonBit and WebAssembly.
 
-> **Status:** pre-v0.1 research runtime with qualified Web, R3F, package-artifact, and real-browser evidence. No stable API, stable semver, npm publication, or broad compatibility guarantee is claimed yet.
+> **Status:** v0.1.0 first-release source with qualified Web, R3F, package-artifact, real-browser, and external consumer evidence. The public npm identity is `web-interactive-flow`. Broad compatibility and stable semver beyond this first release are not claimed.
+
+## Install
+
+For published v0.1.x releases:
+
+```bash
+npm install web-interactive-flow
+```
+
+Registry publication is authoritative only for versions that actually exist on npm; repository tags or source metadata alone do not prove registry availability.
+
+## Quick start
+
+The application owns Wasm URL resolution and fetching. The directly qualified browser package path uses Vite-style asset URL resolution:
+
+```js
+import wasmUrl from "web-interactive-flow/core.wasm?url";
+import {
+  compileFlowModule,
+  createFlowRuntime,
+  createFrameScheduler,
+} from "web-interactive-flow";
+
+const module = await compileFlowModule(fetch(wasmUrl));
+
+const runtime = createFlowRuntime(module, {
+  phases: ["home", "about", "contact"],
+  initial: "home",
+  transitionDuration: 900_000,
+  cooldown: 350_000,
+});
+
+const scheduler = createFrameScheduler({
+  runtime,
+  requestFrame: window.requestAnimationFrame.bind(window),
+  cancelFrame: window.cancelAnimationFrame.bind(window),
+  onFrame(snapshot) {
+    console.log(snapshot);
+  },
+});
+
+scheduler.start();
+
+const disposition = runtime.next();
+console.log(disposition, runtime.getSnapshot());
+
+// Cleanup:
+// scheduler.stop();
+// runtime.dispose();
+```
+
+With the first browser scheduler, browser time is normalized to integer microsecond quanta before `runtime.tick(dt)`. The `?url` Wasm import above is directly qualified with the repository's exact Vite fixture; it is not a universal bundler guarantee.
+
+For requests, snapshots, scheduler ownership, wheel integration, R3F usage, and cleanup, see the [v0.1.0 usage guide](https://github.com/YT-TechDev/web-interactive-flow/blob/main/docs/USAGE.md).
+
+## Public API in v0.1.0
+
+Package root:
+
+- `compileFlowModule(source)`
+- `createFlowRuntime(module, config)`
+- `createFrameScheduler(options)`
+- `applyWheelNavigationIntent(options)`
+
+A created Runtime exposes `next()`, `previous()`, `goTo(phase)`, `lock()`, `unlock()`, `tick(dt)`, `getSnapshot()`, and `dispose()`.
+
+Optional R3F subpath:
+
+```js
+import { useFlowFrame } from "web-interactive-flow/r3f";
+```
+
+Public Wasm asset:
+
+```js
+import wasmUrl from "web-interactive-flow/core.wasm?url";
+```
+
+Repository-internal DOM adapters and deep `bridge/*` paths are not public package entry points in v0.1.0.
 
 ## What this project is
 
@@ -11,6 +90,12 @@ Web Interactive Flow separates interaction-flow semantics from the hosts that de
 The MoonBit/Wasm core owns semantic truth. Web-facing bridges and host adapters normalize host input, advance the runtime through explicit time, and project observable runtime state into DOM, React Three Fiber, or other presentation layers without reimplementing flow semantics.
 
 React Three Fiber is an important reference consumer, but it does not own the architecture. DOM/Web is a first-class target.
+
+### MoonBit/Wasm and JavaScript responsibilities
+
+MoonBit/Wasm owns flow semantics: selected phase, request disposition, transition lifecycle, raw progress/direction, cooldown, lock, and deterministic `tick(dt)` evolution.
+
+JavaScript/Web owns host integration: Wasm acquisition, browser time normalization, frame scheduling, DOM/event normalization, and presentation effects. Host code may translate input into normalized commands, but it must not duplicate Runtime eligibility or lifecycle truth.
 
 ```text
 Host input
@@ -56,11 +141,11 @@ The current repository evidence establishes the following bounded capabilities:
 - **Package boundary** — one logical package topology has been qualified with a framework-neutral root, an explicit `./r3f` host subpath, and a public `./core.wasm` asset boundary.
 - **Packed-artifact qualification** — copy-only staging, local `npm pack`, exact locked consumer installation, production Vite build, emitted-Wasm byte provenance, build-output-only loopback serving, and real-Chrome execution have been exercised as one bounded qualification path.
 
-These are evidence-backed properties of the current pre-v0.1 repository. They are not universal compatibility or production-readiness claims.
+These are evidence-backed properties of the current v0.1.0 release boundary. They are not universal compatibility or production-readiness claims.
 
 ## Qualified package topology
 
-The first distribution boundary currently qualifies this conceptual public surface:
+The v0.1.0 distribution boundary qualifies this public surface:
 
 ```text
 package root
@@ -78,7 +163,11 @@ package ./core.wasm
 
 The framework-neutral root does not import the R3F adapter. R3F remains opt-in behind its explicit subpath, and Wasm acquisition remains caller-owned.
 
-This topology is qualification evidence before publication; it does **not** establish a final npm package name, stable package version, or broad package-manager/bundler support.
+ADR-0027 selects the first public identity as `web-interactive-flow@0.1.0`. A repository tag is not treated as proof of publication; the registry artifact and its release provenance remain the publication evidence.
+
+The package export map remains intentionally narrower than the repository source tree. Repository-qualified internal DOM adapters are **not** public package entry points in v0.1.0.
+
+This first release identity does **not** establish broad package-manager/bundler compatibility or stable semver guarantees beyond the directly qualified evidence.
 
 ## Evidence discipline
 
@@ -107,8 +196,8 @@ The project has moved beyond the initial architecture bootstrap: the host-indepe
 
 The next frontiers remain intentionally evidence-driven. The project does not prematurely freeze or claim:
 
-- stable public API or stable semver;
-- npm publication or final package identity;
+- stable public API or stable semver beyond the first v0.1.0 surface;
+- broad npm/package-manager/bundler compatibility beyond directly qualified environments;
 - final Wasm ABI or serialization format;
 - universal Vite, Webpack, Next.js/Turbopack, SSR, or React Server Components compatibility;
 - broad browser compatibility beyond directly qualified environments;

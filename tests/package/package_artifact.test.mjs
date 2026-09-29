@@ -164,6 +164,23 @@ test("K01-K10: local packed artifact preserves host isolation and provenance", a
     assert.equal(manifest.name, PACKAGE_NAME);
     assert.equal(manifest.version, PACKAGE_VERSION);
     assert.equal(manifest.type, "module");
+    assert.equal(
+      manifest.description,
+      "Deterministic, host-independent interaction-flow runtime for the Web, powered by MoonBit and WebAssembly.",
+    );
+    assert.equal(manifest.license, "MIT");
+    assert.deepEqual(manifest.repository, {
+      type: "git",
+      url: "git+https://github.com/YT-TechDev/web-interactive-flow.git",
+    });
+    assert.equal(
+      manifest.homepage,
+      "https://github.com/YT-TechDev/web-interactive-flow#readme",
+    );
+    assert.deepEqual(manifest.bugs, {
+      url: "https://github.com/YT-TechDev/web-interactive-flow/issues",
+    });
+    assert.deepEqual(manifest.publishConfig, { access: "public" });
     assert.deepEqual(manifest.exports, {
       ".": "./index.mjs",
       "./r3f": "./r3f.mjs",

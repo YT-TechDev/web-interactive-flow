@@ -2,7 +2,7 @@
 
 This document is normative. It records properties the project currently treats as non-negotiable.
 
-The project is pre-v0.1. Only invariants justified at this stage are frozen here. The narrower first-runtime behavior established by research is recorded in [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md).
+The project has established its first v0.1.0 release boundary. Registry publication is evidenced separately from repository source. Only invariants justified by the repository evidence are frozen here. The narrower first-runtime behavior established during the pre-v0.1 research phase is recorded in [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md).
 
 ## I-01 — Host-independent core
 
@@ -52,7 +52,7 @@ The following are intentionally not invariants yet:
 - serialization/restore format;
 - presentation easing utility/API design;
 - exact validation/error encoding;
-- future interruption, queue, or history semantics beyond the current pre-v0.1 behavioral contract;
+- future interruption, queue, or history semantics beyond the current first-runtime behavioral contract;
 - exact Wasm ABI;
 - final npm package layout.
 
