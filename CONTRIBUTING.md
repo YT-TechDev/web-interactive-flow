@@ -1,6 +1,6 @@
 # Contributing
 
-Web Interactive Flow is currently in a pre-v0.1 research and architecture phase.
+Web Interactive Flow is preparing its first public `v0.1.0` npm release while remaining an evidence-driven research runtime. The first package surface is intentionally narrow and is not a stable-semver guarantee for future releases.
 
 ## Workflow
 
@@ -27,6 +27,8 @@ Behavioral changes should identify:
 - any authority document that must change.
 
 Architecture changes should normally include or update an ADR.
+
+Consumer-facing changes must also check whether `README.md` or `docs/USAGE.md` would become inaccurate. Do not document repository-internal paths as public npm APIs unless the accepted package authority and export map expose them.
 
 ## Toolchain and dependencies
 
