@@ -1,6 +1,6 @@
 # ADR-0028 — Existing wheel ownership seam accepts tagged direct-target navigation
 
-Status: Proposed
+Status: Accepted
 
 ## Context
 
@@ -148,6 +148,8 @@ Event cancelability remains browser state, not semantic eligibility.
 
 The helper does not claim that calling `preventDefault()` proves successful browser suppression in every listener context.
 
+If `event.preventDefault()` throws after the Runtime request has already returned `"accepted"`, that host-effect exception propagates. The semantic request remains accepted and is not rolled back. Callers must not interpret a post-disposition host-effect exception as evidence that navigation did not occur.
+
 ### Raw wheel policy remains caller-owned
 
 This widening does not move raw wheel interpretation into WIF.
@@ -242,8 +244,8 @@ Repository authority and evidence include:
 - ADR-0019 — synchronous pointer disposition feedback is request-origin scoped, but remains outside this selected frontier;
 - ADR-0027 — the first public package identity and release boundary;
 - the existing semantic Runtime's `next()`, `previous()`, and `goTo()` behavior;
-- Issue #209 Research 0–2, independent adversarial audit, and final convergence;
-- live `WIF-UsagePage` evidence showing duplicated accepted-only effect logic specifically for direct-target wheel navigation.
+- Issue #209 [final Research 0–2 report](https://github.com/YT-TechDev/web-interactive-flow/issues/209#issuecomment-5893852789), [independent adversarial audit](https://github.com/YT-TechDev/web-interactive-flow/issues/209#issuecomment-5896044484), and [final convergence](https://github.com/YT-TechDev/web-interactive-flow/issues/209#issuecomment-5896054654);
+- live `WIF-UsagePage` evidence at [`1092eff…/src/App.jsx` lines 40–49](https://github.com/YT-TechDev/WIF-UsagePage/blob/1092eff47151a783c4b3e4db640f1b0a438ff103/src/App.jsx#L40-L49), where horizontal navigation uses the public adjacent helper while direct-target navigation performs `runtime.goTo(target)` followed by accepted-and-cancelable `preventDefault()` manually.
 
 The independent audit also established that a dispatcher-only abstraction would add little value because `runtime.goTo()` already performs direct dispatch. The reusable value lies in preserving the disposition-first host-effect ownership theorem for direct targets.
 
@@ -294,6 +296,7 @@ Before release, production evidence must cover at least:
 - accepted + non-cancelable event -> no `preventDefault()`;
 - rejected request -> no `preventDefault()`;
 - failure before disposition -> no `preventDefault()`;
+- accepted + cancelable event whose `preventDefault()` throws -> exception propagates after the accepted disposition; semantic acceptance is not rolled back;
 - exactly one Runtime operation per valid helper invocation.
 
 Package and real-browser qualification must exercise the released public seam rather than a repository-private substitute.
