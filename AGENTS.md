@@ -34,6 +34,26 @@ Stop and resolve material conflicts rather than guessing.
 - R3F is a reference consumer/adapter, not the architectural owner.
 - Adapters must not reimplement core flow semantics.
 
+## Public package boundary
+
+For the first public `v0.1.0` release, the selected npm identity is `web-interactive-flow`.
+
+Treat the package export map as the consumer boundary:
+
+- package root: `compileFlowModule`, `createFlowRuntime`, `createFrameScheduler`, `applyWheelNavigationIntent`;
+- `web-interactive-flow/r3f`: `useFlowFrame`;
+- `web-interactive-flow/core.wasm`: qualified Wasm asset.
+
+Do not suggest or introduce package-name deep imports into repository-internal `bridge/` or `adapters/` paths.
+
+Do not expose the internal DOM adapters merely because their repository implementation is qualified. Public DOM adapter exports remain deferred.
+
+Wasm URL resolution and fetch policy remain caller-owned. The first qualified Vite consumer uses `web-interactive-flow/core.wasm?url`, but that syntax is not a universal bundler guarantee.
+
+The browser frame scheduler may advance Runtime time. The R3F `useFlowFrame` hook is read-only and must not become a second semantic clock.
+
+Consumer examples should agree with `README.md` and `docs/USAGE.md`, while repository authority and implementation remain higher authority when a conflict is found.
+
 ## Existing TypeScript/R3F implementation
 
 When an existing R3F implementation is available, treat it as behavioral evidence, not as source text to port mechanically.
