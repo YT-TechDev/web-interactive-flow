@@ -159,6 +159,6 @@ This is not a line-by-line porting project.
 - validation/error encoding;
 - event subscription API;
 - React/R3F ergonomics;
-- release artifact layout.
+- release artifact evolution beyond the v0.1.0 boundary.
 
 These should be resolved by evidence and ADRs rather than by convenience.
