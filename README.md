@@ -84,7 +84,11 @@ package ./core.wasm
 
 The framework-neutral root does not import the R3F adapter. R3F remains opt-in behind its explicit subpath, and Wasm acquisition remains caller-owned.
 
-This topology is qualification evidence before publication; it does **not** establish a final npm package name, stable package version, or broad package-manager/bundler support.
+ADR-0027 selects the first public identity as `web-interactive-flow@0.1.0`. Until the tagged release workflow completes, this remains a release candidate rather than a claim that the registry package is already available.
+
+The package export map remains intentionally narrower than the repository source tree. Repository-qualified internal DOM adapters are **not** public package entry points in v0.1.0.
+
+This first release identity does **not** establish broad package-manager/bundler compatibility or stable semver guarantees beyond the directly qualified evidence.
 
 ## Evidence discipline
 
