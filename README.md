@@ -2,7 +2,17 @@
 
 A deterministic, host-independent interaction-flow runtime for the Web, powered by MoonBit and WebAssembly.
 
-> **Status:** v0.1.0 release candidate with qualified Web, R3F, package-artifact, real-browser, and external consumer evidence. The first npm identity is selected as `web-interactive-flow`; publication is not complete until the tagged release workflow succeeds. Broad compatibility and stable semver beyond this first release are not claimed.
+> **Status:** v0.1.0 first-release source with qualified Web, R3F, package-artifact, real-browser, and external consumer evidence. The public npm identity is `web-interactive-flow`. Broad compatibility and stable semver beyond this first release are not claimed.
+
+## Install
+
+For published v0.1.x releases:
+
+```bash
+npm install web-interactive-flow
+```
+
+Registry publication is authoritative only for versions that actually exist on npm; repository tags or source metadata alone do not prove registry availability.
 
 ## What this project is
 
@@ -84,7 +94,7 @@ package ./core.wasm
 
 The framework-neutral root does not import the R3F adapter. R3F remains opt-in behind its explicit subpath, and Wasm acquisition remains caller-owned.
 
-ADR-0027 selects the first public identity as `web-interactive-flow@0.1.0`. Until the tagged release workflow completes, this remains a release candidate rather than a claim that the registry package is already available.
+ADR-0027 selects the first public identity as `web-interactive-flow@0.1.0`. A repository tag is not treated as proof of publication; the registry artifact and its release provenance remain the publication evidence.
 
 The package export map remains intentionally narrower than the repository source tree. Repository-qualified internal DOM adapters are **not** public package entry points in v0.1.0.
 
@@ -118,7 +128,7 @@ The project has moved beyond the initial architecture bootstrap: the host-indepe
 The next frontiers remain intentionally evidence-driven. The project does not prematurely freeze or claim:
 
 - stable public API or stable semver beyond the first v0.1.0 surface;
-- npm publication until the tagged release workflow has actually succeeded;
+- broad npm/package-manager/bundler compatibility beyond directly qualified environments;
 - final Wasm ABI or serialization format;
 - universal Vite, Webpack, Next.js/Turbopack, SSR, or React Server Components compatibility;
 - broad browser compatibility beyond directly qualified environments;
