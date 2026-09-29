@@ -171,7 +171,7 @@ test("K01-K10: local packed artifact preserves host isolation and provenance", a
     assert.equal(manifest.license, "MIT");
     assert.deepEqual(manifest.repository, {
       type: "git",
-      url: "https://github.com/YT-TechDev/web-interactive-flow.git",
+      url: "git+https://github.com/YT-TechDev/web-interactive-flow.git",
     });
     assert.equal(
       manifest.homepage,
