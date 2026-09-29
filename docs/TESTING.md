@@ -2984,10 +2984,11 @@ No direct React or Three.js peer is added unless WIF production source imports o
 
 ### K10 — Distribution nonclaims remain explicit
 
-The first package qualification does not establish:
+The first package qualification does not by itself establish release identity. ADR-0027 separately selects `web-interactive-flow@0.1.0`.
 
-- final package name;
-- stable semver compatibility;
+It also does not establish:
+
+- stable semver compatibility beyond that first release;
 - broad R3F peer-version support;
 - TypeScript declaration strategy;
 - CommonJS/dual-package support;
@@ -3067,7 +3068,7 @@ This proof establishes only one exact, lockfile-backed Vite qualification enviro
 - SSR or React Server Components compatibility;
 - support for every browser;
 - universal Wasm deployment behavior; or
-- a final npm package name or version.
+- release identity beyond the separately accepted `web-interactive-flow@0.1.0` boundary.
 
 ### Package-aware browser evidence boundaries
 
