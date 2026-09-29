@@ -8,7 +8,7 @@ This directory contains repository-owned project authority.
 - [adr/](adr/) — accepted architectural decisions and their rationale.
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system structure and ownership.
 - [HOST_BOUNDARIES.md](HOST_BOUNDARIES.md) — responsibilities of core and host adapters.
-- [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md) — evidence-backed pre-v0.1 behavior for the first runtime proof.
+- [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md) — evidence-backed first-runtime behavior established during the pre-v0.1 research phase.
 - [TESTING.md](TESTING.md) — evidence model, semantic oracle, traces, and validation strategy.
 - [GLOSSARY.md](GLOSSARY.md) — shared terminology.
 
