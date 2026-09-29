@@ -137,6 +137,9 @@ jobs:
       - name: Qualify local package artifact topology
         run: node --test tests/package/package_artifact.test.mjs
 
+      - name: Qualify npm release workflow contract
+        run: node --test tests/package/npm_release_workflow.test.mjs
+
       - name: Qualify production Web composition in real Chrome
         shell: bash
         run: |
