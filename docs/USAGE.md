@@ -6,6 +6,8 @@ It is consumer guidance derived from the accepted repository authority and quali
 
 ## Install
 
+After `web-interactive-flow@0.1.0` is published to npm:
+
 ```bash
 npm install web-interactive-flow
 ```
