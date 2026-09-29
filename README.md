@@ -12,6 +12,12 @@ The MoonBit/Wasm core owns semantic truth. Web-facing bridges and host adapters 
 
 React Three Fiber is an important reference consumer, but it does not own the architecture. DOM/Web is a first-class target.
 
+### MoonBit/Wasm and JavaScript responsibilities
+
+MoonBit/Wasm owns flow semantics: selected phase, request disposition, transition lifecycle, raw progress/direction, cooldown, lock, and deterministic `tick(dt)` evolution.
+
+JavaScript/Web owns host integration: Wasm acquisition, browser time normalization, frame scheduling, DOM/event normalization, and presentation effects. Host code may translate input into normalized commands, but it must not duplicate Runtime eligibility or lifecycle truth.
+
 ```text
 Host input
   wheel / touch / keyboard / pointer / programmatic requests
