@@ -12,7 +12,7 @@ const REPOSITORY_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const PACKAGE_DESCRIPTION =
   "Deterministic, host-independent interaction-flow runtime for the Web, powered by MoonBit and WebAssembly.";
 const PACKAGE_REPOSITORY_URL =
-  "https://github.com/YT-TechDev/web-interactive-flow.git";
+  "git+https://github.com/YT-TechDev/web-interactive-flow.git";
 const PACKAGE_HOMEPAGE =
   "https://github.com/YT-TechDev/web-interactive-flow#readme";
 const PACKAGE_BUGS_URL =
