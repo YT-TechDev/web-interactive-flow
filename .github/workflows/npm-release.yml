@@ -44,7 +44,14 @@ jobs:
           grep -Fx "version = \"$version\"" moon.mod
 
           git fetch --no-tags origin main
-          git merge-base --is-ancestor HEAD origin/main
+          tag_commit="$(git rev-parse HEAD)"
+          main_commit="$(git rev-parse origin/main)"
+          if [[ "$tag_commit" != "$main_commit" ]]; then
+            echo "release tag must point at the current main commit" >&2
+            printf 'tag commit:  %s\n' "$tag_commit" >&2
+            printf 'main commit: %s\n' "$main_commit" >&2
+            exit 1
+          fi
 
           printf 'RELEASE_VERSION=%s\n' "$version" >> "$GITHUB_ENV"
           printf 'RELEASE_TAG=%s\n' "$tag" >> "$GITHUB_ENV"
