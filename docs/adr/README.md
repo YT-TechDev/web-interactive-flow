@@ -51,3 +51,4 @@ Accepted ADRs are repository authority below invariants and above architecture o
 - [ADR-0025 — Reusable pointer recognizer boundary composes explicit host policies](0025-pointer-recognizer-composition-boundary.md)
 - [ADR-0026 — First production accepted-only pointer recognizer remains internal host policy](0026-first-production-accepted-pointer-recognizer.md)
 - [ADR-0027 — First public npm release uses web-interactive-flow identity and a qualified release boundary](0027-first-public-npm-release.md)
+- [ADR-0028 — Existing wheel ownership seam accepts tagged direct-target navigation](0028-target-capable-wheel-ownership.md)
