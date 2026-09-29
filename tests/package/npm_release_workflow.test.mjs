@@ -70,11 +70,9 @@ test("npm release workflow preserves the qualified publication boundary", async 
     source,
     /npm publish "\$RELEASE_TARBALL" --access public --provenance/,
   );
-  assert.match(source, /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_TOKEN \}\}/);
-  assert.match(
-    source,
-    /remove registry-url together with the NODE_AUTH_TOKEN publish env/,
-  );
+  assert.match(source, /registry-url: https:\/\/registry\.npmjs\.org/);
+  assert.doesNotMatch(source, /NODE_AUTH_TOKEN/);
+  assert.doesNotMatch(source, /NPM_TOKEN/);
 
   assert.doesNotMatch(source, /npm publish\s+\.\s/);
   assert.doesNotMatch(source, /permissions:\s*write-all/);
