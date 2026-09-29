@@ -117,8 +117,8 @@ The project has moved beyond the initial architecture bootstrap: the host-indepe
 
 The next frontiers remain intentionally evidence-driven. The project does not prematurely freeze or claim:
 
-- stable public API or stable semver;
-- npm publication or final package identity;
+- stable public API or stable semver beyond the first v0.1.0 surface;
+- npm publication until the tagged release workflow has actually succeeded;
 - final Wasm ABI or serialization format;
 - universal Vite, Webpack, Next.js/Turbopack, SSR, or React Server Components compatibility;
 - broad browser compatibility beyond directly qualified environments;
