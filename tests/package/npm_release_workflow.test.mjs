@@ -14,6 +14,11 @@ test("npm release workflow preserves the qualified publication boundary", async 
 
   assert.match(source, /release:\s*\n\s*types:\s*\n\s*- published/);
   assert.doesNotMatch(source, /\n\s*push:\s*(?:\n|$)/);
+  assert.match(source, /permissions: \{\}/);
+  assert.match(
+    source,
+    /concurrency:\s*\n\s*group: npm-release\s*\n\s*cancel-in-progress: false/,
+  );
   assert.match(source, /if: github\.event\.release\.prerelease == false/);
 
   assert.match(source, /permissions:\s*\n\s*contents: read\s*\n\s*id-token: write/);
@@ -28,6 +33,12 @@ test("npm release workflow preserves the qualified publication boundary", async 
   assert.match(source, /node-version: 22\.14\.0/);
   assert.match(source, /npm install --global npm@11\.5\.1/);
 
+  assert.match(source, /INPUT_TAG: \$\{\{ github\.event\.release\.tag_name \}\}/);
+  assert.match(source, /tag="\$INPUT_TAG"/);
+  assert.doesNotMatch(
+    source,
+    /tag="\$\{\{ github\.event\.release\.tag_name \}\}"/,
+  );
   assert.match(source, /\^v\[0-9\]\+\\\.\[0-9\]\+\\\.\[0-9\]\+\$/);
   assert.match(source, /grep -Fx "version = \\"\$version\\""/);
   assert.match(source, /git merge-base --is-ancestor HEAD origin\/main/);
@@ -48,11 +59,18 @@ test("npm release workflow preserves the qualified publication boundary", async 
     source,
     /npm view "web-interactive-flow@\$RELEASE_VERSION" version --json/,
   );
+  assert.match(source, /grep -Eq 'E404\|404 Not Found'/);
+  assert.match(source, /npm registry identity lookup failed/);
+  assert.match(source, /npm registry version lookup failed/);
   assert.match(
     source,
     /npm publish "\$RELEASE_TARBALL" --access public --provenance/,
   );
   assert.match(source, /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_TOKEN \}\}/);
+  assert.match(
+    source,
+    /remove registry-url together with the NODE_AUTH_TOKEN publish env/,
+  );
 
   assert.doesNotMatch(source, /npm publish\s+\.\s/);
   assert.doesNotMatch(source, /permissions:\s*write-all/);
