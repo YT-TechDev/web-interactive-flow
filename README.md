@@ -2,7 +2,7 @@
 
 A deterministic, host-independent interaction-flow runtime for the Web, powered by MoonBit and WebAssembly.
 
-> **Status:** pre-v0.1 research runtime with qualified Web, R3F, package-artifact, and real-browser evidence. No stable API, stable semver, npm publication, or broad compatibility guarantee is claimed yet.
+> **Status:** v0.1.0 release candidate with qualified Web, R3F, package-artifact, real-browser, and external consumer evidence. The first npm identity is selected as `web-interactive-flow`; publication is not complete until the tagged release workflow succeeds. Broad compatibility and stable semver beyond this first release are not claimed.
 
 ## What this project is
 
