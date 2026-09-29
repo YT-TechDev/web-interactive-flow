@@ -2,7 +2,7 @@
 
 This document is normative. It records properties the project currently treats as non-negotiable.
 
-The project is entering its first public v0.1.0 release boundary. Only invariants justified by the repository evidence are frozen here. The narrower first-runtime behavior established during the pre-v0.1 research phase is recorded in [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md).
+The project has established its first v0.1.0 release boundary. Registry publication is evidenced separately from repository source. Only invariants justified by the repository evidence are frozen here. The narrower first-runtime behavior established during the pre-v0.1 research phase is recorded in [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md).
 
 ## I-01 — Host-independent core
 
