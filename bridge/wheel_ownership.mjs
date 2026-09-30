@@ -8,11 +8,21 @@ export function applyWheelNavigationIntent({
     throw new Error("invalid semantic runtime");
   }
 
-  if (intent !== "next" && intent !== "previous") {
+  const isTarget =
+    intent !== null &&
+    typeof intent === "object" &&
+    intent.type === "target" &&
+    Object.hasOwn(intent, "target");
+
+  if (intent !== "next" && intent !== "previous" && !isTarget) {
     throw new Error("invalid normalized wheel intent");
   }
 
-  const request = intent === "next" ? runtime.next : runtime.previous;
+  const request = isTarget
+    ? runtime.goTo
+    : intent === "next"
+      ? runtime.next
+      : runtime.previous;
   if (typeof request !== "function") {
     throw new Error("invalid semantic runtime");
   }
@@ -30,7 +40,10 @@ export function applyWheelNavigationIntent({
     throw new Error("invalid preventDefault policy");
   }
 
-  const disposition = request.call(runtime);
+  // Target identity validation stays with Runtime.goTo(); it is not a rejection.
+  const disposition = isTarget
+    ? request.call(runtime, intent.target)
+    : request.call(runtime);
 
   if (
     disposition === "accepted" &&

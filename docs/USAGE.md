@@ -210,7 +210,7 @@ Do not drive the same Runtime from multiple competing lifecycle clocks.
 
 ## Wheel ownership helper
 
-`applyWheelNavigationIntent()` consumes a normalized `"next"` or `"previous"` intent. It does not decide raw wheel thresholds, gesture accumulation, axis dominance, or device policy.
+`applyWheelNavigationIntent()` consumes one already-normalized intent: `"next"`, `"previous"`, or a tagged direct target `{ type: "target", target }`. A bare phase string is not a direct target, because phase identities may themselves be `"next"` or `"previous"`. It does not decide raw wheel thresholds, gesture accumulation, axis dominance, or device policy.
 
 ```js
 import { applyWheelNavigationIntent } from "web-interactive-flow";
@@ -233,13 +233,15 @@ element.addEventListener(
 );
 ```
 
-The helper calls the Runtime first. It calls `event.preventDefault()` only when:
+The helper issues exactly one Runtime request (`next()`, `previous()`, or `goTo(target)`) and returns its disposition unchanged. An unknown `target` remains a Runtime validation failure, not `"rejected"`. The helper calls the Runtime first. It calls `event.preventDefault()` only when:
 
 - the semantic request returns `"accepted"`;
 - `preventDefault` is enabled;
 - the event is cancelable.
 
-Raw wheel policy remains host-owned.
+If `preventDefault()` throws after an `"accepted"` disposition, the exception propagates but the semantic request remains accepted; it is not rolled back or retried.
+
+Raw wheel policy, and any mapping from a wheel direction to an application target, remain host-owned.
 
 ## React Three Fiber
 

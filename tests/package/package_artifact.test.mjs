@@ -333,6 +333,33 @@ try {
 } finally {
   runtime.dispose();
 }
+
+const targetRuntime = packageRoot.createFlowRuntime(module, {
+  phases: ["A", "B", "C"],
+  initial: "A",
+  transitionDuration: 100,
+  cooldown: 0,
+});
+
+try {
+  let prevented = 0;
+  const event = { cancelable: true, preventDefault() { prevented += 1; } };
+  const apply = (target) => packageRoot.applyWheelNavigationIntent({
+    runtime: targetRuntime,
+    event,
+    intent: { type: "target", target },
+  });
+
+  assert.equal(apply("C"), "accepted");
+  assert.equal(prevented, 1);
+  assert.equal(targetRuntime.getSnapshot().selected, "C");
+  assert.equal(apply("B"), "rejected");
+  assert.equal(prevented, 1);
+  assert.throws(() => apply("not-configured"));
+  assert.equal(prevented, 1);
+} finally {
+  targetRuntime.dispose();
+}
 `;
 
     assert.match(
