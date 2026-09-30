@@ -4,7 +4,7 @@ Web Interactive Flow (WIF) is a small interaction-flow runtime for Web applicati
 
 ## Source and npm status
 
-The current repository source includes the accepted v0.2.0 target-capable wheel ownership boundary. npm release status is separate from source status. As checked on 2026-09-30, npm lists only **web-interactive-flow@0.1.0**. The tagged direct-target wheel intent described below is in repository source for v0.2.0 preparation; it is not in the published 0.1.0 artifact.
+The current repository source is versioned for the v0.2.0 target-capable wheel ownership boundary. npm publication is a separate release event and must be verified from the registry. The tagged direct-target wheel intent described below is part of v0.2.0; it is not present in the 0.1.0 artifact.
 
 A repository commit or tag does not prove npm availability. Check the registry before selecting a version:
 
@@ -112,7 +112,7 @@ function FlowPresentation({ runtime }) {
 
 - [Usage guide](docs/USAGE.md) — practical integration and cleanup
 - [Public API](docs/PUBLIC_API.md) — concise public contract and ownership matrix
-- [Changelog](CHANGELOG.md) — first release facts and v0.2.0 release preparation
+- [Changelog](CHANGELOG.md) — v0.1.0 history and v0.2.0 distribution changes
 - [Contributing and agent guidance](https://github.com/YT-TechDev/web-interactive-flow/blob/main/CONTRIBUTING.md) · [AGENTS.md](https://github.com/YT-TechDev/web-interactive-flow/blob/main/AGENTS.md)
 
 ## Qualified boundaries
