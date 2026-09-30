@@ -1,8 +1,8 @@
 # Changelog
 
-This changelog records high-level distribution changes. It does not replace accepted ADRs or qualification evidence.
+This changelog records high-level source and distribution changes. It does not replace accepted ADRs or qualification evidence. Version entries do not by themselves prove npm publication; verify registry availability separately.
 
-## Unreleased — v0.2.0 release preparation
+## 0.2.0
 
 ### Added
 
@@ -25,7 +25,7 @@ This changelog records high-level distribution changes. It does not replace acce
 - [WIF production qualification, PR #212](https://github.com/YT-TechDev/web-interactive-flow/pull/212)
 - [Issue #210 and UsagePage consumer dogfood evidence](https://github.com/YT-TechDev/web-interactive-flow/issues/210)
 
-This is release-preparation documentation. It does not claim that `web-interactive-flow@0.2.0` is available on npm.
+Registry publication is separate from this source changelog. Verify availability with `npm view web-interactive-flow@0.2.0 version`.
 
 ## 0.1.0 — First public npm release
 
