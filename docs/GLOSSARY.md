@@ -91,3 +91,11 @@ An existing implementation used as behavioral evidence. It is not automatically 
 ## Host effect
 
 A DOM, CSS, React, R3F, rendering, or other host-specific consequence derived from runtime state.
+
+## Normalized intent
+
+A host-boundary representation of one navigation request after host input has been interpreted. The wheel ownership helper accepts adjacent `next`/`previous` intents or a tagged direct-target intent. Raw wheel interpretation remains caller-owned.
+
+## Tagged direct-target intent
+
+The wheel helper representation `{ type: "target", target: phaseIdentity }` for requesting one configured phase directly. The tag distinguishes a phase named `next` or `previous` from the corresponding adjacent operation.

@@ -81,8 +81,15 @@ export async function stagePackageArtifact({
   );
   await rm(path.join(stageRoot, "_build"), { recursive: true, force: true });
 
-  await copyRepositoryFile("README.md", stageRoot);
-  await copyRepositoryFile("LICENSE", stageRoot);
+  for (const relativePath of [
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/USAGE.md",
+    "docs/PUBLIC_API.md",
+  ]) {
+    await copyRepositoryFile(relativePath, stageRoot);
+  }
 
   await writeFile(path.join(stageRoot, "index.mjs"), ROOT_FACADE, "utf8");
   await writeFile(path.join(stageRoot, "r3f.mjs"), R3F_FACADE, "utf8");
@@ -117,6 +124,9 @@ export async function stagePackageArtifact({
       "core.wasm",
       "README.md",
       "LICENSE",
+      "CHANGELOG.md",
+      "docs/USAGE.md",
+      "docs/PUBLIC_API.md",
     ],
     peerDependencies: {
       "@react-three/fiber": r3fPeerVersion,

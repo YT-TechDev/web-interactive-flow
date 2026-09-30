@@ -36,23 +36,23 @@ Stop and resolve material conflicts rather than guessing.
 
 ## Public package boundary
 
-For the first public `v0.1.0` release, the selected npm identity is `web-interactive-flow`.
-
-Treat the package export map as the consumer boundary:
+The current v0.2.0 source boundary retains the existing public export names:
 
 - package root: `compileFlowModule`, `createFlowRuntime`, `createFrameScheduler`, `applyWheelNavigationIntent`;
 - `web-interactive-flow/r3f`: `useFlowFrame`;
-- `web-interactive-flow/core.wasm`: qualified Wasm asset.
+- `web-interactive-flow/core.wasm`: the packaged Wasm asset.
 
-Do not suggest or introduce package-name deep imports into repository-internal `bridge/` or `adapters/` paths.
+The existing wheel helper accepts `"next"` and `"previous"` plus the tagged direct-target form `{ type: "target", target: phaseIdentity }`. A bare phase string is not a direct target; a configured phase may itself be named `"next"` or `"previous"`.
 
-Do not expose the internal DOM adapters merely because their repository implementation is qualified. Public DOM adapter exports remain deferred.
+Runtime remains the sole authority for eligibility and disposition. The helper issues one Runtime request and applies `preventDefault()` only after acceptance, when enabled and when the event is cancelable. Raw wheel interpretation, thresholds, target mapping, and application topology remain caller-owned.
 
-Wasm URL resolution and fetch policy remain caller-owned. The first qualified Vite consumer uses `web-interactive-flow/core.wasm?url`, but that syntax is not a universal bundler guarantee.
+There is no `./dom` export. Internal DOM adapters and package deep imports into `bridge/*` or `adapters/*` remain non-public. Do not widen public pointer or keyboard APIs or make R3F a semantic clock.
 
-The browser frame scheduler may advance Runtime time. The R3F `useFlowFrame` hook is read-only and must not become a second semantic clock.
+As checked on 2026-09-30, npm lists only `web-interactive-flow@0.1.0`; verify registry availability directly. Repository source status does not prove that a newer npm version exists.
 
-Consumer examples should agree with `README.md` and `docs/USAGE.md`, while repository authority and implementation remain higher authority when a conflict is found.
+The browser scheduler may advance Runtime time. The R3F `useFlowFrame` hook is read-only and must not become a second semantic clock. Wasm URL resolution and fetch policy remain caller-owned. The `?url` asset form is qualified for the current Vite path only.
+
+Consumer examples should agree with `README.md`, `docs/USAGE.md`, and `docs/PUBLIC_API.md`, while repository authority and implementation remain higher authority when a conflict is found.
 
 ## Existing TypeScript/R3F implementation
 
