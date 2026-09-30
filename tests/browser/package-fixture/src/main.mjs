@@ -32,7 +32,8 @@ const fail = (error) => {
 try {
   // The application owns both URL resolution and fetch; WIF only consumes Response.
   const module = await compileFlowModule(fetch(wasmUrl));
-  runtime = createFlowRuntime(module, {
+  const createRuntime = (config) => createFlowRuntime(module, config);
+  runtime = createRuntime({
     phases: ["A", "B"],
     initial: "A",
     transitionDuration: 10_000_000,
@@ -43,7 +44,7 @@ try {
 
   // Public target-capable wheel ownership through the package root, using a
   // real cancelable browser event on a separate Runtime.
-  const targetRuntime = createFlowRuntime(module, {
+  const targetRuntime = createRuntime({
     phases: ["A", "B", "C"],
     initial: "A",
     transitionDuration: 10_000_000,
