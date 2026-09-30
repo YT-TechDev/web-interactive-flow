@@ -1,6 +1,6 @@
 # Usage
 
-This practical guide describes the current repository source boundary, including the v0.2.0 target-capable wheel ownership extension. For an export summary and ownership matrix, see [PUBLIC_API.md](PUBLIC_API.md). As checked on 2026-09-30, npm lists only web-interactive-flow@0.1.0; that published artifact does not include the tagged direct-target extension. Repository source and npm publication are separate.
+This practical guide describes the v0.2.0 source boundary, including the target-capable wheel ownership extension. For an export summary and ownership matrix, see [PUBLIC_API.md](PUBLIC_API.md). Registry publication is separate from repository source; verify `npm view web-interactive-flow@0.2.0 version` before relying on availability. The tagged direct-target extension is part of v0.2.0 and is not present in 0.1.0.
 
 ## Install
 
