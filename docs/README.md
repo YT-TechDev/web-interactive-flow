@@ -7,7 +7,7 @@ Use the layer that matches your task. Consumer docs summarize the public package
 - [Root README](../README.md) — what WIF does, install, and quick start.
 - [Usage guide](USAGE.md) — practical integration and cleanup.
 - [Public API](PUBLIC_API.md) — exports, ownership, and integration rules.
-- [Changelog](../CHANGELOG.md) — release and release-preparation facts.
+- [Changelog](../CHANGELOG.md) — version and distribution changes.
 
 ## For contributors and coding agents
 
