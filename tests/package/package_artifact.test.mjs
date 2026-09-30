@@ -36,6 +36,13 @@ const EXPECTED_PRODUCTION_PATHS = [
   "adapters/r3f/use_flow_frame.mjs",
 ];
 
+const EXPECTED_CONSUMER_DOCUMENTS = [
+  "README.md",
+  "CHANGELOG.md",
+  "docs/USAGE.md",
+  "docs/PUBLIC_API.md",
+];
+
 const EXPECTED_ROOT_FACADE =
   'export { createFlowRuntime } from "./bridge/runtime.mjs";\n' +
   'export { compileFlowModule } from "./bridge/module_compiler.mjs";\n' +
@@ -53,9 +60,13 @@ const EXPECTED_MANIFEST_FILES = [
   "core.wasm",
   "README.md",
   "LICENSE",
+  "CHANGELOG.md",
+  "docs/USAGE.md",
+  "docs/PUBLIC_API.md",
 ];
 
 const EXPECTED_PACKED_FILES = [
+  "CHANGELOG.md",
   "LICENSE",
   "README.md",
   "adapters/r3f/use_flow_frame.mjs",
@@ -66,6 +77,8 @@ const EXPECTED_PACKED_FILES = [
   "bridge/runtime.mjs",
   "bridge/wheel_ownership.mjs",
   "core.wasm",
+  "docs/PUBLIC_API.md",
+  "docs/USAGE.md",
   "index.mjs",
   "package.json",
   "r3f.mjs",
@@ -195,6 +208,38 @@ test("K01-K10: local packed artifact preserves host isolation and provenance", a
       },
     });
     assert.deepEqual(manifest.files, EXPECTED_MANIFEST_FILES);
+
+    for (const relativePath of [...EXPECTED_CONSUMER_DOCUMENTS, "LICENSE"]) {
+      assert.deepEqual(
+        await readFile(path.join(stageRoot, relativePath)),
+        await readFile(path.join(REPOSITORY_ROOT, relativePath)),
+        relativePath + " must be copied byte-for-byte",
+      );
+    }
+
+    for (const relativePath of [
+      "AGENTS.md",
+      "CONTRIBUTING.md",
+      "docs/README.md",
+      "docs/INVARIANTS.md",
+      "docs/ARCHITECTURE.md",
+      "docs/HOST_BOUNDARIES.md",
+      "docs/BEHAVIORAL_CONTRACT.md",
+      "docs/TESTING.md",
+      "docs/GLOSSARY.md",
+    ]) {
+      assert.equal(
+        await exists(path.join(stageRoot, relativePath)),
+        false,
+        relativePath + " must remain repository-only",
+      );
+    }
+    assert.equal(
+      await exists(path.join(stageRoot, "docs/adr")),
+      false,
+      "ADR authority must not be bulk-packed",
+    );
+
     assert.equal(manifest.peerDependencies.react, undefined);
     assert.equal(manifest.peerDependencies.three, undefined);
     assert.equal(manifest.dependencies, undefined);
@@ -268,6 +313,28 @@ test("K01-K10: local packed artifact preserves host isolation and provenance", a
     const packed = packResult[0];
     const packedFiles = packed.files.map((entry) => entry.path).sort();
     assert.deepEqual(packedFiles, EXPECTED_PACKED_FILES);
+
+    const packedFileSet = new Set(packedFiles);
+    for (const documentationPath of [
+      "README.md",
+      "docs/USAGE.md",
+      "docs/PUBLIC_API.md",
+    ]) {
+      const document = await readFile(path.join(stageRoot, documentationPath), "utf8");
+      const documentDirectory = path.posix.dirname(documentationPath);
+      for (const [, target] of document.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
+        if (target.startsWith("https://") || target.startsWith("#")) continue;
+        const targetPath = target.split("#", 1)[0].replace(/^\.\//, "");
+        const packagePath = path.posix.normalize(
+          path.posix.join(documentDirectory, targetPath),
+        );
+        assert.ok(
+          packedFileSet.has(packagePath),
+          documentationPath + " relative link " + target +
+            " must resolve inside the packed artifact",
+        );
+      }
+    }
 
     const tarballPath = path.join(packRoot, packed.filename);
     assert.equal(await exists(tarballPath), true);

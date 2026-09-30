@@ -2,7 +2,7 @@
 
 This document is normative. It records properties the project currently treats as non-negotiable.
 
-The project has established its first v0.1.0 release boundary. Registry publication is evidenced separately from repository source. Only invariants justified by the repository evidence are frozen here. The narrower first-runtime behavior established during the pre-v0.1 research phase is recorded in [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md).
+The first public v0.1.0 release is historical. The current repository source includes the v0.2.0 target-capable wheel ownership decision, while npm publication remains a separate event evidenced by the registry. Only invariants justified by repository evidence are frozen here. The narrower first-runtime behavior established during the pre-v0.1 research phase is recorded in [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md).
 
 ## I-01 — Host-independent core
 

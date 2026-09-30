@@ -1,17 +1,33 @@
 # Documentation
 
-This directory contains repository-owned project authority.
+Use the layer that matches your task. Consumer docs summarize the public package surface; they do not override repository authority.
 
-## Authority
+## For users
 
-- [INVARIANTS.md](INVARIANTS.md) — properties implementations must preserve.
-- [adr/](adr/) — accepted architectural decisions and their rationale.
-- [ARCHITECTURE.md](ARCHITECTURE.md) — system structure and ownership.
-- [HOST_BOUNDARIES.md](HOST_BOUNDARIES.md) — responsibilities of core and host adapters.
-- [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md) — evidence-backed first-runtime behavior established during the pre-v0.1 research phase.
-- [TESTING.md](TESTING.md) — evidence model, semantic oracle, traces, and validation strategy.
+- [Root README](../README.md) — what WIF does, install, and quick start.
+- [Usage guide](USAGE.md) — practical integration and cleanup.
+- [Public API](PUBLIC_API.md) — exports, ownership, and integration rules.
+- [Changelog](../CHANGELOG.md) — release and release-preparation facts.
+
+## For contributors and coding agents
+
+- [AGENTS.md](../AGENTS.md) — instructions for work in this repository.
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — focused PR and evidence workflow.
+- Read the authority order below before changing behavior or architecture.
+
+## Architecture and research authority
+
+The repository authority order is:
+
+1. [INVARIANTS.md](INVARIANTS.md)
+2. Accepted [ADRs](adr/README.md)
+3. [ARCHITECTURE.md](ARCHITECTURE.md)
+4. [HOST_BOUNDARIES.md](HOST_BOUNDARIES.md)
+5. [TESTING.md](TESTING.md) and behavioral evidence
+6. Implementation
+7. Consumer guidance, including the README and USAGE guide
+
+- [BEHAVIORAL_CONTRACT.md](BEHAVIORAL_CONTRACT.md) — historical first-runtime behavior from the pre-v0.1 research phase.
 - [GLOSSARY.md](GLOSSARY.md) — shared terminology.
 
-The documents intentionally separate permanent invariants, architectural ownership, researched first-runtime behavior, and still-open design questions.
-
-Do not infer that an unspecified API, representation, ABI, or serialization format has already been chosen.
+This map is navigation, not a new authority source. Resolve conflicts using the authority order above.

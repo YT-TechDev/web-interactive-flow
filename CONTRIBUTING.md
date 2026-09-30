@@ -1,6 +1,6 @@
 # Contributing
 
-Web Interactive Flow has established its first `v0.1.0` release boundary while remaining an evidence-driven research runtime. Registry publication is evidenced separately from repository source. The first package surface is intentionally narrow and is not a stable-semver guarantee for future releases.
+The repository has accepted the v0.2.0 target-capable wheel ownership boundary. Consumer docs describe repository source, while npm publication remains a separate event: check the registry rather than inferring availability from source. The package surface remains intentionally narrow, and compatibility claims stay within direct qualification evidence.
 
 ## Workflow
 
@@ -28,7 +28,7 @@ Behavioral changes should identify:
 
 Architecture changes should normally include or update an ADR.
 
-Consumer-facing changes must also check whether `README.md` or `docs/USAGE.md` would become inaccurate. Do not document repository-internal paths as public npm APIs unless the accepted package authority and export map expose them.
+Consumer-facing changes must also check whether `README.md`, `CHANGELOG.md`, `docs/USAGE.md`, and `docs/PUBLIC_API.md` would become inaccurate. Do not document repository-internal paths as public npm APIs unless the accepted package authority and export map expose them.
 
 ## Toolchain and dependencies
 

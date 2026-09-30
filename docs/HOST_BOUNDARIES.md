@@ -104,9 +104,9 @@ Native-scroll coexistence is a research frontier. Do not encode an untested glob
 
 ### First DOM wheel default-action ownership
 
-The first wheel ownership boundary is governed by [ADR-0008](adr/0008-dom-wheel-default-action-ownership.md).
+The adjacent-intent ownership boundary was introduced by [ADR-0008](adr/0008-dom-wheel-default-action-ownership.md) and extended for tagged direct targets by [ADR-0028](adr/0028-target-capable-wheel-ownership.md).
 
-It receives an already-normalized `next` or `previous` intent and delegates exactly one corresponding request to the existing semantic Runtime. The Runtime's returned request disposition remains the sole authority for flow eligibility at this boundary.
+It receives an already-normalized adjacent intent ("next" or "previous") or tagged direct-target intent ({ type: "target", target: phaseIdentity }) as specified by ADR-0028, then delegates exactly one corresponding request to the existing semantic Runtime. The Runtime's returned request disposition remains the sole authority for flow eligibility at this boundary.
 
 Native-default suppression follows, rather than predicts, semantic disposition:
 

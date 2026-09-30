@@ -1,24 +1,28 @@
 # Web Interactive Flow
 
-A deterministic, host-independent interaction-flow runtime for the Web, powered by MoonBit and WebAssembly.
+Web Interactive Flow (WIF) is a small interaction-flow runtime for Web applications. Its MoonBit/WebAssembly Runtime owns phase selection, request disposition, transitions, cooldown, lock, and semantic time. The application owns input interpretation, topology, scheduling lifetime, asset acquisition, and presentation.
 
-> **Status:** v0.1.0 first-release source with qualified Web, R3F, package-artifact, real-browser, and external consumer evidence. The public npm identity is `web-interactive-flow`. Broad compatibility and stable semver beyond this first release are not claimed.
+## Source and npm status
+
+The current repository source includes the accepted v0.2.0 target-capable wheel ownership boundary. npm release status is separate from source status. As checked on 2026-09-30, npm lists only **web-interactive-flow@0.1.0**. The tagged direct-target wheel intent described below is in repository source for v0.2.0 preparation; it is not in the published 0.1.0 artifact.
+
+A repository commit or tag does not prove npm availability. Check the registry before selecting a version:
+
+~~~sh
+npm view web-interactive-flow versions --json
+~~~
 
 ## Install
 
-For published v0.1.x releases:
-
-```bash
+~~~sh
 npm install web-interactive-flow
-```
-
-Registry publication is authoritative only for versions that actually exist on npm; repository tags or source metadata alone do not prove registry availability.
+~~~
 
 ## Quick start
 
-The application owns Wasm URL resolution and fetching. The directly qualified browser package path uses Vite-style asset URL resolution:
+The application resolves and fetches the Wasm asset. The `?url` form below is qualified for the repository’s Vite path only.
 
-```js
+~~~js
 import wasmUrl from "web-interactive-flow/core.wasm?url";
 import {
   compileFlowModule,
@@ -27,7 +31,6 @@ import {
 } from "web-interactive-flow";
 
 const module = await compileFlowModule(fetch(wasmUrl));
-
 const runtime = createFlowRuntime(module, {
   phases: ["home", "about", "contact"],
   initial: "home",
@@ -45,184 +48,89 @@ const scheduler = createFrameScheduler({
 });
 
 scheduler.start();
-
 const disposition = runtime.next();
 console.log(disposition, runtime.getSnapshot());
 
-// Cleanup:
-// scheduler.stop();
-// runtime.dispose();
-```
+// When this owner is finished:
+scheduler.stop();
+runtime.dispose();
+~~~
 
-With the first browser scheduler, browser time is normalized to integer microsecond quanta before `runtime.tick(dt)`. The `?url` Wasm import above is directly qualified with the repository's exact Vite fixture; it is not a universal bundler guarantee.
+For this browser scheduler, time values use integer microsecond quanta. The application must not advance one Runtime with both the scheduler and a competing clock.
 
-For requests, snapshots, scheduler ownership, wheel integration, R3F usage, and cleanup, see the [v0.1.0 usage guide](https://github.com/YT-TechDev/web-interactive-flow/blob/main/docs/USAGE.md).
+## Public package surface
 
-## Public API in v0.1.0
+The package exports are intentionally narrow:
 
-Package root:
+| Import | Public surface |
+| --- | --- |
+| `web-interactive-flow` | `compileFlowModule`, `createFlowRuntime`, `createFrameScheduler`, `applyWheelNavigationIntent` |
+| `web-interactive-flow/r3f` | `useFlowFrame` |
+| `web-interactive-flow/core.wasm` | Packaged Wasm asset |
 
-- `compileFlowModule(source)`
-- `createFlowRuntime(module, config)`
-- `createFrameScheduler(options)`
-- `applyWheelNavigationIntent(options)`
+There is no `./dom` subpath. Do not deep-import repository files such as `bridge/*` or `adapters/*`.
 
-A created Runtime exposes `next()`, `previous()`, `goTo(phase)`, `lock()`, `unlock()`, `tick(dt)`, `getSnapshot()`, and `dispose()`.
+## Wheel navigation in the v0.2.0 source boundary
 
-Optional R3F subpath:
+The existing `applyWheelNavigationIntent()` helper accepts adjacent intents and a tagged direct target:
 
-```js
+~~~js
+const adjacentIntent = "next"; // calls runtime.next()
+const directTargetIntent = { type: "target", target: "next" }; // calls runtime.goTo("next")
+~~~
+
+A configured phase can itself be named `"next"` or `"previous"`, so a direct phase identity needs the `type: "target"` tag. Each valid helper call makes exactly one Runtime request. The Runtime’s `"accepted"` or `"rejected"` disposition is returned unchanged; unknown target identities are validation failures, not `"rejected"` requests. The helper requests `preventDefault()` only after `"accepted"`, when prevention is enabled and the event is cancelable.
+
+WIF does not interpret wheel deltas or choose the application’s target mapping. Raw wheel policy, gesture thresholds, and application topology stay with the caller. This wheel contract does not add public pointer or keyboard ownership APIs.
+
+## Ownership
+
+| Concern | WIF Runtime | Host/application |
+| --- | --- | --- |
+| Selected phase, eligibility, disposition, transition, cooldown, lock, raw progress | Owns semantic truth | Reads snapshots; does not predict eligibility |
+| Wheel deltas, gesture thresholds, direction-to-target mapping, application topology | — | Owns policy |
+| DOM/R3F presentation and easing | Supplies semantic state | Owns rendering and visual effects |
+| Wasm URL and fetch | Compiles a supplied response | Resolves the asset and fetches it |
+| Runtime and scheduler lifetime | Provides operations | Creates, starts, stops, and disposes its owned instances |
+
+## React Three Fiber
+
+R3F support is optional and isolated at `web-interactive-flow/r3f`. `useFlowFrame(runtime, callback)` reads a snapshot and forwards R3F frame delta to presentation code. It does not call `runtime.tick()` or become the Runtime’s semantic clock.
+
+~~~jsx
 import { useFlowFrame } from "web-interactive-flow/r3f";
-```
 
-Public Wasm asset:
+function FlowPresentation({ runtime }) {
+  useFlowFrame(runtime, (snapshot, delta) => {
+    updateScene(snapshot, delta);
+  });
+  return null;
+}
+~~~
 
-```js
-import wasmUrl from "web-interactive-flow/core.wasm?url";
-```
+## Documentation
 
-Repository-internal DOM adapters and deep `bridge/*` paths are not public package entry points in v0.1.0.
+- [Usage guide](docs/USAGE.md) — practical integration and cleanup
+- [Public API](docs/PUBLIC_API.md) — concise public contract and ownership matrix
+- [Changelog](CHANGELOG.md) — first release facts and v0.2.0 release preparation
+- [Contributing and agent guidance](https://github.com/YT-TechDev/web-interactive-flow/blob/main/CONTRIBUTING.md) · [AGENTS.md](https://github.com/YT-TechDev/web-interactive-flow/blob/main/AGENTS.md)
 
-## What this project is
+## Qualified boundaries
 
-Web Interactive Flow separates interaction-flow semantics from the hosts that deliver input and render effects.
+Current evidence covers a copy-only package artifact, a framework-neutral root, the optional R3F subpath with the directly qualified @react-three/fiber 9.8.0 peer, and one locked Vite production-build / real-Chrome path. The Vite `?url` asset form is not a universal bundler guarantee. WIF does not claim universal browser or bundler compatibility, TypeScript declarations, CommonJS support, SSR/RSC support, stable semver compatibility beyond directly qualified evidence, or a finalized Wasm ABI or serialization format.
 
-The MoonBit/Wasm core owns semantic truth. Web-facing bridges and host adapters normalize host input, advance the runtime through explicit time, and project observable runtime state into DOM, React Three Fiber, or other presentation layers without reimplementing flow semantics.
+## Evidence and repository authority
 
-React Three Fiber is an important reference consumer, but it does not own the architecture. DOM/Web is a first-class target.
+WIF uses a falsification-first process: make an observable claim, test boundary cases, record evidence, then promote the result into repository authority. Green CI is necessary for automated checks but does not establish semantic correctness by itself.
 
-### MoonBit/Wasm and JavaScript responsibilities
+The consumer documents summarize repository authority. They do not override it:
 
-MoonBit/Wasm owns flow semantics: selected phase, request disposition, transition lifecycle, raw progress/direction, cooldown, lock, and deterministic `tick(dt)` evolution.
-
-JavaScript/Web owns host integration: Wasm acquisition, browser time normalization, frame scheduling, DOM/event normalization, and presentation effects. Host code may translate input into normalized commands, but it must not duplicate Runtime eligibility or lifecycle truth.
-
-```text
-Host input
-  wheel / touch / keyboard / pointer / programmatic requests
-                |
-                v
-        Host adapter / bridge
-                |
-      normalized commands + valid dt
-                |
-                v
-        MoonBit / Wasm core
-        -------------------
-        ordered phase domain
-        selected phase / accepted target
-        transition lifecycle
-        raw progress / direction
-        cooldown / lock
-        request disposition
-                |
-                v
-        observable semantic state
-                |
-        Host adapter / presentation
-                |
-          host effects / easing
-                |
-                v
-DOM / React / R3F / future hosts
-```
-
-## Qualified capabilities
-
-The current repository evidence establishes the following bounded capabilities:
-
-- **Host-independent semantic core** — ordered phases, selected semantic target, transition lifecycle, raw progress and direction, cooldown, lock state, request disposition, validation boundaries, and explicit time progression live in the MoonBit/Wasm core.
-- **JavaScript/Web bridge** — production bridge code exposes the qualified runtime without moving semantic ownership into JavaScript.
-- **Browser time and scheduling** — browser monotonic time is normalized at the host boundary, and the first frame scheduler advances semantic time from delivered browser frame timestamps.
-- **Caller-owned Wasm acquisition** — the caller resolves and fetches the Wasm resource and supplies a `Response` / `Promise<Response>` to `compileFlowModule()`; WIF does not own URL selection, automatic fetch, CDN policy, or a global asset cache.
-- **DOM/Web integration** — DOM wheel default-action suppression follows semantic acceptance, and real DOM projection evidence is exercised through production runtime state.
-- **Real-browser composition** — production compiler, Runtime, scheduler, and packaged Wasm have been exercised together in actual Chrome/WebDriver with bounded lifecycle and cleanup.
-- **R3F integration** — R3F frame consumers are read-only semantic observers, and the first production hook is `useFlowFrame(runtime, callback)` with an explicit caller-owned Runtime.
-- **Package boundary** — one logical package topology has been qualified with a framework-neutral root, an explicit `./r3f` host subpath, and a public `./core.wasm` asset boundary.
-- **Packed-artifact qualification** — copy-only staging, local `npm pack`, exact locked consumer installation, production Vite build, emitted-Wasm byte provenance, build-output-only loopback serving, and real-Chrome execution have been exercised as one bounded qualification path.
-
-These are evidence-backed properties of the current v0.1.0 release boundary. They are not universal compatibility or production-readiness claims.
-
-## Qualified package topology
-
-The v0.1.0 distribution boundary qualifies this public surface:
-
-```text
-package root
-  -> createFlowRuntime
-  -> compileFlowModule
-  -> createFrameScheduler
-  -> applyWheelNavigationIntent
-
-package ./r3f
-  -> useFlowFrame
-
-package ./core.wasm
-  -> qualified Wasm asset
-```
-
-The framework-neutral root does not import the R3F adapter. R3F remains opt-in behind its explicit subpath, and Wasm acquisition remains caller-owned.
-
-ADR-0027 selects the first public identity as `web-interactive-flow@0.1.0`. A repository tag is not treated as proof of publication; the registry artifact and its release provenance remain the publication evidence.
-
-The package export map remains intentionally narrower than the repository source tree. Repository-qualified internal DOM adapters are **not** public package entry points in v0.1.0.
-
-This first release identity does **not** establish broad package-manager/bundler compatibility or stable semver guarantees beyond the directly qualified evidence.
-
-## Evidence discipline
-
-This repository is developed falsification-first.
-
-Behavior is promoted in roughly this order:
-
-```text
-semantic claim
-  -> observable behavior
-  -> boundary and counterexample tests
-  -> traces / invariants / ADRs
-  -> implementation
-  -> mutation / qualification evidence
-```
-
-The project uses focused behavioral traces, mutation tests, differential evidence against the existing TypeScript/R3F reference where appropriate, package-artifact provenance checks, and real-browser qualification.
-
-Passing CI is necessary evidence for automated checks, but it is not treated as proof of semantic or architectural correctness.
-
-See [Testing and evidence](docs/TESTING.md) for the current evidence properties and qualification boundaries.
-
-## Current frontier
-
-The project has moved beyond the initial architecture bootstrap: the host-independent core, browser bridge/scheduler path, DOM/Web evidence, R3F read-only adapter boundary, first production R3F hook, package topology, local package artifact, and package-aware real-browser production-build path have all been qualified.
-
-The next frontiers remain intentionally evidence-driven. The project does not prematurely freeze or claim:
-
-- stable public API or stable semver beyond the first v0.1.0 surface;
-- broad npm/package-manager/bundler compatibility beyond directly qualified environments;
-- final Wasm ABI or serialization format;
-- universal Vite, Webpack, Next.js/Turbopack, SSR, or React Server Components compatibility;
-- broad browser compatibility beyond directly qualified environments;
-- final TypeScript declaration strategy;
-- final React/R3F ergonomics, Provider/context design, render-priority policy, or peer-version ranges;
-- presentation easing utilities or animation ownership beyond accepted authority;
-- plugin architecture or WebGPU integration.
-
-These remain open until repository evidence justifies stronger authority.
-
-## Repository authority
-
-Repository-owned authority is intentionally explicit for both humans and coding agents.
-
-1. [Invariants](docs/INVARIANTS.md)
-2. Accepted [ADRs](docs/adr/README.md)
-3. [Architecture](docs/ARCHITECTURE.md) and [host boundaries](docs/HOST_BOUNDARIES.md)
-4. [Testing and evidence](docs/TESTING.md)
+1. [Invariants](https://github.com/YT-TechDev/web-interactive-flow/blob/main/docs/INVARIANTS.md)
+2. [Accepted ADRs](https://github.com/YT-TechDev/web-interactive-flow/tree/main/docs/adr)
+3. [Architecture](https://github.com/YT-TechDev/web-interactive-flow/blob/main/docs/ARCHITECTURE.md) and [host boundaries](https://github.com/YT-TechDev/web-interactive-flow/blob/main/docs/HOST_BOUNDARIES.md)
+4. [Testing and evidence](https://github.com/YT-TechDev/web-interactive-flow/blob/main/docs/TESTING.md)
 5. Implementation
-6. This README
 
-The README summarizes current repository authority; it does not override it.
+## Contributing and license
 
-See [AGENTS.md](AGENTS.md) for agent-facing operating rules and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution workflow.
-
-## License
-
-MIT.
+Focused contributions should include evidence for observable behavior changes and an ADR for architectural ownership changes. See [CONTRIBUTING.md](https://github.com/YT-TechDev/web-interactive-flow/blob/main/CONTRIBUTING.md). Licensed under MIT.
