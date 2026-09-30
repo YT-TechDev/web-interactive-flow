@@ -2,7 +2,7 @@
 
 ## Status
 
-This reference describes the current repository source boundary and summarizes accepted authority; it does not replace invariants or ADRs. The repository source includes the v0.2.0 target-capable wheel boundary; registry publication is separate. As checked on 2026-09-30, npm lists only `web-interactive-flow@0.1.0`; that published artifact does not include the tagged direct-target wheel extension. Check `npm view web-interactive-flow versions --json` before relying on a release.
+This reference describes the v0.2.0 source boundary and summarizes accepted authority; it does not replace invariants or ADRs. Registry publication is separate from repository source; verify `npm view web-interactive-flow@0.2.0 version` before relying on availability. The tagged direct-target wheel extension is part of v0.2.0 and is not present in 0.1.0.
 
 ## Package exports
 
