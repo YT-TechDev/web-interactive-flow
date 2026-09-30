@@ -48,7 +48,7 @@ Runtime remains the sole authority for eligibility and disposition. The helper i
 
 There is no `./dom` export. Internal DOM adapters and package deep imports into `bridge/*` or `adapters/*` remain non-public. Do not widen public pointer or keyboard APIs or make R3F a semantic clock.
 
-As checked on 2026-09-30, npm lists only `web-interactive-flow@0.1.0`; verify registry availability directly. Repository source status does not prove that a newer npm version exists.
+npm publication remains separate from repository source; verify registry availability directly. Repository source status does not prove that a package version is published.
 
 The browser scheduler may advance Runtime time. The R3F `useFlowFrame` hook is read-only and must not become a second semantic clock. Wasm URL resolution and fetch policy remain caller-owned. The `?url` asset form is qualified for the current Vite path only.
 
