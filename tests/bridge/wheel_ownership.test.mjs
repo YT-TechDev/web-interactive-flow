@@ -299,3 +299,306 @@ test("actual semantic Runtime composition preserves rejection and accepted-only 
     runtime.dispose();
   }
 });
+
+function makeTargetRuntime({
+  disposition = "accepted",
+  order = [],
+  failure = null,
+} = {}) {
+  const calls = { next: 0, previous: 0, goTo: [] };
+
+  return {
+    runtime: {
+      next() {
+        calls.next += 1;
+        order.push("request:next");
+        return "accepted";
+      },
+      previous() {
+        calls.previous += 1;
+        order.push("request:previous");
+        return "accepted";
+      },
+      goTo(...args) {
+        calls.goTo.push(args);
+        order.push("request:goTo");
+        if (failure !== null) throw failure;
+        return disposition;
+      },
+    },
+    calls,
+  };
+}
+
+test("T01: tagged target issues exactly one goTo and no adjacent request", () => {
+  const order = [];
+  const { runtime, calls } = makeTargetRuntime({ order });
+  const wheel = makeEvent({ order });
+
+  const disposition = applyWheelNavigationIntent({
+    runtime,
+    event: wheel.event,
+    intent: { type: "target", target: "C" },
+  });
+
+  assert.equal(disposition, "accepted");
+  assert.deepEqual(calls, { next: 0, previous: 0, goTo: [["C"]] });
+  assert.equal(wheel.preventCount, 1);
+  assert.deepEqual(order, ["request:goTo", "preventDefault"]);
+});
+
+test("T02: adjacent intents never call goTo", () => {
+  for (const intent of ["next", "previous"]) {
+    const { runtime, calls } = makeTargetRuntime();
+    const wheel = makeEvent();
+
+    applyWheelNavigationIntent({ runtime, event: wheel.event, intent });
+
+    assert.equal(calls.goTo.length, 0);
+    assert.equal(calls.next + calls.previous, 1);
+    assert.equal(calls[intent], 1);
+  }
+});
+
+test("T03: reserved phase identities stay distinct from adjacent intents", () => {
+  for (const reserved of ["next", "previous"]) {
+    const { runtime, calls } = makeTargetRuntime();
+    const wheel = makeEvent();
+
+    applyWheelNavigationIntent({
+      runtime,
+      event: wheel.event,
+      intent: { type: "target", target: reserved },
+    });
+
+    assert.deepEqual(calls, { next: 0, previous: 0, goTo: [[reserved]] });
+  }
+
+  const { runtime, calls } = makeTargetRuntime();
+  applyWheelNavigationIntent({
+    runtime,
+    event: makeEvent().event,
+    intent: "next",
+  });
+  assert.deepEqual(calls, { next: 1, previous: 0, goTo: [] });
+});
+
+test("T04: rejected tagged target returns rejected without prevention", () => {
+  const order = [];
+  const { runtime, calls } = makeTargetRuntime({
+    disposition: "rejected",
+    order,
+  });
+  const wheel = makeEvent({ order });
+
+  assert.equal(
+    applyWheelNavigationIntent({
+      runtime,
+      event: wheel.event,
+      intent: { type: "target", target: "A" },
+    }),
+    "rejected",
+  );
+  assert.equal(calls.goTo.length, 1);
+  assert.equal(wheel.preventCount, 0);
+  assert.deepEqual(order, ["request:goTo"]);
+});
+
+test("T05: accepted tagged target respects cancelability and prevention policy", () => {
+  const nonCancelable = makeEvent({ cancelable: false });
+  assert.equal(
+    applyWheelNavigationIntent({
+      runtime: makeTargetRuntime().runtime,
+      event: nonCancelable.event,
+      intent: { type: "target", target: "C" },
+    }),
+    "accepted",
+  );
+  assert.equal(nonCancelable.preventCount, 0);
+
+  const disabled = makeEvent();
+  assert.equal(
+    applyWheelNavigationIntent({
+      runtime: makeTargetRuntime().runtime,
+      event: disabled.event,
+      intent: { type: "target", target: "C" },
+      preventDefault: false,
+    }),
+    "accepted",
+  );
+  assert.equal(disabled.preventCount, 0);
+});
+
+test("T06: goTo failure propagates without prevention or retry", () => {
+  const failure = new Error("unknown phase identity");
+  const { runtime, calls } = makeTargetRuntime({ failure });
+  const wheel = makeEvent();
+
+  assert.throws(
+    () =>
+      applyWheelNavigationIntent({
+        runtime,
+        event: wheel.event,
+        intent: { type: "target", target: "not-configured" },
+      }),
+    (error) => error === failure,
+  );
+  assert.deepEqual(calls, {
+    next: 0,
+    previous: 0,
+    goTo: [["not-configured"]],
+  });
+  assert.equal(wheel.preventCount, 0);
+});
+
+test("T07: preventDefault failure after acceptance propagates without a second request", () => {
+  const order = [];
+  const failure = new Error("preventDefault failed");
+  const { runtime, calls } = makeTargetRuntime({ order });
+  const event = {
+    cancelable: true,
+    preventDefault() {
+      order.push("preventDefault");
+      throw failure;
+    },
+  };
+
+  assert.throws(
+    () =>
+      applyWheelNavigationIntent({
+        runtime,
+        event,
+        intent: { type: "target", target: "C" },
+      }),
+    (error) => error === failure,
+  );
+  assert.deepEqual(calls, { next: 0, previous: 0, goTo: [["C"]] });
+  assert.deepEqual(order, ["request:goTo", "preventDefault"]);
+});
+
+test("T08: malformed intents fail before any request or prevention", () => {
+  for (const intent of [
+    null,
+    undefined,
+    {},
+    { type: "target" },
+    { type: "unknown", target: "A" },
+    "A",
+    "C",
+    ["target", "A"],
+  ]) {
+    const order = [];
+    const { runtime, calls } = makeTargetRuntime({ order });
+    const wheel = makeEvent({ order });
+
+    assert.throws(() =>
+      applyWheelNavigationIntent({ runtime, event: wheel.event, intent }),
+    );
+    assert.deepEqual(calls, { next: 0, previous: 0, goTo: [] });
+    assert.equal(wheel.preventCount, 0);
+    assert.deepEqual(order, []);
+  }
+});
+
+test("T09: tagged target requires a callable goTo and never falls back", () => {
+  const { runtime, calls } = makeRuntime();
+  const wheel = makeEvent();
+
+  assert.throws(() =>
+    applyWheelNavigationIntent({
+      runtime,
+      event: wheel.event,
+      intent: { type: "target", target: "C" },
+    }),
+  );
+  assert.deepEqual(calls, { next: 0, previous: 0 });
+  assert.equal(wheel.preventCount, 0);
+
+  assert.throws(() =>
+    applyWheelNavigationIntent({
+      runtime: { ...runtime, goTo: "not callable" },
+      event: wheel.event,
+      intent: { type: "target", target: "C" },
+    }),
+  );
+});
+
+test("T10: actual Runtime composition keeps direct targets direct and disposition-first", async () => {
+  const module = await modulePromise;
+  const config = {
+    phases: ["A", "B", "C", "next"],
+    initial: "A",
+    transitionDuration: 100,
+    cooldown: 20,
+  };
+  const target = (name) => ({ type: "target", target: name });
+  const apply = (runtime, intent, wheel) =>
+    applyWheelNavigationIntent({
+      runtime,
+      event: wheel.event,
+      intent,
+      preventDefault: true,
+    });
+
+  const runtime = createFlowRuntime(module, config);
+  try {
+    const same = makeEvent();
+    assert.equal(apply(runtime, target("A"), same), "rejected");
+    assert.equal(same.preventCount, 0);
+
+    const unknown = makeEvent();
+    assert.throws(() => apply(runtime, target("not-configured"), unknown));
+    assert.equal(unknown.preventCount, 0);
+    assert.equal(runtime.getSnapshot().selected, "A");
+
+    const direct = makeEvent();
+    assert.equal(apply(runtime, target("C"), direct), "accepted");
+    assert.equal(direct.preventCount, 1);
+    assert.equal(runtime.getSnapshot().selected, "C");
+
+    const active = makeEvent();
+    assert.equal(apply(runtime, target("B"), active), "rejected");
+    assert.equal(active.preventCount, 0);
+    assert.equal(runtime.getSnapshot().selected, "C");
+
+    runtime.tick(100);
+    const cooling = makeEvent();
+    assert.equal(apply(runtime, target("B"), cooling), "rejected");
+    assert.equal(cooling.preventCount, 0);
+
+    runtime.tick(20);
+    runtime.lock();
+    const locked = makeEvent();
+    assert.equal(apply(runtime, target("B"), locked), "rejected");
+    assert.equal(locked.preventCount, 0);
+    runtime.unlock();
+
+    // "next" is a configured phase identity here: tagged target selects it,
+    // while bare "next" would have meant the adjacent operation.
+    const reserved = makeEvent();
+    assert.equal(apply(runtime, target("next"), reserved), "accepted");
+    assert.equal(runtime.getSnapshot().selected, "next");
+  } finally {
+    runtime.dispose();
+  }
+
+  const failing = createFlowRuntime(module, config);
+  try {
+    const event = {
+      cancelable: true,
+      preventDefault() {
+        throw new Error("preventDefault failed");
+      },
+    };
+    assert.throws(() =>
+      applyWheelNavigationIntent({
+        runtime: failing,
+        event,
+        intent: target("C"),
+      }),
+    );
+    assert.equal(failing.getSnapshot().selected, "C");
+  } finally {
+    failing.dispose();
+  }
+});

@@ -1,5 +1,6 @@
 import wasmUrl from "wif-package-qualification/core.wasm?url";
 import {
+  applyWheelNavigationIntent,
   compileFlowModule,
   createFlowRuntime,
   createFrameScheduler,
@@ -31,7 +32,8 @@ const fail = (error) => {
 try {
   // The application owns both URL resolution and fetch; WIF only consumes Response.
   const module = await compileFlowModule(fetch(wasmUrl));
-  runtime = createFlowRuntime(module, {
+  const createRuntime = (config) => createFlowRuntime(module, config);
+  runtime = createRuntime({
     phases: ["A", "B"],
     initial: "A",
     transitionDuration: 10_000_000,
@@ -39,6 +41,38 @@ try {
   });
   const disposition = runtime.next();
   if (disposition !== "accepted") throw new Error(`request was ${disposition}`);
+
+  // Public target-capable wheel ownership through the package root, using a
+  // real cancelable browser event on a separate Runtime.
+  const targetRuntime = createRuntime({
+    phases: ["A", "B", "C"],
+    initial: "A",
+    transitionDuration: 10_000_000,
+    cooldown: 0,
+  });
+  try {
+    const wheelIntent = (target, cancelable = true) => {
+      const event = new WheelEvent("wheel", { cancelable });
+      const result = applyWheelNavigationIntent({
+        runtime: targetRuntime,
+        event,
+        intent: { type: "target", target },
+      });
+      return { result, defaultPrevented: event.defaultPrevented };
+    };
+    const accepted = wheelIntent("C");
+    if (accepted.result !== "accepted" || !accepted.defaultPrevented
+      || targetRuntime.getSnapshot().selected !== "C") {
+      throw new Error("tagged direct target was not accepted with prevention");
+    }
+    const rejected = wheelIntent("B");
+    if (rejected.result !== "rejected" || rejected.defaultPrevented
+      || targetRuntime.getSnapshot().selected !== "C") {
+      throw new Error("known target rejection must not prevent default");
+    }
+  } finally {
+    targetRuntime.dispose();
+  }
 
   scheduler = createFrameScheduler({
     runtime,
