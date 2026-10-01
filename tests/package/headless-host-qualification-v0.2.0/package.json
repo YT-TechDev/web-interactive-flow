@@ -1,0 +1,16 @@
+{
+  "name": "wif-v0.2.0-headless-host-qualification",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.19.0"
+  },
+  "scripts": {
+    "test": "node --test ./qualification.test.mjs"
+  },
+  "dependencies": {
+    "web-interactive-flow": "0.2.0"
+  }
+}
+
