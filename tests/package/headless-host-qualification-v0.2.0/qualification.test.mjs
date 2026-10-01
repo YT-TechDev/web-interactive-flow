@@ -166,18 +166,27 @@ function runTrace(runtime, host) {
     }
   }
 
-  function request(label, invokeRuntime, { failEffect = false } = {}) {
+  function request(
+    label,
+    invokeRuntime,
+    { failEffect = false, expectValidationFailure = false } = {},
+  ) {
     let disposition;
     try {
       disposition = host.request(invokeRuntime);
     } catch (error) {
-      if (label !== "Site B goTo(omega)") {
+      if (!expectValidationFailure) {
         throw error;
       }
-      assert.equal(error instanceof Error, true);
+      assert.match(String(error?.message ?? error), /unknown phase identity/i);
       record(label, { validationFailure: true });
       return;
     }
+    assert.equal(
+      expectValidationFailure,
+      false,
+      label + " should have failed validation",
+    );
 
     const effectFailure = acknowledge(disposition, failEffect);
     const outcome =
@@ -221,7 +230,9 @@ function runTrace(runtime, host) {
   record("unlock()", null);
 
   const beforeInvalidTarget = runtime.getSnapshot();
-  request("Site B goTo(omega)", () => runtime.goTo("omega"));
+  request("Site B goTo(omega)", () => runtime.goTo("omega"), {
+    expectValidationFailure: true,
+  });
   assert.deepEqual(runtime.getSnapshot(), beforeInvalidTarget);
 
   assert.equal(effects.attempts, 4);

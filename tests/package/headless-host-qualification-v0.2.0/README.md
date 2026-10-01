@@ -58,7 +58,7 @@ npm ls --depth=0
 npm test
 ~~~
 
-Expected runtime: Node 24.19.0. The test asserts that exact version. npm ci uses the checked-in lock file and verifies the registry artifact integrity. npm audit signatures rechecks npm’s signature and attestation for the installed package. npm test compiles the exported Wasm asset through the public compileFlowModule API, creates the public Runtime, and replays the trace below. No source deep import is used.
+Expected runtime: Node 24.19.0. The test asserts that exact version. The checked-in lock file pins the registry artifact integrity; npm ci verifies it, and npm audit signatures rechecks the package signature and attestation. The test suite compiles the exported Wasm asset through the public compileFlowModule API, creates the public Runtime, and replays the trace below. The fixture never deep-imports package source or internals.
 
 This is an opt-in historical reproduction. It is deliberately not part of current-source CI. The repository’s normal Runtime, package, browser, and differential checks remain the evidence for current source.
 
@@ -164,4 +164,3 @@ The current repository authority reviewed for this evidence includes AGENTS.md; 
 Related repository history: #209 (completed DOM/Web boundary research), ADR-0028 and #210 (v0.2.0 host ownership), PR #212 (implementation), PR #213 (distribution documentation), PR #214 (release source), #206 (Trusted Publishing follow-up), and this evidence follow-up #215. The exact source/tag and registry artifact are separate evidence layers; source identity alone does not prove which bytes npm served.
 
 The original qualification was recorded on 2026-10-01. This durable fixture preserves the historical result and offers a reproducible falsification path without making it a current-source guarantee.
-
